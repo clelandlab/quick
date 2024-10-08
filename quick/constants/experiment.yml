@@ -1,0 +1,266 @@
+var:
+    r_freq: 5000
+    r_power: -30
+    r_length: 2
+    r_phase: 0
+    r_offset: 0
+    r_balun: 3
+    r_threshold: 0
+    r_relax: 1
+    q_freq: 5000
+    q_length: 2
+    q_delta: -180
+    q_gain: 30000
+    q_gain_2: 15000
+    q_T1: 80
+    fringe_freq: 1
+
+LoopBack:
+    soft_avgs: 100  
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    r0_g: 0
+    r0_length: $r_length
+    steps:
+      - type: pulse
+        ch: 0
+      - type: trigger
+        time: $r_offset
+      - type: sync_all
+        time: 1.0
+
+ResonatorSpectroscopy:
+    reps: 300
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    r0_g: 0
+    r0_length: $r_length
+    0_type: pulse
+    0_ch: 0
+    1_type: trigger
+    1_time: $r_offset
+    2_type: sync_all
+    2_time: $r_relax
+
+QubitSpectroscopy:
+    reps: 1000
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    g2_style: flat_top
+    g2_sigma: 0.05
+    g2_freq: $q_freq
+    g2_length: $q_length
+    g2_gain: $q_gain
+    r0_g: 0
+    r0_length: $r_length
+    0_type: pulse
+    0_ch: 2
+    1_type: sync_all
+    2_type: pulse
+    2_ch: 0
+    3_type: trigger
+    3_time: $r_offset
+    4_type: sync_all
+    4_time: $r_relax
+
+Rabi:
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    g2_style: gaussian
+    g2_freq: $q_freq
+    g2_length: $q_length
+    g2_gain: $q_gain
+    r0_g: 0
+    r0_length: $r_length
+    0_type: pulse
+    0_ch: 2
+    1_type: sync_all
+    2_type: goto
+    2_i: 0
+    2_reps: 0
+    3_type: pulse
+    3_ch: 0
+    4_type: trigger
+    4_time: $r_offset
+    5_type: sync
+    5_time: [0, 0, 1000]
+    6_type: sync_all
+    6_time: $r_relax
+
+IQScatter:
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    g2_style: gaussian
+    g2_freq: $q_freq
+    g2_length: $q_length
+    g2_gain: $q_gain
+    r0_g: 0
+    r0_length: $r_length
+    0_type: pulse
+    0_ch: 2
+    1_type: sync_all
+    2_type: pulse
+    2_ch: 0
+    3_type: trigger
+    3_time: $r_offset
+    4_type: wait_all
+    5_type: sync
+    5_time: [0, 0, 1000]
+    6_type: sync_all
+    6_time: $r_relax
+
+DispersiveSpectroscopy:
+    reps: 1000
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    g2_style: gaussian
+    g2_freq: $q_freq
+    g2_length: $q_length
+    g2_gain: $q_gain
+    r0_g: 0
+    r0_length: $r_length
+    0_type: pulse
+    0_ch: 2
+    1_type: sync_all
+    2_type: pulse
+    2_ch: 0
+    3_type: trigger
+    3_time: $r_offset
+    4_type: sync_all
+    4_time: $r_relax
+
+T1:
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    g2_style: gaussian
+    g2_freq: $q_freq
+    g2_length: $q_length
+    g2_gain: $q_gain
+    r0_g: 0
+    r0_length: $r_length
+    0_type: pulse
+    0_ch: 2
+    1_type: sync_all
+    2_type: pulse
+    2_ch: 0
+    3_type: trigger
+    3_time: $r_offset
+    4_type: wait_all
+    5_type: sync
+    5_time: [0, 0, 1000]
+    6_type: sync_all
+    6_time: $r_relax
+
+T2Ramsey:
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    g2_style: gaussian
+    g2_freq: $q_freq
+    g2_length: $q_length
+    g2_gain: $q_gain_2
+    r0_g: 0
+    r0_length: $r_length
+    0_type: set
+    0_ch: 2
+    0_key: phase
+    0_value: 0
+    1_type: pulse
+    1_ch: 2
+    2_type: set
+    2_ch: 2
+    2_key: phase
+    2_value: 0 # phase change
+    3_type: sync_all
+    3_time: 0 # wait time
+    4_type: pulse
+    4_ch: 2
+    5_type: sync_all
+    6_type: pulse
+    6_ch: 0
+    7_type: trigger
+    7_time: $r_offset
+    8_type: wait_all
+    9_type: sync
+    9_time: [0, 0, 1000]
+    10_type: sync_all
+    10_time: $r_relax
+
+T2Echo:
+    g0_freq: $r_freq
+    g0_length: $r_length + 1
+    g0_phase: $r_phase
+    g0_power: $r_power
+    g0_balun: $r_balun
+    g2_style: gaussian
+    g2_freq: $q_freq
+    g2_length: $q_length
+    g2_gain: $q_gain_2
+    r0_g: 0
+    r0_length: $r_length
+    0_type: set
+    0_ch: 2
+    0_key: phase
+    0_value: 0
+    1_type: pulse
+    1_ch: 2
+    2_type: set       # set g2 to pi pulse
+    2_ch: 2
+    2_key: gain
+    2_value: $q_gain
+    3_type: set       # set pi pulse to -y axis
+    3_ch: 2
+    3_key: phase
+    3_value: 90
+    4_type: sync_all
+    4_time: 0         # half wait time
+    5_type: pulse
+    5_ch: 2
+    6_type: sync_all
+    6_time: 0         # half wait time
+    7_type: goto
+    7_i: 4
+    7_reps: 0
+    8_type: set
+    8_ch: 2
+    8_key: phase
+    8_value: 0        # phase change for fringe
+    9_type: set
+    9_ch: 2
+    9_key: gain
+    9_value: $q_gain_2
+    10_type: pulse
+    10_ch: 2
+    11_type: sync_all
+    12_type: pulse
+    12_ch: 0
+    13_type: trigger
+    13_time: $r_offset
+    14_type: wait_all
+    15_type: sync
+    15_time: [0, 0, 1000]
+    16_type: sync_all
+    16_time: $r_relax

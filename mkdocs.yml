@@ -1,0 +1,17 @@
+site_name: QuICK
+site_url: https://labweb.uchicago.edu/quick
+repo_url: https://github.com/clelandlab/quick
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.expand
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+nav:

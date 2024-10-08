@@ -1,0 +1,7 @@
+__pycache__
+.ipynb_checkpoints
+*.egg-info
+test
+.vscode
+site
+build
