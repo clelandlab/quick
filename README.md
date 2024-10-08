@@ -2,6 +2,8 @@
 
 `quick` is a useful wrap of QICK.
 
+<a href="https://clelandlab-quick.readthedocs.io/en/latest/"><img src="https://readthedocs.org/projects/clelandlab-quick/badge/?version=latest&style=for-the-badge"></a>
+
 ## Layers
 
 `quick` has several layers of complexity.

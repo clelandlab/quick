@@ -2,15 +2,13 @@
 
 ## Installation
 
-Install Anaconda on your PC. Clone this repository and run:
+Install this package with `pip`:
 
 ```
-conda env create -f env.yml
+pip install clelandlab-quick
 ```
 
-Have a cup of coffee while waiting for the installation of the conda environment `quick`.
-
-Inside the conda environment `quick`, you can use `quick` by simply import it.
+> It is recommended to use a conda environment.
 
 ```python
 import quick

@@ -47,7 +47,7 @@ setup(
     include_package_data=True,
     project_urls={
         "Source": "https://github.com/clelandlab/quick",
-        "Documentation": "https://github.com/clelandlab/quick",
+        "Documentation": "https://clelandlab-quick.readthedocs.io/en/latest/",
         "Tracker": "https://github.com/clelandlab/quick/issues",
     },
 )
