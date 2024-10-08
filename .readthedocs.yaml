@@ -1,0 +1,9 @@
+version: 2
+
+python:
+  version: 3.12
+  install:
+    - requirements: docs/requirements.txt
+
+mkdocs:
+  configuration: mkdocs.yml
