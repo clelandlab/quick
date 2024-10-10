@@ -150,7 +150,7 @@ for cfg in quick.Sweep(config, sweepConfig):
 s = quick.Saver(title, path, indep_params=[], dep_params=[], params={})
 ```
 
-The *class* to construct a data saver. The data will be saved in *LabRAD* fassion, where meta information will be saved in an ini file and data points will be saved in a csv file.
+The *class* to construct a data saver. The data will be saved in *LabRAD* fashion, where meta information will be saved in an ini file and data points will be saved in a csv file.
 
 **Parameters**:
 
@@ -168,7 +168,7 @@ The *class* to construct a data saver. The data will be saved in *LabRAD* fassio
 s.write_data(data)
 ```
 
-Write data to a data saver. The data will be **immediately appended** to the data file. Actual file writing is performed in this method. Numerical data will be saved as scientific notation with 6 digits after the dot, eg. `0.123456e-3`. This function can be called repetitively to keep appending data.
+Write data to a data saver. The data will be **immediately appended** to the data file. Actual file writing is performed in this method. Numerical data will be saved as scientific notation with 10 digits significant figures, eg. `1.234567890e-3`. This function can be called repetitively to keep appending data.
 
 **Parameters**:
 
