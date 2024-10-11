@@ -1,5 +1,5 @@
 import numpy as np
-import os
+import os, yaml
 import quick.helper as helper
 from .mercator import Mercator
 
@@ -16,7 +16,7 @@ class BaseExperiment:
         self.var = dict(configs["var"])
         self.var.update(var or {})
         configStr = configs.get(self.key, "")
-        self.config = yaml.safe_load(helper.evalStr(configStr, var)) or {}
+        self.config = yaml.safe_load(helper.evalStr(configStr, self.var)) or {}
         self.config["quick.experiment"] = self.key # label the experiment in config
         self.config["var"] = self.var
         self.config.update(kwargs) # customized arguments

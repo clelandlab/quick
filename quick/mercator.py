@@ -26,11 +26,6 @@ def parse(self):
         for key in steps[i]:
             if not f"{i}_{key}" in cfg:
                 cfg[f"{i}_{key}"] = steps[i][key]
-    var = cfg.get("var", {}) # var insertion
-    for k in cfg:
-        if type(cfg[k]) is not str or cfg[k][0] != "$":
-            continue
-        cfg[k] = eval(cfg[k][1:], None, var)
     self.c = c = { "g": {}, "r": {}, "exec": [], "sw": {} } # internal control object
     cfg["reps"] = cfg.get("reps", 1)
     cfg["soft_avgs"] = cfg.get("soft_avgs", 1)

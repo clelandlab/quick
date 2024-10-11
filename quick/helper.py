@@ -203,7 +203,7 @@ def dbm2gain(dbm, freq, nqz, balun):
     return int(10**((dbm - dbm3e5)/20) * 30000)
 
 def evalStr(s, var):
-    return eval(f"f'{s}'", None, var)
+    return eval(f"f'''{s}'''", None, var)
 
 def symmetryCenter(x, y, it=3):
     L = len(y)

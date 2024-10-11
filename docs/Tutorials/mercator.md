@@ -2,7 +2,7 @@
 
 Mercator protocol is a syntax to specify a pulse sequence (QICK program). It is a set of key-value pairs. Conveniently, it can be writen as a Python dictionary or in [YAML format](https://en.wikipedia.org/wiki/YAML). This document will use YAML format for clearance.
 
-> More example of Mercator protocol can be found in [default experiment program](https://github.com/clelandlab/quick/blob/main/constants/experiment.yml)
+> More examples of Mercator protocol can be found in [default experiment programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). Note they are up to variable insertion by `quick.evalStr`.
 
 Mercator protocol includes a lot of default values and syntax sugar to make it simultaneously flexible and easy to use. In this document, **default values will be used. Properties without default value will be marked as required.**
 
@@ -12,7 +12,6 @@ Mercator protocol is generally consisted of 5 sections:
 - Generator channel setup
 - Readout channel setup
 - Execution steps
-- Variable insertion
 
 For example, the following program is for QubitSpectroscopy (TwoTone):
 
@@ -20,18 +19,18 @@ For example, the following program is for QubitSpectroscopy (TwoTone):
 # section 1: Meta Information
 reps: 1000
 # section 2: Generator Channel Setup
-g0_freq: $r_freq
-g0_length: $r_length + 1
-g0_power: $r_power
-g0_balun: $r_balun
-g2_freq: $q_freq
+g0_freq: 5000
+g0_length: 3
+g0_power: -40
+g0_balun: 3
+g2_freq: 4000
 g2_style: flat_top
 g2_sigma: 0.05
-g2_length: $q_length
-g2_gain: $q_gain
+g2_length: 1
+g2_gain: 10000
 # section 3: Readout Channel Setup
 r0_g: 0
-r0_length: $r_length
+r0_length: 2
 # section 4: Execution Steps
 0_type: pulse
 0_ch: 2
@@ -39,20 +38,10 @@ r0_length: $r_length
 2_type: pulse
 2_ch: 0
 3_type: trigger
-3_time: $r_offset
+3_time: 0.5
 4_type: wait_all
 5_type: sync_all
 5_time: 500
-# section 5: Variable Insertion
-var:
-    r_freq: 5000
-    r_length: 2
-    r_power: -40
-    r_balun: 3
-    r_offset: 0.5
-    q_freq: 4000
-    q_length: 1
-    q_gain: 10000
 ```
 
 ## Meta Information
@@ -171,33 +160,6 @@ steps:
 ```
 
 The Mercator *class* accepts any **combination** of the array format and the flat key-value format as previously discussed. But it will first **flatten** the `steps` array into the flat key-value format. **The flat key-value format has higher priority during this flattening process.**
-
-## Variable Insertion
-
-To provide extra flexibility, Mercator protocol accepts variable insertion. In this section, you can provide a variable dictionary to be inserted into the whole program.
-
-```yaml
-var: {}            # the variable dictionary
-```
-
-To use a variable, start the top-level value with a dollar symbol `$`. The rest of the string will be evaluated with `eval` in Python, provided the `var` dictionary.
-
-In Mercator *class*, variable insertion is performed after flattening.
-
-**Example**:
-
-```yaml
-r0_length: $0.5 + r_length
-
-var: 
-    r_length: 1
-```
-
-After variable insertion, this gives
-
-```yaml
-r0_length: 1.5
-```
 
 ## Other Features
 

@@ -49,7 +49,7 @@ quick.experiment.configs
 
 Global config templates used by `BaseExperiment`. These are default Mercator protocols for the experiments. It is loaded from [here](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). Mostly internal use.
 
-All of the programs are saved as a string for variable insersion. The experiment variables will be inserted into the Mercator protocol with `quick.helper.evalStr`.
+All of the programs are saved as strings for variable insersion. The experiment variables will be inserted into the Mercator protocol templates with `quick.evalStr`.
 
 ## 🟡BaseExperiment
 
