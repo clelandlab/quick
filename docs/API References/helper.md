@@ -189,6 +189,30 @@ data = [ # data to save is a 2D array
 s.write_data(data)
 ```
 
+## 🔵evalStr
+
+```python
+res = quick.evalStr(s, var)
+```
+
+Evaluate a string as f-string with the given local variables.
+
+**Parameters**:
+
+- `s` (str) a given template string
+- `var` (dict) given local variables
+
+**Return**:
+
+- `res` (str) evaluated string, treat the given `s` as f-string.
+
+**Example**:
+
+```python
+print(quick.evalStr("{k} + 1 = {k + 1}", { "k": 3 }))
+# This prints: 3 + 1 = 4
+```
+
 ## 🔵symmetryCenter
 
 ```python

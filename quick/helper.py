@@ -137,7 +137,7 @@ class Saver:
         except KeyError:
             print("Variables incorrectly formatted. Independent variable: ('label', 'unit'). Dependent variable: ('label', 'unit', 'category) \n ")
         # Detect max existing file number
-        existing_files = [f for f in os.listdir(self.path) if re.search("^\d\d\d\d\d \- .*\.ini$", f)]
+        existing_files = [f for f in os.listdir(self.path) if re.search(r"^\d\d\d\d\d \- .*\.ini$", f)]
         if existing_files:
             existing_numbers = [int(f.split(' - ')[0]) for f in existing_files]
             next_number = max(existing_numbers) + 1
@@ -202,13 +202,8 @@ def dbm2gain(dbm, freq, nqz, balun):
     dbm3e5 = f(freq*1e6)
     return int(10**((dbm - dbm3e5)/20) * 30000)
 
-def parseLiteral(c, var):
-    r = dict(c)
-    for k in r:
-        if type(r[k]) is not str or r[k][0] != "$":
-            continue
-        r[k] = eval(r[k][1:], None, var)
-    return r
+def evalStr(s, var):
+    return eval(f"f'{s}'", None, var)
 
 def symmetryCenter(x, y, it=3):
     L = len(y)
@@ -485,22 +480,22 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
     S21_fit = S21_th(F, *p)
     back_noise = background_noise(p, F)
     fig, axes = plt.subplots(1, 3, figsize=(12, 4.1), constrained_layout=True, sharex=False)
-    axes[0].scatter((1 / S * back_noise).real, (1 / S * back_noise).imag, label='raw', alpha=0.5, linewidths=0.0)
-    axes[0].plot((1 / S21_fit * back_noise).real, (1 / S21_fit * back_noise).imag, 'r-', label='fit')
-    axes[0].set_xlabel(r'Re $\widetilde{S}_{21}^{-1}$')
-    axes[0].set_ylabel('Im $\widetilde{S}_{21}^{-1}$')
+    axes[0].scatter((1 / S * back_noise).real, (1 / S * back_noise).imag, label="raw", alpha=0.5, linewidths=0.0)
+    axes[0].plot((1 / S21_fit * back_noise).real, (1 / S21_fit * back_noise).imag, "r-", label="fit")
+    axes[0].set_xlabel(r"Re $\widetilde{S}_{21}^{-1}$")
+    axes[0].set_ylabel(r"Im $\widetilde{S}_{21}^{-1}$")
     axes[1].scatter(F, S_db, alpha=0.5, linewidths=0.0)
-    axes[1].plot(F, db(S21_fit), 'r-')
+    axes[1].plot(F, db(S21_fit), "r-")
     axes[1].set_xlim(F[0], F[-1])
-    axes[1].set_xlabel(r'$f$ (MHz)')
-    axes[1].set_ylabel(r'$|S_{21}|$(dB)')
-    axes[1].text(0.7, 0.29, r'Qi=%d' % p[0], ha='left', va='bottom', transform=axes[1].transAxes)
-    axes[1].text(0.7, 0.21, r'Qc=%d' % p[1], ha='left', va='bottom', transform=axes[1].transAxes)
-    axes[1].text(0.7, 0.13, r'$f$=%.4f' % p[2], ha='left', va='bottom', transform=axes[1].transAxes)
-    axes[1].text(0.7, 0.05, r'bg=%.1fdB' % p[5], ha='left', va='bottom', transform=axes[1].transAxes)
+    axes[1].set_xlabel(r"$f$ (MHz)")
+    axes[1].set_ylabel(r"$|S_{21}|$(dB)")
+    axes[1].text(0.7, 0.29, r"Qi=%d" % p[0], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.7, 0.21, r"Qc=%d" % p[1], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.7, 0.13, r"$f$=%.4f" % p[2], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.7, 0.05, r"bg=%.1fdB" % p[5], ha="left", va="bottom", transform=axes[1].transAxes)
     axes[2].scatter(F, np.unwrap(np.angle(S)), alpha=0.5, linewidths=0.0)
     axes[2].plot(F, np.unwrap(np.angle(S21_fit)), 'r-')
     axes[2].set_xlim(F[0], F[-1])
-    axes[2].set_xlabel(r'$f$ (GHz)')
-    axes[2].set_ylabel(r'$arg~S_{21}$')
+    axes[2].set_xlabel(r"$f$ (GHz)")
+    axes[2].set_ylabel(r"$arg~S_{21}$")
     return p, fig
