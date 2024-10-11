@@ -13,10 +13,11 @@ class BaseExperiment:
         self.key = self.__class__.__name__ # get class name as experiment key
         self.data_path = data_path
         self.title = title
-        self.config = dict(configs.get(self.key, {}))
         self.var = dict(configs["var"])
-        self.var.update(var or self.config.get("var", {}))
-        self.config["quick"] = self.key # label the experiment in config
+        self.var.update(var or {})
+        configStr = configs.get(self.key, "")
+        self.config = yaml.safe_load(helper.evalStr(configStr, var)) or {}
+        self.config["quick.experiment"] = self.key # label the experiment in config
         self.config["var"] = self.var
         self.config.update(kwargs) # customized arguments
         self.soccfg, self.soc = helper.getSoc() if soccfg is None else (soccfg, soc)

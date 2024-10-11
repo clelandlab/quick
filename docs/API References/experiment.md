@@ -21,6 +21,9 @@ v = dict(quick.experiment.var) # a copy of experiment variables.
 **Details**:
 
 ```yaml
+rr: 0             # readout channel
+r: 0              # generator channel for readout pulse
+q: 2              # generator channel for qubit pulse
 r_freq: 5000      # [MHz] readout pulse frequency
 r_power: -30      # [dBm] readout pulse power
 r_length: 2       # [us] readout pulse length
@@ -46,6 +49,8 @@ quick.experiment.configs
 
 Global config templates used by `BaseExperiment`. These are default Mercator protocols for the experiments. It is loaded from [here](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). Mostly internal use.
 
+All of the programs are saved as a string for variable insersion. The experiment variables will be inserted into the Mercator protocol with `quick.helper.evalStr`.
+
 ## 🟡BaseExperiment
 
 ```python
@@ -60,8 +65,8 @@ General base *class* for other experiments using Mercator protocol. Mostly for i
 - `title=""` (str) filename of data. A prefix of experiment name will be added to it, eg. `(BaseExperiment)your title`.
 - `soccfg=None` QICK board socket config object. If not provided, the last connected one will be used by calling `quick.getSoc()`.
 - `soc=None` QICK board socket object.
-- `var=None` experimental variables to be inserted into the Mercator protocol. If not provided, `self.config["var"]` will be used. It will NOT be modified. The default value in `quick.experiment.var` will be used if any keys are missing.
-- `**kwargs` other keyword arguments. Can be used to overwrite Mercator protocol and therefore overwrite the pulse sequence.
+- `var=None` experimental variables to be inserted into the corresponding Mercator protocol template of the experiment (in `quick.experiment.configs`). It will NOT be modified. The default value in `quick.experiment.var` will be used if any keys are missing.
+- `**kwargs` other keyword arguments. Can be used to overwrite Mercator protocol and therefore overwrite the pulse sequence. The overwriting happens after variable insertions.
 
 ### - BaseExperiment.key
 
