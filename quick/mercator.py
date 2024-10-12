@@ -27,14 +27,16 @@ def parse(self):
             if not f"{i}_{key}" in cfg:
                 cfg[f"{i}_{key}"] = steps[i][key]
     self.c = c = { "g": {}, "r": {}, "exec": [], "sw": {} } # internal control object
-    cfg["reps"] = cfg.get("reps", 1)
-    cfg["soft_avgs"] = cfg.get("soft_avgs", 1)
+    cfg["reps"] = cfg.get("hard_avg", 1)
+    cfg["soft_avgs"] = cfg.get("soft_avg", 1)
     def sweep(g, o, i=0):
         for k in ["freq", "phase", "gain", "t"]:
             if k in o and isinstance(o[k], listTypes):
                 sw_key = i if k == "t" else f"g{g}_{k}"
                 c["sw"][sw_key] = { "value": o[k], "key": k, "g": g }
                 o[k] = o[k][0]
+    if cfg.get("rep", 0) > 0: # sweep for shot
+        sweep(0, { "t": [0, 0, cfg["rep"]] })
     def generate_waveform(o):
         g, l = o["g"], o["length"] * 16
         f_fabric = self.soccfg["gens"][g]["f_fabric"]
