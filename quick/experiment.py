@@ -1,6 +1,7 @@
 import numpy as np
 import os, yaml
 import quick.helper as helper
+from quick import __version__
 from .mercator import Mercator
 
 # global var & config for quick.experiment
@@ -18,6 +19,7 @@ class BaseExperiment:
         configStr = configs.get(self.key, "")
         self.config = yaml.safe_load(helper.evalStr(configStr, self.var)) or {}
         self.config["quick.experiment"] = self.key # label the experiment in config
+        self.config["quick.__version__"] = __version__
         self.config["var"] = self.var
         self.config.update(kwargs) # customized arguments
         self.soccfg, self.soc = helper.getSoc() if soccfg is None else (soccfg, soc)
@@ -34,16 +36,14 @@ class BaseExperiment:
         self.data.extend(data)
         if self.data_path is not None:
             self.s.write_data(data)
-    def acquire_S21(self, cfg, indep_list, log_mag=False, decimated=False, population=False, iteration=1): # acquire & add data
+    def acquire_S21(self, cfg, indep_list, log_mag=False, decimated=False, population=False): # acquire & add data
         self.m = Mercator(self.soccfg, cfg)
-        S21 = []
-        for _ in range(iteration):
-            iq_list = self.m.acquire_decimated(self.soc, progress=True) if decimated else self.m.acquire(self.soc)
-            if decimated:
-                iq = np.transpose(iq_list[0])
-                S21 = np.append(S21, [iq[0] + 1j * iq[1]]).flatten()
-            else:
-                S21 = np.append(S21, [iq_list[1][0][0] + 1j * iq_list[2][0][0]]).flatten()
+        iq_list = self.m.acquire_decimated(self.soc, progress=True) if decimated else self.m.acquire(self.soc)
+        if decimated:
+            iq = np.transpose(iq_list[0])
+            S21 = np.array([iq[0] + 1j * iq[1]]).flatten()
+        else:
+            S21 = np.array([iq_list[1][0][0] + 1j * iq_list[2][0][0]]).flatten()
         dep_list = []
         if population:
             I = S21.real
@@ -111,13 +111,12 @@ class QubitSpectroscopy(BaseExperiment):
         return self.conclude(silent)
 
 class Rabi(BaseExperiment):
-    def __init__(self, q_lengths=None, q_gains=None, q_freqs=None, cycles=None, shot=1000, **kwargs):
+    def __init__(self, q_lengths=None, q_gains=None, q_freqs=None, cycles=None, **kwargs):
         super().__init__(**kwargs)
         self.q_lengths = q_lengths
         self.q_gains = q_gains
         self.q_freqs = q_freqs
         self.cycles = cycles
-        self.shot = shot
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
@@ -125,7 +124,7 @@ class Rabi(BaseExperiment):
         sweep = {}
         if self.cycles is not None:
             indep_params.append(("Extra Cycles", ""))
-            sweep["2_reps"] = self.cycles
+            sweep["2_rep"] = self.cycles
         if self.q_lengths is not None:
             indep_params.append(("Pulse Length", "us"))
             sweep["g2_length"] = self.q_lengths
@@ -139,21 +138,18 @@ class Rabi(BaseExperiment):
         for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
             indep = []
             if self.cycles is not None:
-                indep.append(c["2_reps"])
-                c["2_reps"] = 2 * c["2_reps"]
+                indep.append(c["2_rep"])
+                c["2_rep"] = 2 * c["2_rep"]
             if self.q_lengths is not None:
                 indep.append(c["g2_length"])
             if self.q_gains is not None:
                 indep.append(c["g2_gain"])
             if self.q_freqs is not None:
                 indep.append(c["g2_freq"])
-            self.acquire_S21(c, indep, population=True, iteration=int(self.shot / 1000))
+            self.acquire_S21(c, indep, population=True)
         return self.conclude(silent)
 
 class IQScatter(BaseExperiment):
-    def __init__(self, shot=10000, **kwargs):
-        super().__init__(**kwargs)
-        self.shot = shot
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
@@ -162,16 +158,15 @@ class IQScatter(BaseExperiment):
         dep_params = [("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")]
         if self.data_path is not None:
             self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, self.config)
-        for _ in helper.Sweep({}, { "i": range(int(self.shot/1000)) }, progressBar=(not silent)):
-            self.config["0_type"] = "pulse" # send pi pulse
-            self.m = Mercator(self.soccfg, self.config)
-            iq_list = self.m.acquire(self.soc)
-            I1, Q1 = np.array(iq_list[1][0][0]), np.array(iq_list[2][0][0])
-            self.config["0_type"] = "sync_all" # omit pi pulse
-            self.m = Mercator(self.soccfg, self.config)
-            iq_list = self.m.acquire(self.soc)
-            I0, Q0 = np.array(iq_list[1][0][0]), np.array(iq_list[2][0][0])
-            self.add_data(np.transpose([I0, Q0, I1, Q1]))
+        self.config["0_type"] = "pulse" # send pi pulse
+        self.m = Mercator(self.soccfg, self.config)
+        iq_list = self.m.acquire(self.soc)
+        I1, Q1 = np.array(iq_list[1][0][0]), np.array(iq_list[2][0][0])
+        self.config["0_type"] = "sync_all" # omit pi pulse
+        self.m = Mercator(self.soccfg, self.config)
+        iq_list = self.m.acquire(self.soc)
+        I0, Q0 = np.array(iq_list[1][0][0]), np.array(iq_list[2][0][0])
+        self.add_data(np.transpose([I0, Q0, I1, Q1]))
         return self.conclude(silent)
 
 class DispersiveSpectroscopy(BaseExperiment):
@@ -199,10 +194,9 @@ class DispersiveSpectroscopy(BaseExperiment):
         return self.conclude(silent)
 
 class T1(BaseExperiment):
-    def __init__(self, times=[], shot=10000, **kwargs):
+    def __init__(self, times=[], **kwargs):
         super().__init__(**kwargs)
         self.times = times
-        self.shot = shot
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
@@ -211,15 +205,14 @@ class T1(BaseExperiment):
         self.prepare(indep_params, population=True)
         for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
             indep = [c["1_time"]]
-            self.acquire_S21(c, indep, population=True, iteration=int(self.shot / 1000))
+            self.acquire_S21(c, indep, population=True)
         return self.conclude(silent)
 
 class T2Ramsey(BaseExperiment):
-    def __init__(self, times=[], fringe_freqs=None, shot=10000, **kwargs):
+    def __init__(self, times=[], fringe_freqs=None, **kwargs):
         super().__init__(**kwargs)
         self.times = times
         self.fringe_freqs = fringe_freqs
-        self.shot = shot
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
@@ -235,15 +228,14 @@ class T2Ramsey(BaseExperiment):
                 indep.append(c["fringe_freq"])
                 self.var["fringe_freq"] = c["fringe_freq"]
             c["2_value"] = -360 * c["3_time"] * self.var["fringe_freq"] % 360
-            self.acquire_S21(c, indep, population=True, iteration=int(self.shot / 1000))
+            self.acquire_S21(c, indep, population=True)
         return self.conclude(silent)
 
 class T2Echo(BaseExperiment):
-    def __init__(self, times=[], fringe_freqs=None, shot=10000, cycle=0, **kwargs):
+    def __init__(self, times=[], fringe_freqs=None, cycle=0, **kwargs):
         super().__init__(**kwargs)
         self.times = times
         self.fringe_freqs = fringe_freqs
-        self.shot = shot
         self.cycle = cycle
     def run(self, silent=False):
         if not silent:
@@ -251,7 +243,7 @@ class T2Echo(BaseExperiment):
         indep_params = [("Pulse Delay", "us")]
         N = self.cycle + 1
         sweep = { "4_time": np.array(self.times) / N / 2 }
-        self.config["7_reps"] = self.cycle
+        self.config["7_rep"] = self.cycle
         if self.fringe_freqs is not None:
             indep_params.append(("Fringe Frequency", "MHz"))
             sweep["fringe_freq"] = self.fringe_freqs
@@ -263,5 +255,5 @@ class T2Echo(BaseExperiment):
                 self.var["fringe_freq"] = c["fringe_freq"]
             c["6_time"] = c["4_time"] # half wait time
             c["8_value"] = -360 * 2 * N * c["4_time"] * self.var["fringe_freq"] % 360
-            self.acquire_S21(c, indep, population=True, iteration=int(self.shot / 1000))
+            self.acquire_S21(c, indep, population=True)
         return self.conclude(silent)

@@ -17,7 +17,7 @@ For example, the following program is for QubitSpectroscopy (TwoTone):
 
 ```yaml
 # section 1: Meta Information
-reps: 1000
+hard_avg: 1000
 # section 2: Generator Channel Setup
 g0_freq: 5000
 g0_length: 3
@@ -49,8 +49,10 @@ r0_length: 2
 This section often describes the program repetition and average times. You can also include your own key-value pairs, as long as they are not conflicting with other keys.
 
 ```yaml
-reps: 1            # on-board repetition (average) times
-soft_avgs: 1       # average times in Python
+hard_avg: 1        # on-board average times
+soft_avg: 1        # average times in Python
+shot: 0            # repetition without average (return all data)
+                   # by dummy sweep
 ```
 
 ## Generator Channel Setup
@@ -105,7 +107,7 @@ Each step will be in the following syntax:
 0_type: pulse      # (REQUIRED) [pulse|trigger|wait_all|sync|sync_all|set|goto]
 0_ch: 0            # (required for pulse, set) which generator channel pulse
 0_time: 0          # [us] time offset from last sync
-0_reps: 1          # repetition times of this step
+0_rep: 1           # repetition times of this step
 ```
 
 The step `type` is required. It takes one of the following values:
@@ -129,7 +131,7 @@ The step `type` is required. It takes one of the following values:
 0_value: 0         # (REQUIRED) value to be set
 0_operator: +      # [+|-|*] if provided, the register will be set incrementally.
 0_time: 0          # [us] time offset from last sync
-0_reps: 1          # repetition times of this step
+0_rep: 1           # repetition times of this step
 ```
 
 **type: goto**
@@ -139,7 +141,7 @@ The step `type` is required. It takes one of the following values:
 ```yaml
 0_type: goto
 0_i: 0             # (REQUIRED) target step number
-0_reps: 1          # repetition times of this step
+0_rep: 1           # repetition times of this step
 ```
 
 > Note: if `goto` a previous step, everything in between will be executed again, respecting the `reps` of the steps. The `goto` function will NOT create actual loops in the assembly code. Instead, it will expand the loop in Python and generate a program without loops.
@@ -172,4 +174,4 @@ g0_gain: [10000, 20000, 11]
 4_time: [0, 2, 51]
 ```
 
-For each sweep, the return data will have an extra axis. The axis order is always in `(time, gain, phase, freq, time series)`, if existing. The maximum acquire size is **1024** data in total. Try to avoid sweeping multiple dimensions on board!
+For each sweep, the return data will have an extra axis. The axis order is always in `(time, gain, phase, freq, time series)`. Try to avoid sweeping multiple dimensions on board!

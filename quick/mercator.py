@@ -35,8 +35,6 @@ def parse(self):
                 sw_key = i if k == "t" else f"g{g}_{k}"
                 c["sw"][sw_key] = { "value": o[k], "key": k, "g": g }
                 o[k] = o[k][0]
-    if cfg.get("rep", 0) > 0: # sweep for shot
-        sweep(0, { "t": [0, 0, cfg["rep"]] })
     def generate_waveform(o):
         g, l = o["g"], o["length"] * 16
         f_fabric = self.soccfg["gens"][g]["f_fabric"]
@@ -83,13 +81,15 @@ def parse(self):
             if o["g"] is not None: # match corresponding g
                 c["g"][o["g"]]["r"] = r
                 o["freq"] = c["g"][o["g"]]["freq"]
+    if cfg.get("shot", 0) > 0: # sweep for shot
+        sweep(next(iter(c["g"])), { "t": [0, 0, cfg["shot"]] })
     for i in range(99999999): # find all execution steps
         if not f"{i}_type" in cfg:
             break
         o = { "type": cfg[f"{i}_type"] }
         o["ch"] = cfg.get(f"{i}_ch")
         o["t"] = cfg.get(f"{i}_t", 0)
-        o["reps"] = cfg.get(f"{i}_reps", 1)
+        o["rep"] = cfg.get(f"{i}_rep", 1)
         if f"{i}_time" in cfg:
             o["t"] = us2t(self, cfg[f"{i}_time"])
         if o["type"] == "sync":
@@ -137,9 +137,9 @@ class Mercator(NDAveragerProgram):
         self.synci(200)
     
     def body(self):
-        reps = [] # get reps for each step
+        reps = [] # get rep for each step
         for o in self.c["exec"]:
-            reps.append(o["reps"])
+            reps.append(o["rep"])
         i = 0
         while i < len(reps):
             if reps[i] <= 0:
@@ -168,7 +168,7 @@ class Mercator(NDAveragerProgram):
                     reg.set_to(reg, o["operator"], o["value"], physical_unit=(o["operator"] != "*"))
             if o["type"] == "goto":
                 for j in range(o["i"], i):
-                    reps[j] += self.c["exec"][j]["reps"]
+                    reps[j] += self.c["exec"][j]["rep"]
                 i = o["i"]
             if o["type"] == "cond_pulse":
                 self.read(0, 0, "lower", 2)
@@ -210,9 +210,9 @@ class Mercator(NDAveragerProgram):
             if o["mode"] != "periodic":
                 data[g].append([end, 0])
             return end
-        reps = [] # get reps for each step
+        reps = [] # get rep for each step
         for o in self.c["exec"]:
-            reps.append(o["reps"])
+            reps.append(o["rep"])
         i = 0
         while i < len(reps):
             if reps[i] <= 0:
@@ -239,7 +239,7 @@ class Mercator(NDAveragerProgram):
                 c["g"][o["ch"]][o["key"]] = o["value"]
             if o["type"] == "goto":
                 for j in range(o["i"], i):
-                    reps[j] += self.c["exec"][j]["reps"]
+                    reps[j] += self.c["exec"][j]["rep"]
                 i = o["i"]
             if o["type"] == "trigger":
                 for r in o["ch"]:

@@ -131,7 +131,7 @@ def ramsey(var, soccfg=None, soc=None, data_path=None):
     c0, c1, _, _, _, _ = helper.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
     var["r_phase"], var["r_threshold"] = helper.iq_rotation(c0, c1)
     var["fringe_freq"] = 10
-    data = experiment.T2Ramsey(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.ramsey) {int(var['r_freq'])}", times=np.arange(0, 1, 0.01), c0=c0, c1=c1).run().data.T
+    data = experiment.T2Ramsey(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.ramsey) {int(var['r_freq'])}", times=np.arange(0, 1, 0.01)).run().data.T
     L, A = data[0], data[1]
     def m(x, p1, p2, p3):
         return p1 * np.cos(p2 * x) + p3

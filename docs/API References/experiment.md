@@ -137,7 +137,7 @@ add and save data. Mostly for internal use.
 ### - BaseExperiment.acquire_S21
 
 ```python
-e.acquire_S21(cfg, indep_list, log_mag=False, decimated=False, population=False, iteration=1)
+e.acquire_S21(cfg, indep_list, log_mag=False, decimated=False, population=False)
 ```
 
 acquire data for standard S21 measurement. Mostly for internal use.
@@ -149,7 +149,6 @@ acquire data for standard S21 measurement. Mostly for internal use.
 - `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
 - `decimated=False` (bool) whether to acquire for time-series output.
 - `population=False` (bool) whether to measure the qubit population.
-- `iteration=1` (int) how many time we run the acquisition, especially useful when measuring populations with multiple shots.
 
 ### - BaseExperiment.conclude
 
@@ -261,7 +260,7 @@ run the experiment.
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.Rabi(q_lengths=None, q_gains=None, q_freqs=None, cycles=None, shot=1000, **kwargs)
+e = quick.experiment.Rabi(q_lengths=None, q_gains=None, q_freqs=None, cycles=None, **kwargs)
 ```
 
 Measure the Rabi oscillation. Any combinations of the four independent variables can be sweeped.
@@ -274,7 +273,6 @@ Measure the Rabi oscillation. Any combinations of the four independent variables
 - `q_gains=None` (1D ArrayLike) optional qubit pulse gain list `("Pulse Gain", "a.u.")`.
 - `q_freqs=None` (1D ArrayLike) optional qubit frequency list `("Qubit Frequency", "MHz")`.
 - `cycles=None` (1D ArrayLike) optional extra cycle list `("Extra Cycles", "")`. Each extra cycle introduces 2 extra pi pulses. `cycle=0` gives one pi pulse.
-- `shot=1000` (int) total count of measurements for each pulse delay time, must be integer multiple of 1000.
 
 ### - Rabi.run
 
@@ -293,16 +291,12 @@ run the experiment.
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.IQScatter(shot=10000, **kwargs)
+e = quick.experiment.IQScatter(**kwargs)
 ```
 
 Measure the IQ scatter data.
 
 - `dep_params = [("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")]`
-
-**Parameters**:
-
-- `shot=10000` (int) total count of measurements. Each shot includes one 1-state measurement and one 0-state measurement.
 
 ### - IQScatter.run
 
@@ -349,7 +343,7 @@ run the experiment.
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.T1(times=[], shot=10000, **kwargs)
+e = quick.experiment.T1(times=[], **kwargs)
 ```
 
 Measure the T1 decay.
@@ -359,7 +353,6 @@ Measure the T1 decay.
 **Parameters**:
 
 - `times=[]` (1D ArrayLike) pulse delay time list `("Pulse Delay", "us")`.
-- `shot=10000` (int) total count of measurements for each pulse delay time, must be integer multiple of 1000.
 
 ### - T1.run
 
@@ -378,7 +371,7 @@ run the experiment.
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.T2Ramsey(times=[], fringe_freqs=None, shot=10000, **kwargs)
+e = quick.experiment.T2Ramsey(times=[], fringe_freqs=None, **kwargs)
 ```
 
 Measure the T2 decay with fringe by Ramsey oscillation.
@@ -389,7 +382,6 @@ Measure the T2 decay with fringe by Ramsey oscillation.
 
 - `times=[]` (1D ArrayLike) pulse delay time list `("Pulse Delay", "us")`.
 - `fringe_freqs=None` (1D ArrayLike) fringe frequency list `("Fringe Frequency", "MHz")`.
-- `shot=10000` (int) total count of measurements for each pulse delay time, must be integer multiple of 1000.
 
 ### - T2Ramsey.run
 
@@ -408,7 +400,7 @@ run the experiment.
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.T2Echo(times=[], fringe_freqs=None, shot=10000, cycle=0, **kwargs)
+e = quick.experiment.T2Echo(times=[], fringe_freqs=None, cycle=0, **kwargs)
 ```
 
 Measure the T2 decay with fringe by Hahn echo or CPMG method. Pi pulses for echo will always be on +y axis (90 degrees phase).
@@ -419,7 +411,6 @@ Measure the T2 decay with fringe by Hahn echo or CPMG method. Pi pulses for echo
 
 - `times=[]` (1D ArrayLike) pulse delay time list `("Pulse Delay", "us")`.
 - `fringe_freqs=None` (1D ArrayLike) fringe frequency list `("Fringe Frequency", "MHz")`.
-- `shot=10000` (int) total count of measurements for each pulse delay time, must be integer multiple of 1000.
 - `cycle=0` (int) extra cycle in the CPMG method. Each extra cycle introduces 1 extra pi pulse, implementing the CPMG pulse sequence. `cycle=0` gives 1 pi pulse.
 
 ### - T2Echo.run
