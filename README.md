@@ -12,3 +12,5 @@
 - `quick.experiment` Experiment Routines for Qubit Measurements
 - `quick.Mercator` Mercator Protocol for Pulse Sequence Program
 - `qick` the QICK firmware
+
+![](https://clelandlab-quick.readthedocs.io/en/latest/Images/overview.png)

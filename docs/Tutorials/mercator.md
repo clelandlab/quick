@@ -147,7 +147,7 @@ The step `type` is required. It takes one of the following values:
 0_rep: 1           # repetition times of this step
 ```
 
-> Note: if `goto` a previous step, everything in between will be executed again, respecting the `reps` of the steps. The `goto` function will NOT create actual loops in the assembly code. Instead, it will expand the loop in Python and generate a program without loops.
+> Note: if `goto` a previous step, everything in between will be executed again, respecting the `rep` of the steps. The `goto` function will NOT create actual loops in the assembly code. Instead, it will expand the loop in Python and generate a program without loops.
 
 **Syntax Sugar**: (sometimes useful)
 
