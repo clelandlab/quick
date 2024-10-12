@@ -81,8 +81,8 @@ def parse(self):
             if o["g"] is not None: # match corresponding g
                 c["g"][o["g"]]["r"] = r
                 o["freq"] = c["g"][o["g"]]["freq"]
-    if cfg.get("shot", 0) > 0: # sweep for shot
-        sweep(next(iter(c["g"])), { "t": [0, 0, cfg["shot"]] })
+    if cfg.get("rep", 0) > 0: # sweep for rep
+        sweep(next(iter(c["g"])), { "t": [0, 0, cfg["rep"]] })
     for i in range(99999999): # find all execution steps
         if not f"{i}_type" in cfg:
             break

@@ -2,8 +2,6 @@
 
 Mercator protocol is a syntax to specify a pulse sequence (QICK program). It is a set of key-value pairs. Conveniently, it can be writen as a Python dictionary or in [YAML format](https://en.wikipedia.org/wiki/YAML). This document will use YAML format for clearance.
 
-> More examples of Mercator protocol can be found in [default experiment programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). Note they are up to variable insertion by `quick.evalStr`.
-
 Mercator protocol includes a lot of default values and syntax sugar to make it simultaneously flexible and easy to use. In this document, **default values will be used. Properties without default value will be marked as required.**
 
 Mercator protocol is generally consisted of 5 sections:
@@ -13,7 +11,7 @@ Mercator protocol is generally consisted of 5 sections:
 - Readout channel setup
 - Execution steps
 
-For example, the following program is for QubitSpectroscopy (TwoTone):
+For example, the following program is for QubitSpectroscopy (TwoTone) with very short relax time:
 
 ```yaml
 # section 1: Meta Information
@@ -21,7 +19,7 @@ hard_avg: 1000
 # section 2: Generator Channel Setup
 g0_freq: 5000
 g0_length: 3
-g0_power: -40
+g0_power: -30
 g0_balun: 3
 g2_freq: 4000
 g2_style: flat_top
@@ -39,10 +37,15 @@ r0_length: 2
 2_ch: 0
 3_type: trigger
 3_time: 0.5
-4_type: wait_all
-5_type: sync_all
-5_time: 500
+4_type: sync_all
+4_time: 2
 ```
+
+This program gives the following pulse sequence, plotted by `quick.Mercator.light`, showing only the I data waveform and the acquisition window (pink). For details about execution of Mercator protocol, see API References.
+
+![](../Images/mercator_light.png)
+
+> More examples of Mercator protocol can be found in [default experiment programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). Note they are up to variable insertion by `quick.evalStr`.
 
 ## Meta Information
 
@@ -51,7 +54,7 @@ This section often describes the program repetition and average times. You can a
 ```yaml
 hard_avg: 1        # on-board average times
 soft_avg: 1        # average times in Python
-shot: 0            # repetition without average (return all data)
+rep: 0             # repetition without average (return all data)
                    # by dummy sweep
 ```
 

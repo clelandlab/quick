@@ -60,4 +60,4 @@ Acquire time-series data. Similar to `qick.NDAveragerProgram.acquire_decimated`.
 m.light()
 ```
 
-Plot the pulse sequence. Only `idata` will be plotted, and frequency and phase information are not shown on the plot.
+Plot the pulse sequence. Only `idata` will be plotted, and frequency and phase information are not shown on the plot. See [Mercator Protocol Tutorial](../../Tutorials/mercator/) for an example.

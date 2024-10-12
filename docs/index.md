@@ -1,5 +1,9 @@
 # Get Started
 
+`quick` is a useful wrap of QICK.
+
+![](./Images/overview.png)
+
 ## Installation
 
 Install this package with `pip`:

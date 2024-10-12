@@ -78,7 +78,7 @@ QubitSpectroscopy: |
     4_time: {r_relax}
 
 Rabi: |
-    shot: 1000
+    rep: 1000
     g{r}_freq: {r_freq}
     g{r}_length: {r_length + 1}
     g{r}_phase: {r_phase}
@@ -104,7 +104,7 @@ Rabi: |
     5_time: {r_relax}
 
 IQScatter: |
-    shot: 10000
+    rep: 10000
     g{r}_freq: {r_freq}
     g{r}_length: {r_length + 1}
     g{r}_phase: {r_phase}
@@ -150,7 +150,7 @@ DispersiveSpectroscopy: |
     4_time: {r_relax}
 
 T1: |
-    shot: 10000
+    rep: 10000
     g{r}_freq: {r_freq}
     g{r}_length: {r_length + 1}
     g{r}_phase: {r_phase}
@@ -174,7 +174,7 @@ T1: |
     5_time: {r_relax}
 
 T2Ramsey: |
-    shot: 10000
+    rep: 10000
     g{r}_freq: {r_freq}
     g{r}_length: {r_length + 1}
     g{r}_phase: {r_phase}
@@ -209,7 +209,7 @@ T2Ramsey: |
     8_time: {r_relax}
 
 T2Echo: |
-    shot: 10000
+    rep: 10000
     g{r}_freq: {r_freq}
     g{r}_length: {r_length + 1}
     g{r}_phase: {r_phase}

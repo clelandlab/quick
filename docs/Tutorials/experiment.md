@@ -144,7 +144,7 @@ To customize an experiment, there are several layers you can play with.
 - If you just want to slightly modify an existing experiment, use keyword argument to overwrite the [default programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). For example, if you want a DRAG pi pulse instead of a gaussian pi pulse in Rabi and change the total repetition times to 3000, you can do:
 
 ```python
-quick.experiment.Rabi(var=v, data_path=DATA_PATH, g2_style="DRAG", g2_delta=-180, shot=3000).run()
+quick.experiment.Rabi(var=v, data_path=DATA_PATH, g2_style="DRAG", g2_delta=-180, rep=3000).run()
 ```
 
 - If you want to write your own pulse sequence or scan function, you can inherit or use the `quick.BaseExperiment`. You can put a Mercator protocol into `quick.experiment.configs`. This requires some advanced understanding of Mercator and Experiment layers. See API References for details.
