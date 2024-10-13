@@ -102,8 +102,9 @@ def parse(self):
             o["operator"] = cfg.get(f"{i}_operator", None)
         if o["type"] == "goto":
             o["i"] = cfg.get(f"{i}_i", i + 1)
-        if o["type"] == "cond_pulse":
-            o["threshold"] = cfg.get(f"{i}_threshold", 0)
+        if o["type"] == "pulse":
+            o["threshold"] = cfg.get(f"{i}_threshold")
+            o["r"] = cfg.get(f"{i}_r", 0)
         c["exec"].append(o)
 
 class Mercator(NDAveragerProgram):
@@ -148,7 +149,13 @@ class Mercator(NDAveragerProgram):
             reps[i] -= 1
             o = self.c["exec"][i]
             if o["type"] == "pulse":
+                if o["threshold"] is not None: # conditional
+                    self.read(0, 0, "lower", 2)
+                    self.regwi(0, 6, int(o["threshold"] * self.c["r"][o["r"]]["length"]))
+                    self.condj(0, 2, "<", 6, f"after_pulse_{i}")
                 self.pulse(ch=o["ch"], t=o["t"])
+                if o["threshold"] is not None:
+                    self.label(f"after_pulse_{i}")
             if o["type"] == "wait_all":
                 self.wait_all(t=o["t"])
             if o["type"] == "sync":
@@ -170,22 +177,20 @@ class Mercator(NDAveragerProgram):
                 for j in range(o["i"], i):
                     reps[j] += self.c["exec"][j]["rep"]
                 i = o["i"]
-            if o["type"] == "cond_pulse":
-                self.read(0, 0, "lower", 2)
-                self.read(0, 0, "upper", 3)
-                self.regwi(0, 6, int(o["threshold"] * self.c["r"][0]["length"]))
-                self.condj(0, 2, "<", 6, f"cond_pulse_{i}")
-                self.pulse(ch=o["ch"], t=o["t"])
-                self.label(f"cond_pulse_{i}")
+
+    def acquire(self, soc, **kwargs): # Overwrites the default to return only IQ values
+        res = super().acquire(soc, **kwargs)
+        return res[1], res[2]
 
     def acquire_decimated(self, soc, progress=False): # Overwrites the default to disable the progress bar
-        return super().acquire_decimated(soc, soft_avgs=self.cfg.get("soft_avgs", 1), progress=progress)
+        res = super().acquire_decimated(soc, soft_avgs=self.cfg.get("soft_avgs", 1), progress=progress)
+        return np.moveaxis(res, -1, 0)
 
     def light(self):
         plt.clf()
         c = self.c
-        us = self.cycles2us(1)
-        us_r = self.cycles2us(1, ro_ch=0)
+        us = self.cycles2us(1) # DAC us
+        us_r = self.cycles2us(1, ro_ch=0) # ADC us
         data = {} # plot data
         for g in range(7, -1, -1):
             if g in c["g"]:
@@ -243,9 +248,9 @@ class Mercator(NDAveragerProgram):
                 i = o["i"]
             if o["type"] == "trigger":
                 for r in o["ch"]:
-                    end = start + c["r"][r]["length"]
+                    end = start + int(c["r"][r]["length"] * us_r / us) # convert into DAC us.
                     pulse_until = max(end, pulse_until)
-                    plt.gca().add_patch(patches.Rectangle((start * us, -35000), (end - start) * us_r, 70000, fill=True, color=('r' if r == 0 else 'b'), alpha=0.1, label=f"r{r}"))
+                    plt.gca().add_patch(patches.Rectangle((start * us, -35000), (end - start) * us, 70000, fill=True, color=('r' if r == 0 else 'b'), alpha=0.1, label=f"r{r}"))
         final = max(pulse_until, sync)
         for g in data:
             if c["g"][g]["mode"] == "periodic":

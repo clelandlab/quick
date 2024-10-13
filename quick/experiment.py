@@ -38,12 +38,8 @@ class BaseExperiment:
             self.s.write_data(data)
     def acquire_S21(self, cfg, indep_list, log_mag=False, decimated=False, population=False): # acquire & add data
         self.m = Mercator(self.soccfg, cfg)
-        iq_list = self.m.acquire_decimated(self.soc, progress=True) if decimated else self.m.acquire(self.soc)
-        if decimated:
-            iq = np.transpose(iq_list[0])
-            S21 = np.array([iq[0] + 1j * iq[1]]).flatten()
-        else:
-            S21 = np.array([iq_list[1][0][0] + 1j * iq_list[2][0][0]]).flatten()
+        I, Q = self.m.acquire_decimated(self.soc, progress=True) if decimated else self.m.acquire(self.soc)
+        S21 = (np.array(I) + 1j * np.array(Q)).flatten()
         dep_list = []
         if population:
             I = S21.real
@@ -51,10 +47,7 @@ class BaseExperiment:
         if not decimated:
             S21 = np.mean(S21)
         dep_list.extend([(20 * np.log10(np.abs(S21) / cfg["g0_gain"]) if log_mag else np.abs(S21)), np.angle(S21), S21.real, S21.imag])
-        if decimated:
-            self.add_data(np.transpose([*indep_list, *dep_list]))
-        else:
-            self.add_data([ [*indep_list, *dep_list] ])
+        self.add_data(np.transpose([*indep_list, *dep_list]) if decimated else [ [*indep_list, *dep_list] ])
     def conclude(self, silent=False): # last step of run
         if not silent:
             print(f"quick.experiment({self.key}) Completed. Data saved in {self.data_path}" if self.data_path is not None else f"quick.experiment({self.key}) Completed.")
@@ -160,12 +153,12 @@ class IQScatter(BaseExperiment):
             self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, self.config)
         self.config["0_type"] = "pulse" # send pi pulse
         self.m = Mercator(self.soccfg, self.config)
-        iq_list = self.m.acquire(self.soc)
-        I1, Q1 = np.array(iq_list[1][0][0]), np.array(iq_list[2][0][0])
+        I1, Q1 = self.m.acquire(self.soc)
+        I1, Q1 = I1[0][0], Q1[0][0]
         self.config["0_type"] = "sync_all" # omit pi pulse
         self.m = Mercator(self.soccfg, self.config)
-        iq_list = self.m.acquire(self.soc)
-        I0, Q0 = np.array(iq_list[1][0][0]), np.array(iq_list[2][0][0])
+        I0, Q0 = self.m.acquire(self.soc)
+        I0, Q0 = I0[0][0], Q0[0][0]
         self.add_data(np.transpose([I0, Q0, I1, Q1]))
         return self.conclude(silent)
 
@@ -184,12 +177,12 @@ class DispersiveSpectroscopy(BaseExperiment):
         for c in helper.Sweep(self.config, { "g0_freq": self.r_freqs }, progressBar=(not silent)):
             c["0_type"] = "pulse" # send pi pulse
             self.m = Mercator(self.soccfg, c)
-            iq_list = self.m.acquire(self.soc)
-            S1 = iq_list[1][0][0] + 1j * iq_list[2][0][0]
+            I1, Q1 = self.m.acquire(self.soc)
+            S1 = I1[0][0] + 1j * Q1[0][0]
             c["0_type"] = "sync_all" # omit pi pulse
             self.m = Mercator(self.soccfg, c)
-            iq_list = self.m.acquire(self.soc)
-            S0 = iq_list[1][0][0] + 1j * iq_list[2][0][0]
+            I0, Q0 = self.m.acquire(self.soc)
+            S0 = I0[0][0] + 1j * Q0[0][0]
             self.add_data([[c["g0_freq"], 20 * np.log10(np.abs(S0) / c["g0_gain"]), np.angle(S0), np.real(S0), np.imag(S0), 20 * np.log10(np.abs(S1) / c["g0_gain"]), np.angle(S1), np.real(S1), np.imag(S1) ]])
         return self.conclude(silent)
 
