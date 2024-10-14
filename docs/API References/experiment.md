@@ -39,6 +39,7 @@ q_gain: 30000     # [0-32766] qubit pulse (pi pulse) gain
 q_gain_2: 15000   # [0-32766] half pi pulse gain
 q_T1: 80          # [us] qubit T1
 fringe_freq: 1    # [MHz] fringe frequency in T2Ramsey and T2Echo
+active_reset: 0   # [us] active reset wait time. 0 for disable.
 ```
 
 ## 🟡configs
@@ -299,6 +300,30 @@ Measure the IQ scatter data.
 - `dep_params = [("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")]`
 
 ### - IQScatter.run
+
+```python
+e.run(silent=False)
+```
+
+run the experiment.
+
+**Parameters**:
+
+- `silent=False` (bool) Whether to avoid any printing.
+
+## 🔵ActiveReset
+
+> Base *class*: `BaseExperiment`
+
+```python
+e = quick.experiment.ActiveReset(**kwargs)
+```
+
+Test active reset. Performing an amplitude Rabi for 100 points.
+
+- `dep_params = [("Population", "", "before reset"), ("Population", "", "after reset")]`
+
+### - ActiveReset.run
 
 ```python
 e.run(silent=False)

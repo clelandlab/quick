@@ -115,7 +115,7 @@ Each step will be in the following syntax:
 
 The step `type` is required. It takes one of the following values:
 
-- `pulse`: release a pulse from channel `0_ch`.
+- `pulse`: release a pulse from channel `0_ch`. Conditional pulses see below.
 - `trigger`: trigger the readout. `0_ch` should be an array, defaulted to all readout channels.
 - `wait_all`: wait for all pulses and readouts
 - `sync_all`: sync channels after the end of all pulses and readouts (+`0_time`)
@@ -123,7 +123,7 @@ The step `type` is required. It takes one of the following values:
 - `set`: (discussed below)
 - `goto`: (discussed below)
 
-**type: set**
+### set
 
 `set` step can update register values on the fly. It takes the following syntax:
 
@@ -137,7 +137,7 @@ The step `type` is required. It takes one of the following values:
 0_rep: 1           # repetition times of this step
 ```
 
-**type: goto**
+### goto
 
 `goto` step can jump to another step. It takes the following syntax:
 
@@ -149,7 +149,23 @@ The step `type` is required. It takes one of the following values:
 
 > Note: if `goto` a previous step, everything in between will be executed again, respecting the `rep` of the steps. The `goto` function will NOT create actual loops in the assembly code. Instead, it will expand the loop in Python and generate a program without loops.
 
-**Syntax Sugar**: (sometimes useful)
+### Conditional Pulse
+
+Mercator protocol supports conditional pulses, especially for qubit active reset. The releasing of the pulse will be determined by the I data acquired in the last acquisition window on the fly. For example:
+
+```yaml
+3_type: trigger    # trigger acquisition
+4_type: wait_all
+4_time: 2          # MUST wait for data
+5_type: pulse      # conditional pulse
+5_ch: 2
+5_threshold: 0     # threshold condition on I data
+5_r: 0             # default to be 0
+```
+
+In this case, step 5 specifies that the pulse on `g2` will be released only if the I data acquired in step 3 is above the value in `5_threshold`. The corresponding readout channel is provided to obtain acquisition length.
+
+### Syntax Sugar
 
 The execution steps can also be writen as an array in Mercator protocol, for example:
 
