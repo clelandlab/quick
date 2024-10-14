@@ -15,8 +15,8 @@ var:
     q_delta: -180
     q_gain: 30000
     q_gain_2: 15000
-    q_T1: 80
     fringe_freq: 1
+    active_reset: 4
 
 # Programs below are exported as strings for variable insertion
 
@@ -126,6 +126,49 @@ IQScatter: |
     4_type: sync_all
     4_time: {r_relax}
 
+ActiveReset: |
+    rep: 10000
+    g{r}_freq: {r_freq}
+    g{r}_length: {r_length}
+    g{r}_phase: {r_phase}
+    g{r}_power: {r_power}
+    g{r}_balun: {r_balun}
+    g{q}_style: gaussian
+    g{q}_freq: {q_freq}
+    g{q}_length: {q_length}
+    g{q}_gain: {q_gain}
+    r{rr}_g: {r}
+    r{rr}_length: {r_length}
+    steps:
+      - type: set
+        ch: {q}
+        key: gain
+        value: 0
+      - type: pulse
+        ch: {q}
+      - type: sync_all
+      - type: pulse
+        ch: {r}
+      - type: trigger
+        time: {r_offset}
+      - type: set
+        ch: {q}
+        key: gain
+        value: {q_gain}
+      - type: sync_all
+      - type: wait_all
+        time: {active_reset}
+      - type: {"pulse" if active_reset else "pass"}
+        ch: {q}
+        threshold: {r_threshold}
+      - type: sync_all
+      - type: pulse
+        ch: {r}
+      - type: trigger
+        time: {r_offset}
+      - type: sync_all
+        time: {r_relax}
+
 DispersiveSpectroscopy: |
     hard_avg: 1000
     g{r}_freq: {r_freq}
@@ -169,9 +212,15 @@ T1: |
     2_ch: {r}
     3_type: trigger
     3_time: {r_offset}
-    4_type: wait_all
-    5_type: sync_all
-    5_time: {r_relax}
+    4_type: sync_all
+    5_type: {"wait_all" if active_reset else "pass"}
+    5_time: {active_reset}
+    6_type: {"pulse" if active_reset else "pass"}
+    6_ch: {q}
+    6_threshold: {r_threshold}
+    6_r: {r}
+    7_type: sync_all
+    7_time: {r_relax}
 
 T2Ramsey: |
     rep: 10000
@@ -186,27 +235,42 @@ T2Ramsey: |
     g{q}_gain: {q_gain}
     r{rr}_g: {r}
     r{rr}_length: {r_length}
-    0_type: set
+    0_type: set       # init qubit pulse
     0_ch: {q}
     0_key: phase
     0_value: 0
-    1_type: pulse
+    1_type: set
     1_ch: {q}
-    2_type: set
+    1_key: gain
+    1_value: {q_gain_2}
+    2_type: pulse
     2_ch: {q}
-    2_key: phase
-    2_value: 0 # phase change
-    3_type: sync_all
-    3_time: 0 # wait time
-    4_type: pulse
-    4_ch: {q}
-    5_type: sync_all
-    6_type: pulse
-    6_ch: {r}
-    7_type: trigger
-    7_time: {r_offset}
-    8_type: sync_all
-    8_time: {r_relax}
+    3_type: set
+    3_ch: {q}
+    3_key: phase
+    3_value: 0        # phase change
+    4_type: sync_all
+    4_time: 0         # wait time
+    5_type: pulse
+    5_ch: {q}
+    6_type: sync_all
+    7_type: pulse
+    7_ch: {r}
+    8_type: trigger
+    8_time: {r_offset}
+    9_type: set       # prepare reset pulse
+    9_ch: {q}
+    9_key: gain
+    9_value: {q_gain}
+    10_type: sync_all
+    11_type: {"wait_all" if active_reset else "pass"}
+    11_time: {active_reset}
+    12_type: {"pulse" if active_reset else "pass"}
+    12_ch: {q}
+    12_threshold: {r_threshold}
+    12_r: {r}
+    13_type: sync_all
+    13_time: {r_relax}
 
 T2Echo: |
     rep: 10000
@@ -221,43 +285,58 @@ T2Echo: |
     g{q}_gain: {q_gain}
     r{rr}_g: {r}
     r{rr}_length: {r_length}
-    0_type: set
+    0_type: set       # init qubit pulse
     0_ch: {q}
     0_key: phase
     0_value: 0
-    1_type: pulse
+    1_type: set
     1_ch: {q}
-    2_type: set       # set g2 to pi pulse
+    1_key: gain
+    1_value: {q_gain_2}
+    2_type: pulse
     2_ch: {q}
-    2_key: gain
-    2_value: $q_gain
-    3_type: set       # set pi pulse to -y axis
+    3_type: set       # set g2 to pi pulse
     3_ch: {q}
-    3_key: phase
-    3_value: 90
-    4_type: sync_all
-    4_time: 0         # half wait time
-    5_type: pulse
-    5_ch: {q}
-    6_type: sync_all
-    6_time: 0         # half wait time
-    7_type: goto
-    7_i: 4
-    7_rep: 0
-    8_type: set
-    8_ch: {q}
-    8_key: phase
-    8_value: 0        # phase change for fringe
+    3_key: gain
+    3_value: {q_gain}
+    4_type: set       # set pi pulse to -y axis
+    4_ch: {q}
+    4_key: phase
+    4_value: 90
+    5_type: sync_all
+    5_time: 0         # half wait time
+    6_type: pulse
+    6_ch: {q}
+    7_type: sync_all
+    7_time: 0         # half wait time
+    8_type: goto
+    8_i: 4
+    8_rep: 0
     9_type: set
     9_ch: {q}
-    9_key: gain
-    9_value: $q_gain_2
-    10_type: pulse
+    9_key: phase
+    9_value: 0        # phase change for fringe
+    10_type: set
     10_ch: {q}
-    11_type: sync_all
-    12_type: pulse
-    12_ch: {r}
-    13_type: trigger
-    13_time: {r_offset}
-    14_type: sync_all
-    14_time: {r_relax}
+    10_key: gain
+    10_value: {q_gain_2}
+    11_type: pulse
+    11_ch: {q}
+    12_type: sync_all
+    13_type: pulse
+    13_ch: {r}
+    14_type: trigger
+    14_time: {r_offset}
+    15_type: set      # prepare set pulse
+    15_ch: {q}
+    15_key: gain
+    15_value: {q_gain}
+    16_type: sync_all
+    17_type: {"wait_all" if active_reset else "pass"}
+    17_time: {active_reset}
+    18_type: {"pulse" if active_reset else "pass"}
+    18_ch: {q}
+    18_threshold: {r_threshold}
+    18_r: {r}
+    19_type: sync_all
+    19_time: {r_relax}
