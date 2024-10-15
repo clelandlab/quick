@@ -23,7 +23,7 @@ var:
 LoopBack: |
     soft_avg: 100  
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -40,7 +40,7 @@ LoopBack: |
 ResonatorSpectroscopy: |
     hard_avg: 300
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -56,7 +56,7 @@ ResonatorSpectroscopy: |
 QubitSpectroscopy: |
     hard_avg: 1000
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -80,7 +80,7 @@ QubitSpectroscopy: |
 Rabi: |
     rep: 1000
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -106,7 +106,7 @@ Rabi: |
 IQScatter: |
     rep: 10000
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -172,7 +172,7 @@ ActiveReset: |
 DispersiveSpectroscopy: |
     hard_avg: 1000
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -195,7 +195,7 @@ DispersiveSpectroscopy: |
 T1: |
     rep: 10000
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -208,14 +208,16 @@ T1: |
     0_type: pulse
     0_ch: {q}
     1_type: sync_all
+    1_time: 0              # delay time
     2_type: pulse
     2_ch: {r}
     3_type: trigger
     3_time: {r_offset}
-    4_type: sync_all
-    5_type: {"wait_all" if active_reset else "pass"}
+    4_type: {"sync_all" if active_reset else "goto"}
+    4_i: 7
+    5_type: wait_all
     5_time: {active_reset}
-    6_type: {"pulse" if active_reset else "pass"}
+    6_type: pulse          # reset pulse
     6_ch: {q}
     6_threshold: {r_threshold}
     6_r: {r}
@@ -225,7 +227,7 @@ T1: |
 T2Ramsey: |
     rep: 10000
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -258,14 +260,15 @@ T2Ramsey: |
     7_ch: {r}
     8_type: trigger
     8_time: {r_offset}
-    9_type: set       # prepare reset pulse
-    9_ch: {q}
-    9_key: gain
-    9_value: {q_gain}
-    10_type: sync_all
-    11_type: {"wait_all" if active_reset else "pass"}
+    9_type: {"sync_all" if active_reset else "goto"}
+    9_i: 13
+    10_type: set       # prepare reset pulse
+    10_ch: {q}
+    10_key: gain
+    10_value: {q_gain}
+    11_type: wait_all
     11_time: {active_reset}
-    12_type: {"pulse" if active_reset else "pass"}
+    12_type: pulse     # reset pulse
     12_ch: {q}
     12_threshold: {r_threshold}
     12_r: {r}
@@ -275,7 +278,7 @@ T2Ramsey: |
 T2Echo: |
     rep: 10000
     g{r}_freq: {r_freq}
-    g{r}_length: {r_length + 1}
+    g{r}_length: {r_length}
     g{r}_phase: {r_phase}
     g{r}_power: {r_power}
     g{r}_balun: {r_balun}
@@ -327,14 +330,15 @@ T2Echo: |
     13_ch: {r}
     14_type: trigger
     14_time: {r_offset}
-    15_type: set      # prepare set pulse
-    15_ch: {q}
-    15_key: gain
-    15_value: {q_gain}
-    16_type: sync_all
-    17_type: {"wait_all" if active_reset else "pass"}
+    15_type: {"sync_all" if active_reset else "goto"}
+    15_i: 19
+    16_type: set      # prepare reset pulse
+    16_ch: {q}
+    16_key: gain
+    16_value: {q_gain}
+    17_type: wait_all
     17_time: {active_reset}
-    18_type: {"pulse" if active_reset else "pass"}
+    18_type: pulse    # reset pulse
     18_ch: {q}
     18_threshold: {r_threshold}
     18_r: {r}
