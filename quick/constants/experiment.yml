@@ -16,7 +16,7 @@ var:
     q_gain: 30000
     q_gain_2: 15000
     fringe_freq: 1
-    active_reset: 4
+    active_reset: 0
 
 # Programs below are exported as strings for variable insertion
 

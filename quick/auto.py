@@ -110,28 +110,29 @@ def pi_pulse(var, soccfg=None, soc=None, data_path=None):
     return True
 
 def r_freq(var, soccfg=None, soc=None, data_path=None):
-    data = experiment.DispersiveSpectroscopy(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.r_freq) {int(var['r_freq'])}", r_freqs=np.arange(var["r_freq"] - 1, var["r_freq"] + 1, 0.02)).run().data.T
+    v = dict(var)
+    data = experiment.DispersiveSpectroscopy(soccfg=soccfg, soc=soc, var=v, data_path=data_path, title=f"(auto.r_freq) {int(v['r_freq'])}", r_freqs=np.arange(v["r_freq"] - 1, v["r_freq"] + 1, 0.02)).run().data.T
     F, A0, P0, A1, P1 = data[0], data[1], data[2], data[5], data[6]
     dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
-    var["r_freq"] = float(F[np.argmax(dP)])
+    v["r_freq"] = float(F[np.argmax(dP)])
     plt.clf()
     plt.plot(F, A0, label="Amplitude 0", marker="o")
     plt.plot(F, A1, label="Amplitude 1", marker="o")
-    plt.vlines(var["r_freq"], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
+    plt.vlines(v["r_freq"], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
     plt.legend()
     plt.xlabel("Readout Frequency (MHz)")
     plt.ylabel("Amplitude [log mag] (dB)")
     plt.title("DispersiveSpectroscopy")
     plt.show()
-    return True
+    return v
 
 def ramsey(var, soccfg=None, soc=None, data_path=None):
-    var["r_phase"] = 0
-    data = experiment.IQScatter(soccfg=soccfg, soc=soc, var=var).run().data.T
+    v = dict(var)
+    v["r_phase"] = 0
+    data = experiment.IQScatter(soccfg=soccfg, soc=soc, var=v).run().data.T
     c0, c1, _, _, _, _ = helper.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
-    var["r_phase"], var["r_threshold"] = helper.iq_rotation(c0, c1)
-    var["fringe_freq"] = 10
-    data = experiment.T2Ramsey(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.ramsey) {int(var['r_freq'])}", times=np.arange(0, 1, 0.01)).run().data.T
+    v["r_phase"], v["r_threshold"] = helper.iq_rotation(c0, c1)
+    data = experiment.T2Ramsey(soccfg=soccfg, soc=soc, var=v, data_path=data_path, title=f"(auto.ramsey) {int(v['r_freq'])}", times=np.arange(0, 1, 0.01)).run().data.T
     L, A = data[0], data[1]
     def m(x, p1, p2, p3):
         return p1 * np.cos(p2 * x) + p3
@@ -141,8 +142,9 @@ def ramsey(var, soccfg=None, soc=None, data_path=None):
     plt.plot(np.arange(0, 1, 0.001), m(np.arange(0, 1, 0.001), *popt), color="red")
     plt.title("Ramsey (fringe_freq = 10)")
     plt.show()
-    var["q_freq"] = float(var["q_freq"] + popt[1] / 2 / np.pi - 10)
-    print(var["q_freq"], popt[1] / 2 / np.pi - 10)
+    v["q_freq"] = float(v["q_freq"] + popt[1] / 2 / np.pi - 10)
+    print(v["q_freq"], popt[1] / 2 / np.pi - 10)
+    return v
 
 def readout(var, soccfg=None, soc=None):
     def negative_fidelity(x):
