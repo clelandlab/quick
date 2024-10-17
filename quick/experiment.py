@@ -230,17 +230,17 @@ class T2Ramsey(BaseExperiment):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
         indep_params = [("Pulse Delay", "us")]
-        sweep = { "3_time": self.times }
+        sweep = { "4_time": self.times }
         if self.fringe_freqs is not None:
             indep_params.append(("Fringe Frequency", "MHz"))
             sweep["fringe_freq"] = self.fringe_freqs
         self.prepare(indep_params, population=True)
         for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
-            indep = [c["3_time"]]
+            indep = [c["4_time"]]
             if self.fringe_freqs is not None:
                 indep.append(c["fringe_freq"])
                 self.var["fringe_freq"] = c["fringe_freq"]
-            c["2_value"] = -360 * c["3_time"] * self.var["fringe_freq"] % 360
+            c["3_value"] = -360 * c["4_time"] * self.var["fringe_freq"] % 360
             self.acquire_S21(c, indep, population=True)
         return self.conclude(silent)
 
