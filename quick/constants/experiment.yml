@@ -18,6 +18,26 @@ var:
     fringe_freq: 1
     active_reset: 0
 
+var_label:
+    rr: ["Readout Channel for Readout Pulse", ""]
+    r: ["Generator Channel for Readout Pulse", ""]
+    q: ["Generator Channel for Qubit Pulse", ""]
+    r_freq: ["Readout Pulse Frequency", "MHz"]
+    r_power: ["Readout Pulse Power", "dBm"]
+    r_length: ["Readout Pulse Length", "us"]
+    r_phase: ["Readout Pulse Phase", "deg"]
+    r_offset: ["Readout Offset", "us"]
+    r_balun: ["Readout Generator Balun", ""]
+    r_threshold: ["Readout Threshold", ""]
+    r_relax: ["Readout Relax", "us"]
+    q_freq: ["Qubit Pulse Frequency", "MHz"]
+    q_length: ["Qubit Pulse Length", "us"]
+    q_delta: ["Qubit Anharmonicity", "MHz"]
+    q_gain: ["Qubit Pulse Gain", "a.u."]
+    q_gain_2: ["Qubit Half Pulse Gain", "a.u."]
+    fringe_freq: ["Fringe Frequency", "MHz"]
+    active_reset: ["Active Reset Wait Time", "us"]
+
 # Programs below are exported as strings for variable insertion
 
 LoopBack: |
@@ -95,7 +115,7 @@ Rabi: |
     1_type: sync_all
     2_type: goto
     2_i: 0
-    2_rep: 0
+    2_rep: {cycle} # (plugin) extra cycle
     3_type: pulse
     3_ch: {r}
     4_type: trigger
@@ -123,8 +143,16 @@ IQScatter: |
     2_ch: {r}
     3_type: trigger
     3_time: {r_offset}
-    4_type: sync_all
-    4_time: {r_relax}
+    4_type: {"sync_all" if active_reset else "goto"}
+    4_i: 7
+    5_type: wait_all
+    5_time: {active_reset}
+    6_type: pulse          # reset pulse
+    6_ch: {q}
+    6_threshold: {r_threshold}
+    6_r: {r}
+    7_type: sync_all
+    7_time: {r_relax}
 
 ActiveReset: |
     rep: 10000
@@ -208,7 +236,7 @@ T1: |
     0_type: pulse
     0_ch: {q}
     1_type: sync_all
-    1_time: 0              # delay time
+    1_time: {time}         # delay time
     2_type: pulse
     2_ch: {r}
     3_type: trigger
@@ -250,9 +278,9 @@ T2Ramsey: |
     3_type: set
     3_ch: {q}
     3_key: phase
-    3_value: 0        # phase change
+    3_value: {-360 * time * fringe_freq % 360} # phase change
     4_type: sync_all
-    4_time: 0         # wait time
+    4_time: {time}    # (plugin) wait time
     5_type: pulse
     5_ch: {q}
     6_type: sync_all
@@ -307,18 +335,18 @@ T2Echo: |
     4_key: phase
     4_value: 90
     5_type: sync_all
-    5_time: 0         # half wait time
+    5_time: {time / (cycle + 1) / 2}  # half wait time
     6_type: pulse
     6_ch: {q}
     7_type: sync_all
-    7_time: 0         # half wait time
+    7_time: {time / (cycle + 1) / 2}  # half wait time
     8_type: goto
     8_i: 4
-    8_rep: 0
+    8_rep: {cycle}
     9_type: set
     9_ch: {q}
     9_key: phase
-    9_value: 0        # phase change for fringe
+    9_value: {-360 * time * fringe_freq % 360} # phase change for fringe
     10_type: set
     10_ch: {q}
     10_key: gain

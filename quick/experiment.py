@@ -4,28 +4,55 @@ from quick import __version__
 from .mercator import Mercator
 import os, yaml
 
+listTypes = (list, np.ndarray)
+
 # global var & config for quick.experiment
 configs = helper.load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), "./constants/experiment.yml"))
 var = configs["var"]
 
 class BaseExperiment:
-    """Experiment Base Class"""
+    var = {}
+    var_label = {}
     def __init__(self, data_path=None, title="", soccfg=None, soc=None, var=None, **kwargs):
         self.key = self.__class__.__name__ # get class name as experiment key
         self.data_path = data_path
         self.title = title
-        self.var = dict(configs["var"])
+        template_var = dict(configs["var"])
+        template_var.update(self.var)
+        self.var = template_var
         self.var.update(var or {})
-        configStr = configs.get(self.key, "")
-        self.config = yaml.safe_load(helper.evalStr(configStr, self.var)) or {}
-        self.config["quick.experiment"] = self.key # label the experiment in config
-        self.config["quick.__version__"] = __version__
-        self.config["var"] = self.var
-        self.config.update(kwargs) # customized arguments
+        template_var_label = dict(configs["var_label"])
+        template_var_label.update(self.var_label)
+        self.var_label = template_var_label
+        self.sweep = {}
+        self.config_update = {
+            "quick.experiment": self.key,
+            "quick.__version__": __version__
+        }
+        for k, v in kwargs.items():
+            if k in self.var:
+                self.var[k] = v
+                if isinstance(v, listTypes):
+                    self.sweep[k] = v
+                    self.var[k] = v[0]
+                if hasattr(self.var[k], "dtype"): # np to native for saving.
+                    self.var[k] = self.var[k].item()
+            else:
+                self.config_update[k] = v
+        self.config_update["var"] = self.var
+        self.eval_config(self.var)
         self.soccfg, self.soc = helper.getSoc() if soccfg is None else (soccfg, soc)
         self.m = Mercator(self.soccfg, self.config)
+    def eval_config(self, v):
+        configStr = configs.get(self.key, "")
+        self.config = yaml.safe_load(helper.evalStr(configStr, v)) or {}
+        self.config.update(self.config_update)
     def prepare(self, indep_params=[], log_mag=False, population=False): # prepare saver
         self.data = []
+        indep_params = list(indep_params) # avoid modify in place
+        for k in self.sweep:
+            label = self.var_label.get(k, (k, ""))
+            indep_params.append(label)
         dep_params = []
         if population:
             dep_params.append(("Population", ""))
@@ -36,8 +63,8 @@ class BaseExperiment:
         self.data.extend(data)
         if self.data_path is not None:
             self.s.write_data(data)
-    def acquire_S21(self, cfg, indep_list, log_mag=False, decimated=False, population=False): # acquire & add data
-        self.m = Mercator(self.soccfg, cfg)
+    def acquire_S21(self, indep_list, log_mag=False, decimated=False, population=False): # acquire & add data
+        self.m = Mercator(self.soccfg, self.config)
         I, Q = self.m.acquire_decimated(self.soc, progress=True) if decimated else self.m.acquire(self.soc)
         S21 = (np.array(I) + 1j * np.array(Q)).flatten()
         dep_list = []
@@ -46,8 +73,19 @@ class BaseExperiment:
             dep_list.append(float(I[I > self.var.get("r_threshold", 0)].size) / I.size)
         if not decimated:
             S21 = np.mean(S21)
-        dep_list.extend([(20 * np.log10(np.abs(S21) / cfg[helper.evalStr("g{r}_gain", self.var)]) if log_mag else np.abs(S21)), np.angle(S21), S21.real, S21.imag])
+        dep_list.extend([(20 * np.log10(np.abs(S21) / self.config[helper.evalStr("g{r}_gain", self.var)]) if log_mag else np.abs(S21)), np.angle(S21), S21.real, S21.imag])
         self.add_data(np.transpose([*indep_list, *dep_list]) if decimated else [ [*indep_list, *dep_list] ])
+    def run(self, silent=False, log_mag=False, population=False):
+        if not silent:
+            print(f"quick.experiment({self.key}) Starting")
+        self.prepare(log_mag=log_mag, population=population)
+        for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
+            self.eval_config(v)
+            indep = []
+            for k in self.sweep:
+                indep.append(v[k])
+            self.acquire_S21(indep, log_mag=log_mag, population=population)
+        return self.conclude(silent)
     def conclude(self, silent=False): # last step of run
         if not silent:
             print(f"quick.experiment({self.key}) Completed. Data saved in {self.data_path}" if self.data_path is not None else f"quick.experiment({self.key}) Completed.")
@@ -58,91 +96,27 @@ class BaseExperiment:
 
 # All experiments are following
 class LoopBack(BaseExperiment):
-    def run(self, silent=False):
+    def run(self, silent=False, log_mag=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
         self.prepare([("Time", "us")])
-        self.acquire_S21(self.config, [np.arange(self.soccfg.us2cycles(self.config["r0_length"], ro_ch=0)) * self.soccfg.cycles2us(1, ro_ch=0)], log_mag=False, decimated=True)
+        self.acquire_S21([np.arange(self.soccfg.us2cycles(self.config["r0_length"], ro_ch=0)) * self.soccfg.cycles2us(1, ro_ch=0)], log_mag=log_mag, decimated=True)
         return self.conclude(silent)
 
 class ResonatorSpectroscopy(BaseExperiment):
-    def __init__(self, r_freqs=[], r_powers=None, **kwargs):
-        super().__init__(**kwargs)
-        self.r_freqs = r_freqs
-        self.r_powers = r_powers
     def run(self, silent=False, log_mag=True):
-        if not silent:
-            print(f"quick.experiment({self.key}) Starting")
-        hasPowers = self.r_powers is not None
-        indep_params = [("Power", "dBm"), ("Frequency", "MHz")] if hasPowers else [("Frequency", "MHz")]
-        power_key, freq_key = helper.evalStr("g{r}_power", self.var), helper.evalStr("g{r}_freq", self.var)
-        sweep = { power_key: self.r_powers, freq_key: self.r_freqs } if hasPowers else { freq_key: self.r_freqs }
-        self.prepare(indep_params, log_mag=log_mag)
-        for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
-            indep = [c[power_key], c[freq_key]] if hasPowers else [c[freq_key]]
-            self.acquire_S21(c, indep, log_mag=log_mag)
-        return self.conclude(silent)
+        return super().run(silent, log_mag)
 
 class QubitSpectroscopy(BaseExperiment):
-    def __init__(self, q_freqs=[], r_freqs=None, **kwargs):
-        super().__init__(**kwargs)
-        self.q_freqs = q_freqs
-        self.r_freqs = r_freqs
-    def run(self, silent=False):
-        if not silent:
-            print(f"quick.experiment({self.key}) Starting")
-        indep_params = [("Qubit Frequency", "MHz")]
-        r_freq_key, q_freq_key = helper.evalStr("g{r}_freq", self.var), helper.evalStr("g{q}_freq", self.var)
-        sweep = { q_freq_key: self.q_freqs }
-        if self.r_freqs is not None:
-            indep_params.append(("Readout Frequency", "MHz"))
-            sweep[r_freq_key] = self.r_freqs
-        self.prepare(indep_params)
-        for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
-            indep = [c[q_freq_key]]
-            if self.r_freqs is not None:
-                indep.append(c[r_freq_key])
-            self.acquire_S21(c, indep)
-        return self.conclude(silent)
+    pass
 
 class Rabi(BaseExperiment):
-    def __init__(self, q_lengths=None, q_gains=None, q_freqs=None, cycles=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.var = { "cycle": 0 } # add one var
+        self.var_label = { "cycle": ("Extra Cycles", "") }
         super().__init__(**kwargs)
-        self.q_lengths = q_lengths
-        self.q_gains = q_gains
-        self.q_freqs = q_freqs
-        self.cycles = cycles
-    def run(self, silent=False):
-        if not silent:
-            print(f"quick.experiment({self.key}) Starting")
-        indep_params = []
-        sweep = {}
-        if self.cycles is not None:
-            indep_params.append(("Extra Cycles", ""))
-            sweep["2_rep"] = self.cycles
-        if self.q_lengths is not None:
-            indep_params.append(("Pulse Length", "us"))
-            sweep[helper.evalStr("g{q}_length", self.var)] = self.q_lengths
-        if self.q_gains is not None:
-            indep_params.append(("Pulse Gain", "a.u."))
-            sweep[helper.evalStr("g{q}_gain", self.var)] = self.q_gains
-        if self.q_freqs is not None:
-            indep_params.append(("Qubit Frequency", "MHz"))
-            sweep[helper.evalStr("g{q}_freq", self.var)] = self.q_freqs
-        self.prepare(indep_params, population=True)
-        for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
-            indep = []
-            if self.cycles is not None:
-                indep.append(c["2_rep"])
-                c["2_rep"] = 2 * c["2_rep"]
-            if self.q_lengths is not None:
-                indep.append(c[helper.evalStr("g{q}_length", self.var)])
-            if self.q_gains is not None:
-                indep.append(c[helper.evalStr("g{q}_gain", self.var)])
-            if self.q_freqs is not None:
-                indep.append(c[helper.evalStr("g{q}_freq", self.var)])
-            self.acquire_S21(c, indep, population=True)
-        return self.conclude(silent)
+    def run(self, population=True, **kwargs):
+        return super().run(population=population, **kwargs)
 
 class IQScatter(BaseExperiment):
     def run(self, silent=False):
@@ -183,18 +157,18 @@ class ActiveReset(BaseExperiment):
         return self.conclude(silent)
 
 class DispersiveSpectroscopy(BaseExperiment):
-    def __init__(self, r_freqs=[], **kwargs):
+    def __init__(self, r_freq=[], **kwargs):
         super().__init__(**kwargs)
-        self.r_freqs = r_freqs
+        self.r_freq = r_freq
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
         self.data = []
-        indep_params = [("Frequency", "MHz")]
+        indep_params = [("Readout Pulse Frequency", "MHz")]
         dep_params = [("Amplitude 0", "dB", "log mag"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB", "log mag"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]
         if self.data_path is not None:
             self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, self.config)
-        for c in helper.Sweep(self.config, { helper.evalStr("g{r}_freq", self.var): self.r_freqs }, progressBar=(not silent)):
+        for c in helper.Sweep(self.config, { helper.evalStr("g{r}_freq", self.var): self.r_freq }, progressBar=(not silent)):
             c["0_type"] = "pulse" # send pi pulse
             self.m = Mercator(self.soccfg, c)
             I1, Q1 = self.m.acquire(self.soc)
@@ -207,66 +181,28 @@ class DispersiveSpectroscopy(BaseExperiment):
         return self.conclude(silent)
 
 class T1(BaseExperiment):
-    def __init__(self, times=[], **kwargs):
+    def __init__(self, **kwargs):
+        self.var = { "time": 0 } # add one var
+        self.var_label = { "time": ("Delay Time", "us") }
         super().__init__(**kwargs)
-        self.times = times
-    def run(self, silent=False):
-        if not silent:
-            print(f"quick.experiment({self.key}) Starting")
-        indep_params = [("Pulse Delay", "us")]
-        sweep = { "1_time": self.times }
-        self.prepare(indep_params, population=True)
-        for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
-            indep = [c["1_time"]]
-            self.acquire_S21(c, indep, population=True)
-        return self.conclude(silent)
+    def run(self, population=True, **kwargs):
+        return super().run(population=population, **kwargs)
 
 class T2Ramsey(BaseExperiment):
-    def __init__(self, times=[], fringe_freqs=None, **kwargs):
+    def __init__(self, **kwargs):
+        self.var = { "time": 0 } # add one var
+        self.var_label = { "time": ("Delay Time", "us") }
         super().__init__(**kwargs)
-        self.times = times
-        self.fringe_freqs = fringe_freqs
-    def run(self, silent=False):
-        if not silent:
-            print(f"quick.experiment({self.key}) Starting")
-        indep_params = [("Pulse Delay", "us")]
-        sweep = { "4_time": self.times }
-        if self.fringe_freqs is not None:
-            indep_params.append(("Fringe Frequency", "MHz"))
-            sweep["fringe_freq"] = self.fringe_freqs
-        self.prepare(indep_params, population=True)
-        for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
-            indep = [c["4_time"]]
-            if self.fringe_freqs is not None:
-                indep.append(c["fringe_freq"])
-                self.var["fringe_freq"] = c["fringe_freq"]
-            c["3_value"] = -360 * c["4_time"] * self.var["fringe_freq"] % 360
-            self.acquire_S21(c, indep, population=True)
-        return self.conclude(silent)
+    def run(self, population=True, **kwargs):
+        return super().run(population=population, **kwargs)
 
 class T2Echo(BaseExperiment):
-    def __init__(self, times=[], fringe_freqs=None, cycle=0, **kwargs):
+    def __init__(self, **kwargs):
+        self.var = { "time": 0, "cycle": 0 } # add var
+        self.var_label = {
+            "time": ("Delay Time", "us"),
+            "cycle": ("Extra Cycles", "")
+        }
         super().__init__(**kwargs)
-        self.times = times
-        self.fringe_freqs = fringe_freqs
-        self.cycle = cycle
-    def run(self, silent=False):
-        if not silent:
-            print(f"quick.experiment({self.key}) Starting")
-        indep_params = [("Pulse Delay", "us")]
-        N = self.cycle + 1
-        sweep = { "5_time": np.array(self.times) / N / 2 }
-        self.config["8_rep"] = self.cycle
-        if self.fringe_freqs is not None:
-            indep_params.append(("Fringe Frequency", "MHz"))
-            sweep["fringe_freq"] = self.fringe_freqs
-        self.prepare(indep_params, population=True)
-        for c in helper.Sweep(self.config, sweep, progressBar=(not silent)):
-            indep = [c["5_time"] * 2 * N] # total time
-            if self.fringe_freqs is not None:
-                indep.append(c["fringe_freq"])
-                self.var["fringe_freq"] = c["fringe_freq"]
-            c["7_time"] = c["5_time"] # half wait time
-            c["9_value"] = -360 * 2 * N * c["5_time"] * self.var["fringe_freq"] % 360
-            self.acquire_S21(c, indep, population=True)
-        return self.conclude(silent)
+    def run(self, population=True, **kwargs):
+        return super().run(population=population, **kwargs)
