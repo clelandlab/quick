@@ -122,19 +122,20 @@ fig.show()
 
 ## T2
 
-Measure, fit and plot T2 with your pi pulse and IQ center. Set fringe frequency `v["fringe_freq"]` first.
+Measure, fit and plot T2 with your pi pulse and IQ center.
 
 You can use either `T2Ramsey` or `T2Echo`. See API References for details.
 
 ```python
-v["fringe_freq"] = 0.1
+fringe_freq = 0.1
 data = quick.experiment.T2Echo(
 	var=v, data_path=DATA_PATH,
 	title=f"{int(v['r_freq'])}",
 	time=np.arange(0, 200, 1),
-	cycle=3
+	cycle=3,
+  fringe_freq=fringe_freq
 ).run().data.T
-popt, _, _, fig = quick.fitT2(data[0], data[1], omega=2*np.pi*v["fringe_freq"])
+popt, _, _, fig = quick.fitT2(data[0], data[1], omega=2*np.pi*fringe_freq)
 fig.show()
 ```
 

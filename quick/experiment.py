@@ -202,7 +202,7 @@ class T2Ramsey(BaseExperiment):
 
 class T2Echo(BaseExperiment):
     def __init__(self, **kwargs):
-        self.var = { "time": 0, "cycle": 0 "fringe_freq": 0 } # add var
+        self.var = { "time": 0, "cycle": 0, "fringe_freq": 0 } # add var
         self.var_label = {
             "time": ("Delay Time", "us"),
             "cycle": ("Extra Cycles", ""),
