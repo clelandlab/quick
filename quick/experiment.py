@@ -84,6 +84,7 @@ class BaseExperiment:
             indep = []
             for k in self.sweep:
                 indep.append(v[k])
+            self.var = v
             self.acquire_S21(indep, log_mag=log_mag, population=population)
         return self.conclude(silent)
     def conclude(self, silent=False): # last step of run
