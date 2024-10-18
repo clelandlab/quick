@@ -37,7 +37,6 @@ q_length: 2       # [us] qubit pulse length
 q_delta: -180     # [MHz] qubit anharmonicity
 q_gain: 30000     # [0-32766] qubit pulse (pi pulse) gain
 q_gain_2: 15000   # [0-32766] half pi pulse gain
-fringe_freq: 1    # [MHz] fringe frequency in T2Ramsey and T2Echo
 active_reset: 0   # [us] active reset wait time. 0 for disable.
 ```
 
@@ -51,13 +50,13 @@ Global config templates used by `BaseExperiment`. These are default Mercator pro
 
 All of the programs are saved as strings for variable insersion. The experiment variables will be inserted into the Mercator protocol templates with `quick.evalStr`.
 
-## 🟡BaseExperiment
+## 🔵BaseExperiment
 
 ```python
 e = quick.experiment.BaseExperiment(data_path=None, title="", soccfg=None, soc=None, var=None, **kwargs)
 ```
 
-General base *class* for other experiments using Mercator protocol. Mostly for internal use.
+General base *class* for other experiments using Mercator protocol. If not overwriten, all the other experiment *class* have the properties and methods described here. If not specified, all `**kwargs` in the other experiment *class* are passed into this constructor.
 
 **Parameters**:
 
@@ -65,8 +64,8 @@ General base *class* for other experiments using Mercator protocol. Mostly for i
 - `title=""` (str) filename of data. A prefix of experiment name will be added to it, eg. `(BaseExperiment)your title`.
 - `soccfg=None` QICK board socket config object. If not provided, the last connected one will be used by calling `quick.getSoc()`.
 - `soc=None` QICK board socket object.
-- `var=None` experimental variables to be inserted into the corresponding Mercator protocol template of the experiment (in `quick.experiment.configs`). It will NOT be modified. The default value in `quick.experiment.var` will be used if any keys are missing.
-- `**kwargs` other keyword arguments. Can be used to overwrite Mercator protocol and therefore overwrite the pulse sequence. The overwriting happens after variable insertions.
+- `var=None` experimental variables to be inserted into the corresponding Mercator protocol template of the experiment (in `quick.experiment.configs`) and pre-defined experiment-specific variables. It will NOT be modified. The default value in `quick.experiment.var` will be used if any keys are missing.
+- `**kwargs` other keyword arguments. Any keys in `self.var` can be used as variable overwriting(by a value) or sweeping(by a list). The sweeping order is determined by the order of keyword arguments. Keys not in `self.var` are used to overwrite Mercator protocol and therefore overwrite the pulse sequence. The overwriting happens after variable insertions.
 
 ### - BaseExperiment.key
 
@@ -74,7 +73,7 @@ General base *class* for other experiments using Mercator protocol. Mostly for i
 e.key
 ```
 
-Same as experiment class name. Will be saved as `params["quick"]`.
+Same as experiment class name. Used to obtain config template by `quick.experiment.configs[self.key]`. Will be saved in data metainformation as `params["quick.experiment"]`.
 
 ### - BaseExperiment.var
 
@@ -82,7 +81,15 @@ Same as experiment class name. Will be saved as `params["quick"]`.
 e.var
 ```
 
-The experiment variable dictionary used by the experiment.  Will be saved as `params["var"]`.
+The experiment variable dictionary used in the experiment. Variables are inserted into the Mercator protocol of the experiment by `quick.evalStr` in each sweep/run.
+
+### - BaseExperiment.var_label
+
+```python
+e.var_label
+```
+
+The experiment variable label dictionary used in the experiment. This determines the data label and unit.
 
 ### - BaseExperiment.data
 
@@ -98,7 +105,23 @@ Data acquired by the experiment. Same structure as saved by the data saver `quic
 e.config
 ```
 
-Program config template in Mercator protocol.
+Program config (pulse sequence) dictionary in Mercator protocol, will be run to acquire data.
+
+### - BaseExperiment.config_update
+
+```python
+e.config_update
+```
+
+Config update dictionary. Used to overwrite `self.config` after variable insertion in each sweep/run.
+
+### - BaseExperiment.sweep
+
+```python
+e.sweep
+```
+
+Sweep dictionary. Store sweeping variables.
 
 ### - BaseExperiment.m
 
@@ -107,6 +130,18 @@ e.m
 ```
 
 The Mercator instance created by the experiment.
+
+### - BaseExperiment.eval_config
+
+```python
+e.eval_config(v)
+```
+
+Perform variable insertion and then config overwriting, generating `self.config` from the template `quick.experiment.configs[self.key]`
+
+**Parameters**:
+
+- `v` (dict) variable dictionary, used in variable insertion.
 
 ### - BaseExperiment.prepare
 
@@ -118,7 +153,7 @@ prepare the standard S21 measurements (amplitude, phase, I, Q), create data save
 
 **Parameters**:
 
-- `indep_params=[]` (list) a list of 2-tuples, specifying meta information for independent variables, in the format of `("Name", "Unit")`
+- `indep_params=[]` (list) a list of 2-tuples, specifying meta information for independent variables, in the format of `("Name", "Unit")`. Note that variables in `self.sweep` are automatically added without passing in.
 - `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
 - `population=False` (bool) whether to measure the qubit population.
 
@@ -137,23 +172,50 @@ add and save data. Mostly for internal use.
 ### - BaseExperiment.acquire_S21
 
 ```python
-e.acquire_S21(cfg, indep_list, log_mag=False, decimated=False, population=False)
+e.acquire_S21(indep_list, log_mag=False, decimated=False, population=False)
 ```
 
-acquire data for standard S21 measurement. Mostly for internal use.
+acquire data for standard S21 measurement. Run the program specified by `self.config` in Mercator protocol. Mostly for internal use.
 
 **Parameters**:
 
-- `cfg` (dict) a program in Mercator protocol.
 - `indep_list` (list) a list of values for independent variables, in the exact order as specified by `prepare`.
 - `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
 - `decimated=False` (bool) whether to acquire for time-series output.
 - `population=False` (bool) whether to measure the qubit population.
 
+### = BaseExperiment.run
+
+```python
+e = e.run(silent=False, log_mag=False, population=False)
+```
+
+Run the experiment. See details below.
+
+**Parameters**:
+
+- `silent=False` (bool) Whether to avoid any printing.
+- `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
+- `population=False` (bool) whether to measure the qubit population.
+
+**Return**:
+
+- `e` the experiment object itself.
+
+**Detail**:
+
+This method performs the following steps:
+
+1. Call `self.prepare` to prepare the data saver.
+2. Use `quick.Sweep` to sweep the variables in `self.sweep`. In each sweep:
+    1. Call `self.eval_config` to generate the corresponding `self.config`
+    2. Call `self.acquire_S21` to execute and save data with `quick.Mercator`
+3. Call and return `self.conclude`
+
 ### - BaseExperiment.conclude
 
 ```python
-e.conclude(silent=False)
+e = e.conclude(silent=False)
 ```
 
 finalize the experiment, print message for completion. Mostly for internal use.
@@ -162,13 +224,21 @@ finalize the experiment, print message for completion. Mostly for internal use.
 
 - `silent=False` (bool) Whether to avoid any printing.
 
+**Return**:
+
+- `e` the experiment object itself.
+
 ### - BaseExperiment.light
 
 ```python
-e.light()
+e = e.light()
 ```
 
 Light the internal Mercator object.
+
+**Return**:
+
+- `e` the experiment object itself.
 
 ## 🟢LoopBack
 
@@ -178,7 +248,7 @@ Light the internal Mercator object.
 e = quick.experiment.LoopBack(**kwargs)
 ```
 
-Measure the loop-back signal.
+Measure the loop-back signal. No variable sweeping.
 
 - `indep_params = [("Time", "us")]`
 - `dep_params = [("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
@@ -186,7 +256,7 @@ Measure the loop-back signal.
 ### - LoopBack.run
 
 ```python
-e.run(silent=False)
+e = e.run(silent=False, log_mag=False)
 ```
 
 run the experiment.
@@ -194,29 +264,29 @@ run the experiment.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
+- `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
+
+**Return**:
+
+- `e` the experiment object itself.
 
 ## 🟢ResonatorSpectroscopy
 
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.ResonatorSpectroscopy(r_freqs=[], r_powers=None, **kwargs)
+e = quick.experiment.ResonatorSpectroscopy(**kwargs)
 ```
 
 Measure the resonator spectroscopy, including the power spectroscopy.
 
+- Arbitrary variable sweeping
 - `dep_params = [("Amplitude", "dB", "log mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
-- Amplitude can be `lin mag` by setting `log_mag=False` in parameters of `e.run()`
-
-**Parameters**:
-
-- `r_freqs=[]` (1D ArrayLike) resonator frequency list `("Frequency", "MHz")`.
-- `r_powers=None` (1D ArrayLike) optional resonator power list `("Power", "dBm")`.
 
 ### - ResonatorSpectroscopy.run
 
 ```python
-e.run(silent=False, log_mag=True)
+e = e.run(silent=False, log_mag=True)
 ```
 
 run the experiment.
@@ -226,58 +296,44 @@ run the experiment.
 - `silent=False` (bool) Whether to avoid any printing.
 - `log_mag=True` (bool) Whether to use log magnitude (dB).
 
+**Return**:
+
+- `e` the experiment object itself.
+
 ## 🟢QubitSpectroscopy
 
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.QubitSpectroscopy(q_freqs=[], r_freqs=None, **kwargs)
+e = quick.experiment.QubitSpectroscopy(**kwargs)
 ```
 
 Measure the qubit spectroscopy, or two-tone spectroscopy.
 
+- Arbitrary variable sweeping
 - `dep_params = [("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
-
-**Parameters**:
-
-- `q_freqs=[]` (1D ArrayLike) qubit frequency list `("Qubit Frequency", "MHz")`.
-- `r_freqs=None` (1D ArrayLike) optional resonator frequency list `("Readout Frequency", "MHz")`.
-
-### - QubitSpectroscopy.run
-
-```python
-e.run(silent=False)
-```
-
-run the experiment.
-
-**Parameters**:
-
-- `silent=False` (bool) Whether to avoid any printing.
+    - include `(Population, "")` by `e.run(population=True)`
+    - use log magnitude by `e.run(log_mag=True)`
 
 ## 🟢Rabi
 
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.Rabi(q_lengths=None, q_gains=None, q_freqs=None, cycles=None, **kwargs)
+e = quick.experiment.Rabi(**kwargs)
 ```
 
-Measure the Rabi oscillation. Any combinations of the four independent variables can be sweeped.
+Measure the Rabi oscillation.
 
+- Arbitrary variable sweeping, plus:
+    - `cycle=0` (int) extra pi pulse cycle. Every cycle gives two extra pi pulse. `cycle=0` gives 1 pi pulse.
 - `dep_params = [("Population", ""), ("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
-
-**Parameters**:
-
-- `q_lengths=None` (1D ArrayLike) optional qubit pulse length list `("Pulse Length", "us")`.
-- `q_gains=None` (1D ArrayLike) optional qubit pulse gain list `("Pulse Gain", "a.u.")`.
-- `q_freqs=None` (1D ArrayLike) optional qubit frequency list `("Qubit Frequency", "MHz")`.
-- `cycles=None` (1D ArrayLike) optional extra cycle list `("Extra Cycles", "")`. Each extra cycle introduces 2 extra pi pulses. `cycle=0` gives one pi pulse.
+    - remove `(Population, "")` by `e.run(population=False)`
 
 ### - Rabi.run
 
 ```python
-e.run(silent=False)
+e.run(silent=False, population=True)
 ```
 
 run the experiment.
@@ -285,6 +341,11 @@ run the experiment.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
+- `population=True` (bool) whether to measure the qubit population.
+
+**Return**:
+
+- `e` the experiment object itself.
 
 ## 🟢IQScatter
 
@@ -294,7 +355,7 @@ run the experiment.
 e = quick.experiment.IQScatter(**kwargs)
 ```
 
-Measure the IQ scatter data.
+Measure the IQ scatter data. No variable sweeping.
 
 - `dep_params = [("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")]`
 
@@ -310,6 +371,10 @@ run the experiment.
 
 - `silent=False` (bool) Whether to avoid any printing.
 
+**Return**:
+
+- `e` the experiment object itself.
+
 ## 🔵ActiveReset
 
 > Base *class*: `BaseExperiment`
@@ -318,7 +383,7 @@ run the experiment.
 e = quick.experiment.ActiveReset(**kwargs)
 ```
 
-Test active reset. Performing an amplitude Rabi for 100 points.
+Test active reset. Performing an amplitude Rabi for 100 points. No variable sweeping.
 
 - `dep_params = [("Population", "", "before reset"), ("Population", "", "after reset")]`
 
@@ -334,21 +399,25 @@ run the experiment.
 
 - `silent=False` (bool) Whether to avoid any printing.
 
+**Return**:
+
+- `e` the experiment object itself.
+
 ## 🟢DispersiveSpectroscopy
 
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.DispersiveSpectroscopy(r_freqs=[], **kwargs)
+e = quick.experiment.DispersiveSpectroscopy(r_freq=[], **kwargs)
 ```
 
-Measure the dispersive spectroscopy.
+Measure the dispersive spectroscopy. No variable sweeping.
 
 - `dep_params = [("Amplitude 0", "dB", "log mag"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB", "log mag"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]`
 
 **Parameters**:
 
-- `r_freqs=[]` (1D ArrayLike) resonator frequency list `("Frequency", "MHz")`.
+- `r_freq=[]` (1D ArrayLike) resonator frequency list `("Frequency", "MHz")`.
 
 ### - DispersiveSpectroscopy.run
 
@@ -362,26 +431,29 @@ run the experiment.
 
 - `silent=False` (bool) Whether to avoid any printing.
 
+**Return**:
+
+- `e` the experiment object itself.
+
 ## 🟢T1
 
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.T1(times=[], **kwargs)
+e = quick.experiment.T1(**kwargs)
 ```
 
 Measure the T1 decay.
 
+- Arbitrary variable sweeping, plus:
+    - `time=0` (us) readout delay time.
 - `dep_params = [("Population", ""), ("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
-
-**Parameters**:
-
-- `times=[]` (1D ArrayLike) pulse delay time list `("Pulse Delay", "us")`.
+    - remove `(Population, "")` by `e.run(population=False)`
 
 ### - T1.run
 
 ```python
-e.run(silent=False)
+e.run(silent=False, population=True)
 ```
 
 run the experiment.
@@ -389,28 +461,32 @@ run the experiment.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
+- `population=True` (bool) whether to measure the qubit population.
+
+**Return**:
+
+- `e` the experiment object itself.
 
 ## 🟢T2Ramsey
 
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.T2Ramsey(times=[], fringe_freqs=None, **kwargs)
+e = quick.experiment.T2Ramsey(**kwargs)
 ```
 
 Measure the T2 decay with fringe by Ramsey oscillation.
 
+- Arbitrary variable sweeping, plus:
+    - `time=0` (us) readout delay time.
+    - `fringe_freq=0` (MHz) fringe frequency.
 - `dep_params = [("Population", ""), ("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
-
-**Parameters**:
-
-- `times=[]` (1D ArrayLike) pulse delay time list `("Pulse Delay", "us")`.
-- `fringe_freqs=None` (1D ArrayLike) fringe frequency list `("Fringe Frequency", "MHz")`.
+    - remove `(Population, "")` by `e.run(population=False)`
 
 ### - T2Ramsey.run
 
 ```python
-e.run(silent=False)
+e.run(silent=False, population=True)
 ```
 
 run the experiment.
@@ -418,29 +494,33 @@ run the experiment.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
+- `population=True` (bool) whether to measure the qubit population.
+
+**Return**:
+
+- `e` the experiment object itself.
 
 ## 🟢T2Echo
 
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.T2Echo(times=[], fringe_freqs=None, cycle=0, **kwargs)
+e = quick.experiment.T2Echo(**kwargs)
 ```
 
 Measure the T2 decay with fringe by Hahn echo or CPMG method. Pi pulses for echo will always be on +y axis (90 degrees phase).
 
+- Arbitrary variable sweeping, plus:
+    - `time=0` (us) readout delay time.
+    - `cycle=0` (int) extra cycle in the CPMG method. Each extra cycle introduces 1 extra pi pulse, implementing the CPMG pulse sequence. `cycle=0` gives 1 pi pulse.
+    - `fringe_freq=0` (MHz) fringe frequency.
 - `dep_params = [("Population", ""), ("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
-
-**Parameters**:
-
-- `times=[]` (1D ArrayLike) pulse delay time list `("Pulse Delay", "us")`.
-- `fringe_freqs=None` (1D ArrayLike) fringe frequency list `("Fringe Frequency", "MHz")`.
-- `cycle=0` (int) extra cycle in the CPMG method. Each extra cycle introduces 1 extra pi pulse, implementing the CPMG pulse sequence. `cycle=0` gives 1 pi pulse.
+    - remove `(Population, "")` by `e.run(population=False)`
 
 ### - T2Echo.run
 
 ```python
-e.run(silent=False)
+e.run(silent=False, population=True)
 ```
 
 run the experiment.
@@ -448,3 +528,8 @@ run the experiment.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
+- `population=True` (bool) whether to measure the qubit population.
+
+**Return**:
+
+- `e` the experiment object itself.

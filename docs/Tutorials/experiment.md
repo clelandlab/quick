@@ -43,9 +43,11 @@ Find the readout resonator. Do a broad scan first.
 quick.experiment.ResonatorSpectroscopy(
 	var=v, data_path=DATA_PATH,
 	title="broad scan",
-	r_freqs=np.arange(4000, 7000, 1)
+	r_freq=np.arange(4000, 7000, 1)
 ).run()
 ```
+
+> For most `quick.experiment`, you can pass in arbitrary sweep for variables. The sweeps will be in the order of the arguments.
 
 Update `v["r_freq"]` and do a power spectroscopy.
 
@@ -54,8 +56,8 @@ v["r_freq"] = 6000
 quick.experiment.ResonatorSpectroscopy(
 	var=v, data_path=DATA_PATH,
 	title=f"PowerSpectroscopy {int(v['r_freq'])}",
-	r_freqs=np.arange(v["r_freq"] - 2, v["r_freq"] + 2, 0.05),
-	r_powers=np.arange(-65, -15, 1)
+	r_power=np.arange(-65, -15, 1), # first sweeping variable
+	r_freq=np.arange(v["r_freq"] - 2, v["r_freq"] + 2, 0.05) # second sweeping variable
 ).run()
 ```
 
@@ -70,7 +72,7 @@ v["q_gain"] = 10000
 quick.experiment.QubitSpectroscopy(
 	var=v, data_path=DATA_PATH,
 	title=f"{int(v['r_freq'])}",
-	q_freqs=np.arange(3000, 4000, 1)
+	q_freq=np.arange(3000, 4000, 1)
 ).run()
 ```
 
@@ -84,11 +86,11 @@ v["r_relax"] = 500  # long relax time for qubit relax
 quick.experiment.Rabi(
 	var=v, data_path=DATA_PATH,
 	title=f"length {int(v['r_freq'])}",
-	q_lengths=np.arange(0.01, 0.4, 0.01)
+	q_length=np.arange(0.01, 0.4, 0.01)
 ).run()
 ```
 
-You can also do amplitude rabi, frequency rabi, and even adding more pi pulse cycles. See API References for details.
+You can also sweep `q_gain`(amplitude Rabi), `q_freq`(frequency Rabi), and even `cycle`(adding extra pi pulse cycles). See API References for details.
 
 ## IQ Scatter
 
@@ -112,10 +114,9 @@ Measure, fit and plot T1 with your pi pulse and IQ center, update `v["q_T1"]`
 data = quick.experiment.T1(
 	var=v, data_path=DATA_PATH,
 	title=f"{int(v['r_freq'])}",
-	times=np.arange(0, 200, 5)
+	time=np.arange(0, 200, 5)
 ).run().data.T
 popt, _, _, fig = quick.fitT1(data[0], data[1])
-v["q_T1"] = float(popt[1])
 fig.show()
 ```
 
@@ -130,7 +131,7 @@ v["fringe_freq"] = 0.1
 data = quick.experiment.T2Echo(
 	var=v, data_path=DATA_PATH,
 	title=f"{int(v['r_freq'])}",
-	times=np.arange(0, 200, 1),
+	time=np.arange(0, 200, 1),
 	cycle=3
 ).run().data.T
 popt, _, _, fig = quick.fitT2(data[0], data[1], omega=2*np.pi*v["fringe_freq"])
@@ -140,6 +141,8 @@ fig.show()
 ## Customization
 
 To customize an experiment, there are several layers you can play with.
+
+- Any variable can be sweeped by simply passing it as keyword argument into the experiment constructor.
 
 - If you just want to slightly modify an existing experiment, use keyword argument to overwrite the [default programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). For example, if you want a DRAG pi pulse instead of a gaussian pi pulse in Rabi and change the total repetition times to 3000, you can do:
 

@@ -116,8 +116,8 @@ class Rabi(BaseExperiment):
         self.var = { "cycle": 0 } # add one var
         self.var_label = { "cycle": ("Extra Cycles", "") }
         super().__init__(**kwargs)
-    def run(self, population=True, **kwargs):
-        return super().run(population=population, **kwargs)
+    def run(self, silent=False, population=True):
+        return super().run(silent=silent, population=population)
 
 class IQScatter(BaseExperiment):
     def run(self, silent=False):
@@ -186,24 +186,28 @@ class T1(BaseExperiment):
         self.var = { "time": 0 } # add one var
         self.var_label = { "time": ("Delay Time", "us") }
         super().__init__(**kwargs)
-    def run(self, population=True, **kwargs):
-        return super().run(population=population, **kwargs)
+    def run(self, silent=False, population=True):
+        return super().run(silent=silent, population=population)
 
 class T2Ramsey(BaseExperiment):
     def __init__(self, **kwargs):
-        self.var = { "time": 0 } # add one var
-        self.var_label = { "time": ("Delay Time", "us") }
+        self.var = { "time": 0, "fringe_freq": 0 } # add var
+        self.var_label = {
+            "time": ("Delay Time", "us"),
+            "fringe_freq": ("Fringe Frequency", "MHz")
+        }
         super().__init__(**kwargs)
-    def run(self, population=True, **kwargs):
-        return super().run(population=population, **kwargs)
+    def run(self, silent=False, population=True):
+        return super().run(silent=silent, population=population)
 
 class T2Echo(BaseExperiment):
     def __init__(self, **kwargs):
-        self.var = { "time": 0, "cycle": 0 } # add var
+        self.var = { "time": 0, "cycle": 0 "fringe_freq": 0 } # add var
         self.var_label = {
             "time": ("Delay Time", "us"),
-            "cycle": ("Extra Cycles", "")
+            "cycle": ("Extra Cycles", ""),
+            "fringe_freq": ("Fringe Frequency", "MHz")
         }
         super().__init__(**kwargs)
-    def run(self, population=True, **kwargs):
-        return super().run(population=population, **kwargs)
+    def run(self, silent=False, population=True):
+        return super().run(silent=silent, population=population)

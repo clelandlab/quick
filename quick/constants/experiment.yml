@@ -15,7 +15,6 @@ var:
     q_delta: -180
     q_gain: 30000
     q_gain_2: 15000
-    fringe_freq: 1
     active_reset: 0
 
 var_label:
@@ -35,7 +34,6 @@ var_label:
     q_delta: ["Qubit Anharmonicity", "MHz"]
     q_gain: ["Qubit Pulse Gain", "a.u."]
     q_gain_2: ["Qubit Half Pulse Gain", "a.u."]
-    fringe_freq: ["Fringe Frequency", "MHz"]
     active_reset: ["Active Reset Wait Time", "us"]
 
 # Programs below are exported as strings for variable insertion
