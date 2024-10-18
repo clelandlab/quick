@@ -172,7 +172,7 @@ class Saver:
             if isinstance(value, (list, np.ndarray)):
                 value = np.array2string(np.ndarray(value), max_line_width=2147483647, separator=",", threshold=2147483647)
             if isinstance(value, dict):
-                value = json.dumps(value)
+                value = json.dumps(value, default=str)
             config["Parameter " + str(n_param)] = { "label": key, "data": value }
             n_param += 1
         config["Comments"] = {} # No comments bc nobody uses them

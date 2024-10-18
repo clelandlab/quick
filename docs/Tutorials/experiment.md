@@ -6,7 +6,7 @@ This is a tutorial of `quick.experiment`. For detailed parameters information, s
 
 ## Wiring
 
-`quick.experiment` follows a fixed convention in wire connection. You must connect the sample to specific qick board channels.
+`quick.experiment` use the following channel convention by default. You can change them by changing variables.
 
 |#|Channel|Purpose|
 |---|---|---|
