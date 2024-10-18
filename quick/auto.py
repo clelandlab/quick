@@ -14,7 +14,7 @@ def resonator(var, r=2, soccfg=None, soc=None, data_path=None):
     update value: r_freq, r_power
     return: True for success
     """
-    data = experiment.ResonatorSpectroscopy(data_path=data_path, title=f'(auto.resonator) {int(var["r_freq"])}', r_freqs=np.linspace(var["r_freq"] - r, var["r_freq"] + r, 100), r_powers=np.arange(-55, -14, 1), soccfg=soccfg, soc=soc, var=var).run().data.T
+    data = experiment.ResonatorSpectroscopy(data_path=data_path, title=f'(auto.resonator) {int(var["r_freq"])}', r_power=np.arange(-55, -14, 1), r_freq=np.linspace(var["r_freq"] - r, var["r_freq"] + r, 100), soccfg=soccfg, soc=soc, var=var).run().data.T
     P, F, A = data[0], data[1], data[2]
     F = F[0:100]
     P = P[0::100]
@@ -44,7 +44,7 @@ def q_freq(var, span=[3000, 5000], soccfg=None, soc=None, data_path=None):
     return: True for success
     """
     def scan(r, nop, w=5, mean=False):
-        data = experiment.QubitSpectroscopy(data_path=data_path, title=f'(auto.q_freq) {int(var["r_freq"])}', q_freqs=np.linspace(var["q_freq"] - r, var["q_freq"] + r, nop), soccfg=soccfg, soc=soc, var=var).run().data.T
+        data = experiment.QubitSpectroscopy(data_path=data_path, title=f'(auto.q_freq) {int(var["r_freq"])}', q_freq=np.linspace(var["q_freq"] - r, var["q_freq"] + r, nop), soccfg=soccfg, soc=soc, var=var).run().data.T
         F, A = data[0], data[1]
         C = np.convolve(A, np.ones(w), 'same') / w if mean else median_filter(A, size=w)
         plt.clf()
@@ -75,7 +75,7 @@ def pi_pulse(var, soccfg=None, soc=None, data_path=None):
     var["q_gain"] = 30000
     var["q_length"] = 0
     def freq_scan(cycle, Δ, nop):
-        data = experiment.Rabi(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.pi_pulse) {int(var['r_freq'])} freq cycle={cycle}", q_freqs=np.linspace(var["q_freq"] - Δ, var["q_freq"] + Δ, nop), **{ "2_reps": cycle * 2 }).run().data.T
+        data = experiment.Rabi(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.pi_pulse) {int(var['r_freq'])} freq cycle={cycle}", q_freq=np.linspace(var["q_freq"] - Δ, var["q_freq"] + Δ, nop), **{ "2_reps": cycle * 2 }).run().data.T
         F, A = data[0], data[2]
         plt.clf()
         var["q_freq"] = float(helper.symmetryCenter(F, A))
@@ -87,7 +87,7 @@ def pi_pulse(var, soccfg=None, soc=None, data_path=None):
         plt.show()
         print(var["q_freq"], var["q_length"])
     def length_scan(cycle, Δ, nop):
-        data = experiment.Rabi(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.pi_pulse) {int(var['r_freq'])} length cycle={cycle}", q_lengths=np.linspace(max(var["q_length"] - Δ, 0.01), var["q_length"] + Δ, nop), **{ "2_reps": 2 * cycle }).run().data.T
+        data = experiment.Rabi(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.pi_pulse) {int(var['r_freq'])} length cycle={cycle}", q_length=np.linspace(max(var["q_length"] - Δ, 0.01), var["q_length"] + Δ, nop), **{ "2_reps": 2 * cycle }).run().data.T
         L, A = data[0], data[2]
         def m(x, p1, p2, p3):
             return p1 * np.sin(x * p2) ** 2 + p3
@@ -111,7 +111,7 @@ def pi_pulse(var, soccfg=None, soc=None, data_path=None):
 
 def r_freq(var, soccfg=None, soc=None, data_path=None):
     v = dict(var)
-    data = experiment.DispersiveSpectroscopy(soccfg=soccfg, soc=soc, var=v, data_path=data_path, title=f"(auto.r_freq) {int(v['r_freq'])}", r_freqs=np.arange(v["r_freq"] - 1, v["r_freq"] + 1, 0.02)).run().data.T
+    data = experiment.DispersiveSpectroscopy(soccfg=soccfg, soc=soc, var=v, data_path=data_path, title=f"(auto.r_freq) {int(v['r_freq'])}", r_freq=np.arange(v["r_freq"] - 1, v["r_freq"] + 1, 0.02)).run().data.T
     F, A0, P0, A1, P1 = data[0], data[1], data[2], data[5], data[6]
     dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
     v["r_freq"] = float(F[np.argmax(dP)])
@@ -132,7 +132,7 @@ def ramsey(var, soccfg=None, soc=None, data_path=None):
     data = experiment.IQScatter(soccfg=soccfg, soc=soc, var=v).run().data.T
     c0, c1, _, _, _, _ = helper.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
     v["r_phase"], v["r_threshold"] = helper.iq_rotation(c0, c1)
-    data = experiment.T2Ramsey(soccfg=soccfg, soc=soc, var=v, data_path=data_path, title=f"(auto.ramsey) {int(v['r_freq'])}", times=np.arange(0, 1, 0.01)).run().data.T
+    data = experiment.T2Ramsey(soccfg=soccfg, soc=soc, var=v, data_path=data_path, title=f"(auto.ramsey) {int(v['r_freq'])}", time=np.arange(0, 1, 0.01)).run().data.T
     L, A = data[0], data[1]
     def m(x, p1, p2, p3):
         return p1 * np.cos(p2 * x) + p3
