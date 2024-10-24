@@ -3,37 +3,62 @@ import quick.helper as helper
 import numpy as np
 from scipy.optimize import minimize, curve_fit
 from scipy.ndimage import convolve1d, median_filter
+from scipy.signal import find_peaks
 from tqdm.notebook import tqdm
 from IPython.display import clear_output
 import matplotlib.pyplot as plt
 
-def resonator(var, r=2, soccfg=None, soc=None, data_path=None):
-    """
-    find resonator frequency and power
-    provide center: r_freq
-    update value: r_freq, r_power
-    return: True for success
-    """
-    data = experiment.ResonatorSpectroscopy(data_path=data_path, title=f'(auto.resonator) {int(var["r_freq"])}', r_power=np.arange(-55, -14, 1), r_freq=np.linspace(var["r_freq"] - r, var["r_freq"] + r, 100), soccfg=soccfg, soc=soc, var=var).run().data.T
-    P, F, A = data[0], data[1], data[2]
-    F = F[0:100]
-    P = P[0::100]
-    A = A.reshape((-1, 100))
-    A = convolve1d(A, [0.333, 0.333, 0.333], axis=1)
-    M = np.min(A, axis=1)
-    stable = M[-1]
-    if abs(np.max(M) - stable) < 4:
-        return False
-    index = -1
-    for i in range(np.argmax(M), 0, -1):
-        if abs(M[i] - stable) < 1:
-            index = i
-            break
-    if index < 0:
-        return False
-    var["r_power"] = float(P[index])
-    var["r_freq"] = float(F[np.argmin(A[index])])
-    return True
+class BaseAuto:
+    var = {}
+    data = [[]]
+    def __init__(self, var):
+        self.var = dict(var)
+    def measure(self):
+        pass
+    def load_data(self, *paths):
+        self.data = helper.load_data(*paths).T
+    def calibrate(self):
+        return False, None
+    def check(self):
+        return True
+
+class Resonator(BaseAuto):
+    def measure(self, silent=False, data_path=None, soccfg=None, soc=None):
+        self.var["r_relax"] = 1
+        self.data = experiment.ResonatorSpectroscopy(data_path=data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-60, -15, 1), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=soccfg, soc=soc, var=self.var).run(silent=silent).data.T
+        return self.data
+    def calibrate(self, silent=False):
+        P, F, A = self.data[0], self.data[1], self.data[2]
+        Fn = len(np.unique(F))
+        F, P = F[0:Fn], P[0::Fn]
+        unit = (F[-1] - F[0]) / Fn
+        A = A.reshape((-1, Fn))
+        avg = np.mean(A, axis=0)
+        avg = convolve1d(avg, np.ones(3) / 3)
+        peaks, _ = find_peaks(-avg, distance=0.3/unit, width=0.05/unit, prominence=0.2)
+        fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+        axes[0].plot(F, avg)
+        axes[0].vlines(peaks * unit + F[0], ymin=np.min(avg), ymax=np.max(avg), color="red")
+        axes[0].set_xlabel("Frequency (MHz)")
+        axes[0].set_ylabel("Amplitude (dB) [log mag]")
+        axes[0].grid()
+        fi = peaks[-1]
+        s = convolve1d(A[:, fi], np.ones(5) / 5)
+        axes[1].plot(P, s, marker="o")
+        axes[1].grid()
+        axes[1].set_xlabel("Power (dBm)")
+        if s[-1] - s[0] < np.std(A):
+            return False, fig
+        threshold = (np.max(s) - np.min(s)) * 0.2 + np.min(s)
+        for i in range(len(s) - 1, 0, -1):
+            if s[i] < threshold:
+                pi = i
+                break
+        fi = np.argmin(A[pi, :])
+        axes[1].vlines(P[pi], ymin=np.min(s), ymax=np.max(s), color="red")
+        self.var["r_freq"] = float(F[fi])
+        self.var["r_power"] = float(P[pi])
+        return self.var, fig
 
 def q_freq(var, span=[3000, 5000], soccfg=None, soc=None, data_path=None):
     """
