@@ -188,19 +188,10 @@ class Saver:
 dbm_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "./constants/dbm.npy")
 dbm_data = np.load(dbm_path)
 
-def gain2dbm(gain, freq, nqz, balun):
-    f = interpolate.interp1d(np.linspace(1e8, 8e9, 80), dbm_data[balun*2 + nqz - 1])
-    try:
-        dbm = np.ones(len(gain)) * f(freq*1e6)
-    except:
-        dbm = f(freq*1e6)
-    dbm += 20 * np.log10(gain/30000)
-    return dbm
-
 def dbm2gain(dbm, freq, nqz, balun):
     f = interpolate.interp1d(np.linspace(1e8, 8e9, 80), dbm_data[balun*2 + nqz - 1])
     dbm3e5 = f(freq*1e6)
-    return int(10**((dbm - dbm3e5)/20) * 30000)
+    return 10**((dbm - dbm3e5)/20)
 
 def evalStr(s, var):
     return eval(f"f'''{s}'''", None, var)
@@ -243,7 +234,7 @@ def iq2prob(Ss, c0, c1):
 
 # rotation angle and real threshold after rotation.
 def iq_rotation(c0, c1):
-    return float(np.angle(c1 - c0, deg=True)), float(np.real((c1 + c0) / 2 * np.exp(-1j *  np.angle(c1 - c0))))
+    return float(-np.angle(c1 - c0, deg=True)), float(np.real((c1 + c0) / 2 * np.exp(-1j *  np.angle(c1 - c0))))
 
 # return c0, c1, visibility, Fg, Fe, fig
 def iq_scatter(S0s, S1s, c0=None, c1=None):
