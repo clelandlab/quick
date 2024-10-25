@@ -98,7 +98,8 @@ class Mercator(AveragerProgramV2):
             kwargs = {}
             if self.soccfg["gens"][g]["has_mixer"]:
                 kwargs["mixer_freq"] = o["freq"]
-            self.declare_gen(ch=g, nqz=o["nqz"], ro_ch=o["r"], **kwargs)
+                kwargs["ro_ch"] = o["r"]
+            self.declare_gen(ch=g, nqz=o["nqz"], **kwargs)
         for r, o in c["r"].items(): # Declare Readout Channels
             self.declare_readout(ch=r, length=o["length"])
             self.add_readoutconfig(ch=r, name=f"r{r}", freq=o['freq'], gen_ch=o["g"], phase=o["phase"])
@@ -109,9 +110,9 @@ class Mercator(AveragerProgramV2):
                 kwargs["mode"] = o["mode"]
             else: # non-const pulse
                 kwargs["envelope"] = f"e{p}"
-                maxv = soccfg.get_maxv(o["g"])
-                idata = o["idata"] or maxv * o["idata"]
-                qdata = o["qdata"] or maxv * o["qdata"]
+                maxv = self.soccfg.get_maxv(o["g"])
+                idata = maxv * o["idata"] if o["idata"] is not None else None
+                qdata = maxv * o["qdata"] if o["qdata"] is not None else None
                 self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata)
             if o["style"] in ["flat_top", "const"]:
                 kwargs["length"] = o["length"]
