@@ -8,12 +8,12 @@ def generate_waveform(o, soccfg):
     f_fabric = soccfg["gens"][o["g"]]["f_fabric"]
     samps_per_clk = soccfg["gens"][o["g"]]["samps_per_clk"]
     maxv = soccfg.get_maxv(o["g"])
-    l = int(o["length"] * samps_per_clk * f_fabric / 2) * 2 # force even length
+    l = int(o["length"] * f_fabric) * samps_per_clk
     σ = o["sigma"] * samps_per_clk * f_fabric # keep float!
     if o["style"] == "const":
         o["idata"] = None
     if o["style"] == "flat_top":
-        l = σ * 5
+        l = int(σ * 5 / samps_per_clk / 2) * 2 * samps_per_clk
     if o["style"] in ["gaussian", "flat_top", "DRAG"]:
         x = np.arange(0, l)
         μ = l/2 - 0.5
@@ -177,6 +177,7 @@ class Mercator(AveragerProgramV2):
             o = c["p"][p]
             if first:
                 data[g].append([start, 0])
+                ax.annotate(f"p{p}", (start, o["gain"] + 0.05))
             if o["idata"] is not None:
                 l = o["length"] if o["style"] == "flat_top" else 0
                 end = start + l + len(o["idata"]) * us
@@ -223,7 +224,7 @@ class Mercator(AveragerProgramV2):
                 for r in (o["rs"] or c["r"]):
                     end = start + c["r"][r]["length"]
                     pulse_until = max(end, pulse_until)
-                    ax.add_patch(patches.Rectangle((start, -1), end - start, 2, fill=True, color=('r' if r == 0 else 'b'), alpha=0.1, label=f"r{r}"))
+                    ax.add_patch(patches.Rectangle((start, -1.05), end - start, 2.25, fill=True, color=('r' if r == 0 else 'b'), alpha=0.1, label=f"r{r}"))
         final = max(pulse_until, delay)
         for g in data:
             if periodic.get(g):
@@ -239,6 +240,6 @@ class Mercator(AveragerProgramV2):
         ax.set_title("Mercator Light")
         ax.set_xlabel("Time (μs)")
         ax.set_ylabel("Gain")
-        ax.set_ylim([-1.1, 1.1])
+        ax.set_ylim([-1.05, 1.2])
         ax.grid()
         return fig
