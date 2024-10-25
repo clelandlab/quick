@@ -4,15 +4,24 @@ This is a tutorial of `quick.experiment`. For detailed parameters information, s
 
 > Note in the front: `quick.experiment` use a variable dictionary to specify useful parameters for readout/qubit. For customization, see the last section of this document.
 
-## Wiring
+## Wiring and Pulse
 
-`quick.experiment` use the following channel convention by default. You can change them by changing variables.
+`quick.experiment` uses the following channel convention by default. You can change them by changing variables.
 
 |#|Channel|Purpose|
 |---|---|---|
 |`r0`|ADC 0|Readout acquisition|
 |`g0`|DAC 0|Readout pulse|
 |`g2`|DAC 2|Qubit pulse|
+
+`quick.experiment` reserves the pulse index in range `0-5`. It uses the following pulse index by default. You can customize the pulse by passing in key-word arguments into experiment constructors.
+
+|#|Purpose|
+|---|---|
+|`p0`|Readout pulse|
+|`p1`|Qubit pi pulse|
+|`p2`|Qubit half pi pulse|
+|`p2`|Qubit half pi pulse with phase shift|
 
 ## Preparation
 
@@ -68,7 +77,7 @@ Find the sweet spot before the non-linear region and update `v["r_freq"]` and `v
 Play with `v["q_gain"]` and update `v["q_freq"]`.
 
 ```python
-v["q_gain"] = 10000
+v["q_gain"] = 0.5
 quick.experiment.QubitSpectroscopy(
 	var=v, data_path=DATA_PATH,
 	title=f"{int(v['r_freq'])}",
@@ -81,7 +90,7 @@ quick.experiment.QubitSpectroscopy(
 Here is a length Rabi. Find the pi pulse and update `v["q_length"]`.
 
 ```python
-v["q_gain"] = 30000
+v["q_gain"] = 1
 v["r_relax"] = 500  # long relax time for qubit relax
 quick.experiment.Rabi(
 	var=v, data_path=DATA_PATH,
@@ -145,10 +154,10 @@ To customize an experiment, there are several layers you can play with.
 
 - Any variable can be sweeped by simply passing it as keyword argument into the experiment constructor.
 
-- If you just want to slightly modify an existing experiment, use keyword argument to overwrite the [default programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). For example, if you want a DRAG pi pulse instead of a gaussian pi pulse in Rabi and change the total repetition times to 3000, you can do:
+- If you just want to slightly modify an existing experiment, use keyword argument to overwrite the [default programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). For example, if you want a DRAG pi pulse instead of a gaussian pi pulse (`p1`) in Rabi and change the total repetition times to 3000, you can do:
 
 ```python
-quick.experiment.Rabi(var=v, data_path=DATA_PATH, g2_style="DRAG", g2_delta=-180, rep=3000).run()
+quick.experiment.Rabi(var=v, data_path=DATA_PATH, p1_style="DRAG", p1_delta=-180, rep=3000).run()
 ```
 
 - If you want to write your own pulse sequence or scan function, you can inherit or use the `quick.BaseExperiment`. You can put a Mercator protocol into `quick.experiment.configs`. This requires some advanced understanding of Mercator and Experiment layers. See API References for details.

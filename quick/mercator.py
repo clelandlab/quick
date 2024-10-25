@@ -7,7 +7,6 @@ import matplotlib.patches as patches
 def generate_waveform(o, soccfg):
     f_fabric = soccfg["gens"][o["g"]]["f_fabric"]
     samps_per_clk = soccfg["gens"][o["g"]]["samps_per_clk"]
-    maxv = soccfg.get_maxv(o["g"])
     l = int(o["length"] * f_fabric) * samps_per_clk
     σ = o["sigma"] * samps_per_clk * f_fabric # keep float!
     if o["style"] == "const":
@@ -17,7 +16,7 @@ def generate_waveform(o, soccfg):
     if o["style"] in ["gaussian", "flat_top", "DRAG"]:
         x = np.arange(0, l)
         μ = l/2 - 0.5
-        o["idata"] = maxv * np.exp(-(x - μ) ** 2 / σ ** 2)
+        o["idata"] = np.exp(-(x - μ) ** 2 / σ ** 2)
     if o["style"] == "DRAG":
         δ = -o["delta"] / (samps_per_clk * f_fabric)
         o["qdata"] = 0.5 * (x - μ) / (2 * σ ** 2) * o["idata"] / δ
@@ -110,7 +109,10 @@ class Mercator(AveragerProgramV2):
                 kwargs["mode"] = o["mode"]
             else: # non-const pulse
                 kwargs["envelope"] = f"e{p}"
-                self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=o["idata"], qdata=o["qdata"])
+                maxv = soccfg.get_maxv(o["g"])
+                idata = o["idata"] or maxv * o["idata"]
+                qdata = o["qdata"] or maxv * o["qdata"]
+                self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata)
             if o["style"] in ["flat_top", "const"]:
                 kwargs["length"] = o["length"]
             else:
@@ -173,7 +175,6 @@ class Mercator(AveragerProgramV2):
         periodic = {}
         def add_pulse(p, g, start, first=True):
             us = self.cycles2us(1, gen_ch=g) / self.soccfg["gens"][g]["samps_per_clk"]
-            maxv = self.soccfg.get_maxv(g)
             o = c["p"][p]
             if first:
                 data[g].append([start, 0])
@@ -182,8 +183,8 @@ class Mercator(AveragerProgramV2):
                 l = o["length"] if o["style"] == "flat_top" else 0
                 end = start + l + len(o["idata"]) * us
                 h = len(o["idata"]) // 2
-                data[g].extend(list(zip(np.arange(h)*us + start, o["gain"] * np.array(o["idata"])[:h] / maxv)))
-                data[g].extend(list(zip(np.arange(h)*us + start + l + h*us, o["gain"] * np.array(o["idata"])[h:] / maxv)))
+                data[g].extend(list(zip(np.arange(h)*us + start, o["gain"] * np.array(o["idata"])[:h])))
+                data[g].extend(list(zip(np.arange(h)*us + start + l + h*us, o["gain"] * np.array(o["idata"])[h:])))
             else:
                 end = start + o["length"]
                 data[g].extend([[start, o["gain"]], [end, o["gain"]]])

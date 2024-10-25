@@ -4,11 +4,11 @@ Mercator protocol is a syntax to specify a pulse sequence (QICK program). It is 
 
 Mercator protocol includes a lot of default values and syntax sugar to make it simultaneously flexible and easy to use. In this document, **default values will be used. Properties without default value will be marked as required.**
 
-Mercator protocol is generally consisted of 5 sections:
+Mercator protocol is generally consisted of 4 sections:
 
 - Meta information
-- Generator channel setup
-- Readout channel setup
+- Pulse setup
+- Readout setup
 - Execution steps
 
 For example, the following program is for QubitSpectroscopy (TwoTone) with very short relax time:
@@ -16,29 +16,31 @@ For example, the following program is for QubitSpectroscopy (TwoTone) with very 
 ```yaml
 # section 1: Meta Information
 hard_avg: 1000
-# section 2: Generator Channel Setup
-g0_freq: 5000
-g0_length: 3
-g0_power: -30
-g0_balun: 3
-g2_freq: 4000
-g2_style: flat_top
-g2_sigma: 0.05
-g2_length: 1
-g2_gain: 10000
-# section 3: Readout Channel Setup
-r0_g: 0
+# section 2: Pulse Setup
+p0_freq: 5000
+p0_length: 3
+p0_power: -30
+p0_balun: 3
+p1_freq: 4000
+p1_style: flat_top
+p1_sigma: 0.05
+p1_length: 1
+p1_gain: 0.5
+# section 3: Readout Setup
+r0_p: 0
 r0_length: 2
 # section 4: Execution Steps
 0_type: pulse
-0_ch: 2
-1_type: sync_all
+0_p: 1
+0_g: 2
+1_type: delay_auto
 2_type: pulse
-2_ch: 0
+2_p: 0
+2_g: 0
 3_type: trigger
-3_time: 0.5
-4_type: sync_all
-4_time: 2
+3_t: 0.5
+4_type: delay_auto
+4_t: 2
 ```
 
 This program gives the following pulse sequence, plotted by `quick.Mercator.light`, showing only the I data waveform and the acquisition window (pink). For details about execution of Mercator protocol, see API References.
@@ -58,30 +60,30 @@ rep: 0             # repetition without average (return all data)
                    # by dummy sweep
 ```
 
-## Generator Channel Setup
+## Pulse Setup
 
-In this section, you can prepare your generator (DAC) channels. All properties in this section have prefix `gx_`, where `x` represents the generator channel number. This document use `g0_` as an example.
+In this section, you can prepare your pulses. All properties in this section have prefix `px_`, where `x` represents the pulse index. This document use `p0_` as an example.
 
 ```yaml
-g0_freq: 5000      # (REQUIRED) [MHz] frequency
-g0_gain: 0         # [-32766, 32766] gain
-g0_nqz: 2          # [1, 2]nyquist zone
-g0_balun: 2        # [0, 3] balun
-g0_mode: oneshot   # [oneshot|periodic]
-g0_style: const    # [const|gaussian|DRAG|flat_top|arb] pulse style
-g0_phase: 0        # [deg] phase
-g0_length: 2       # [us] length
-g0_delta: -200     # [MHz] anharmonicity used in DRAG pulse
-g0_idata: []       # [-32766, 32766] used in arb pulse, sampling 16x clock ticks
-g0_qdata: []       # [-32766, 32766] used in arb pulse, sampling 16x clock ticks
+p0_freq: 5000      # (REQUIRED) [MHz] frequency
+p0_gain: 0         # [-1, 1] gain
+p0_nqz: 2          # [1, 2]nyquist zone
+p0_balun: 2        # [0, 3] balun
+p0_mode: oneshot   # [oneshot|periodic]
+p0_style: const    # [const|gaussian|DRAG|flat_top|arb] pulse style
+p0_phase: 0        # [deg] phase
+p0_length: 2       # [us] length
+p0_delta: -200     # [MHz] anharmonicity used in DRAG pulse
+p0_idata: []       # [-1, 1] used in arb pulse, in DAC sample rates
+p0_qdata: []       # [-1, 1] used in arb pulse, in DAC sample rates
 ```
 
 **Syntax Sugar**: (optional)
 
 ```yaml
-g0_power: -40      # [dBm] power, will overwrite g0_gain
-g0_sigma: 0.05     # [us] gaussian std in flat_top/gaussian/DRAG pulse.
-                   # Its default value is 1/5 of g0_length
+p0_power: -40      # [dBm] power, will overwrite p0_gain
+p0_sigma: 0.05     # [us] gaussian std in flat_top/gaussian/DRAG pulse.
+                   # Its default value is 1/5 of p0_length
 ```
 
 ## Readout Channel Setup
@@ -91,12 +93,13 @@ In this section, you can prepare your readout (ADC) channels. All properties in 
 ```yaml
 r0_freq: 0         # [MHz] readout frequency
 r0_length: 2       # [us] readout length
+r0_phase: 0        # [deg] readout phase
 ```
 
-**Syntax Sugar**: (recommended)
+**Syntax Sugar**: (important)
 
 ```yaml
-r0_g: 0            # match one generator channel for frequency down-conversion
+r0_p: 0            # match one pulse for frequency down-conversion
                    # will overwrite r0_freq
 ```
 
@@ -107,35 +110,22 @@ In this section, you can describe a series of steps to be executed during the ru
 Each step will be in the following syntax: 
 
 ```yaml
-0_type: pulse      # (REQUIRED) [pulse|trigger|wait_all|sync|sync_all|set|goto]
-0_ch: 0            # (required for pulse, set) which generator channel pulse
-0_time: 0          # [us] time offset from last sync
+0_type: pulse      # (REQUIRED) [pulse|trigger|wait|wait_auto|delay|delay_auto|goto]
+0_p: 0             # (for pulse) pulse index
+0_g: 0             # (for pulse) generator channel
+0_t: 0             # [us] time offset from last delay
 0_rep: 1           # repetition times of this step
 ```
 
 The step `type` is required. It takes one of the following values:
 
-- `pulse`: release a pulse from channel `0_ch`. Conditional pulses see below.
+- `pulse`: release a pulse `0_p` on generator channel `0_g`. Conditional pulses see below.
 - `trigger`: trigger the readout. `0_ch` should be an array, defaulted to all readout channels.
-- `wait_all`: wait for all pulses and readouts
-- `sync_all`: sync channels after the end of all pulses and readouts (+`0_time`)
-- `sync`: offset the channel sync by `0_time`
-- `set`: (discussed below)
+- `wait`: wait until a specific time.
+- `wait_auto`: wait for all channel plus a specific time
+- `delay`: delay the following step
+- `delay_auto`: delay the following step after all channels
 - `goto`: (discussed below)
-
-### set
-
-`set` step can update register values on the fly. It takes the following syntax:
-
-```yaml
-0_type: set
-0_ch: 0            # (REQUIRED) generator channel
-0_key: phase       # (REQUIRED) name of the register
-0_value: 0         # (REQUIRED) value to be set
-0_operator: +      # [+|-|*] if provided, the register will be set incrementally.
-0_time: 0          # [us] time offset from last sync
-0_rep: 1           # repetition times of this step
-```
 
 ### goto
 
@@ -155,15 +145,16 @@ Mercator protocol supports conditional pulses, especially for qubit active reset
 
 ```yaml
 3_type: trigger    # trigger acquisition
-4_type: wait_all
+4_type: wait_auto
 4_time: 2          # MUST wait for data
 5_type: pulse      # conditional pulse
-5_ch: 2
+5_p: 1             # release pulse p1
+5_g: 2             # on generator channel g2
 5_threshold: 0     # threshold condition on I data
-5_r: 0             # default to be 0
+5_r: 0             # which readout channel, default to be 0
 ```
 
-In this case, step 5 specifies that the pulse on `g2` will be released only if the I data acquired in step 3 is above the value in `5_threshold`. The corresponding readout channel is provided to obtain acquisition length.
+In this case, step 5 specifies that the pulse `p1` will be released on `g2` only if the I data acquired in step 3 is above the value in `5_threshold`. The corresponding readout channel is provided to obtain acquisition length.
 
 ### Syntax Sugar
 
@@ -171,26 +162,13 @@ The execution steps can also be writen as an array in Mercator protocol, for exa
 
 ```yaml
 steps:
-  - type: pulse
-    ch: 0
-  - type: trigger
-    time: 0.5
-  - type: wait_all
-  - type: sync_all
-    time: 1
+- type: pulse
+  ch: 0
+- type: trigger
+  time: 0.5
+- type: wait_auto
+- type: delay_auto
+  time: 1
 ```
 
 The Mercator *class* accepts any **combination** of the array format and the flat key-value format as previously discussed. But it will first **flatten** the `steps` array into the flat key-value format. **The flat key-value format has higher priority during this flattening process.**
-
-## Other Features
-
-**Sweeping** on board is supported! It is supported for generator on `gain`, `phase`, and `freq` (`freq` only supports **non-readout** pulse), and on execution type `sync` (for time sweeping). You can pass in sweep values like `[start, end, number of points]`. For example:
-
-```yaml
-g0_gain: [10000, 20000, 11]
-
-4_type: sync
-4_time: [0, 2, 51]
-```
-
-For each sweep, the return data will have an extra axis. The axis order is always in `(time, gain, phase, freq, time series)`. Try to avoid sweeping multiple dimensions on board!

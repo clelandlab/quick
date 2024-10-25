@@ -6,7 +6,7 @@ A Python interface to run Mercator protocol. See Tutorials for details of Mercat
 
 ## 🔵Mercator
 
-> Base *class*: `qick.NDAveragerProgram`
+> Base *class*: `qick.asm_v2。AveragerProgramV2`
 
 ```python
 m = quick.Mercator(soccfg, cfg)
@@ -32,7 +32,7 @@ Internal control object generated from the Mercator protocol. Mostly for interna
 ### 🔵Mercator.acquire
 
 ```python
-I, Q = m.acquire(soc)
+I, Q = m.acquire(soc, progress=False)
 ```
 
 Acquire data. Data in each acquisition window are averaged into one data point.
@@ -40,10 +40,11 @@ Acquire data. Data in each acquisition window are averaged into one data point.
 **Parameters**:
 
 - `soc` QICK board socket object.
+- `progress=False` whether to show progress bar.
 
 **Return**:
 
-- `I` (np.ndarray) I data, shape depends on `rep` and sweeping.
+- `I` (np.ndarray) I data, shape depends on `rep` and triggering.
 - `Q` (np.ndarray) Q data, same shape as `I`.
 
 ### 🔵Mercator.acquire_decimated
