@@ -1,12 +1,16 @@
 # QuICK
 
-`quick` is a useful wrap of QICK.
+QuICK is a useful wrap of [QICK](https://github.com/openquantumhardware/qick).
 
-<a href="https://clelandlab-quick.readthedocs.io/en/latest/"><img src="https://readthedocs.org/projects/clelandlab-quick/badge/?version=latest&style=for-the-badge"></a>
+<div>
+  <a style="margin: 0.25rem;" href="https://clelandlab-quick.readthedocs.io/en/latest/"><img src="https://img.shields.io/readthedocs/clelandlab-quick?style=for-the-badge&logo=readthedocs&logoColor=white"></a>
+  <a style="margin: 0.25rem;" href="https://pypi.org/project/clelandlab-quick/"><img src="https://img.shields.io/pypi/v/clelandlab-quick?style=for-the-badge&logo=pypi&logoColor=white"></a>
+  <a style="margin: 0.25rem;" href="https://github.com/clelandlab/quick"><img src="https://img.shields.io/github/stars/clelandlab/quick?style=for-the-badge&logo=github"></a>
+</div>
 
 ## Layers
 
-`quick` has several layers of complexity.
+QuICK has several layers of complexity.
 
 - `quick.auto` Automation of Qubit Measurements
 - `quick.experiment` Experiment Routines for Qubit Measurements
