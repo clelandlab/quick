@@ -50,6 +50,10 @@ Load and transpose data using `quick.load_data`.
 
 > Base *class*: `BaseAuto`
 
+```python
+a = quick.auto.Resonator(**kwargs)
+```
+
 Determine the readout power and readout frequency from PowerSpectroscopy.
 
 ### - Resonator.measure
@@ -70,7 +74,7 @@ Run experiment to measure data.
 ### - Resonator.calibrate
 
 ```python
-a.calibrate(silent=False):
+a.calibrate(silent=False)
 ```
 
 Calibrate the experiment variables from data.
@@ -82,7 +86,7 @@ Calibrate the experiment variables from data.
 ### - Resonator.update
 
 ```python
-a.update(v):
+a.update(v)
 ```
 
 Update relavent variables (`r_freq`, `r_power`)
