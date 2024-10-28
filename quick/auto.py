@@ -13,14 +13,8 @@ class BaseAuto:
     data = [[]]
     def __init__(self, var):
         self.var = dict(var)
-    def measure(self):
-        pass
     def load_data(self, *paths):
         self.data = helper.load_data(*paths).T
-    def calibrate(self):
-        return False, None
-    def check(self):
-        return True
 
 class Resonator(BaseAuto):
     def measure(self, silent=False, data_path=None, soccfg=None, soc=None):
@@ -59,6 +53,9 @@ class Resonator(BaseAuto):
         self.var["r_freq"] = float(F[fi])
         self.var["r_power"] = float(P[pi])
         return self.var, fig
+    def update(self, v):
+        v["r_freq"] = self.var["r_freq"]
+        v["r_power"] = self.var["r_power"]
 
 def q_freq(var, span=[3000, 5000], soccfg=None, soc=None, data_path=None):
     """

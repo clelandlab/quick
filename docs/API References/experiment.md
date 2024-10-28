@@ -184,7 +184,7 @@ acquire data for standard S21 measurement. Run the program specified by `self.co
 - `decimated=False` (bool) whether to acquire for time-series output.
 - `population=False` (bool) whether to measure the qubit population.
 
-### - BaseExperiment.run
+### = BaseExperiment.run
 
 ```python
 e = e.run(silent=False, log_mag=False, population=False)

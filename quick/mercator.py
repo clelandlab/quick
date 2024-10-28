@@ -42,7 +42,6 @@ def parse(soccfg, cfg):
             break
         o = { "type": cfg[f"{i}_type"] }
         o["t"] = cfg.get(f"{i}_t", 0)
-        o["rep"] = cfg.get(f"{i}_rep", 1)
         if o["type"] == "pulse":
             o["g"], o["p"], o["r"] = cfg.get(f"{i}_g"), cfg.get(f"{i}_p"), cfg.get(f"{i}_r", 0)
             c["g"][o["g"]] = { "p": o["p"], "r": None }
@@ -54,6 +53,7 @@ def parse(soccfg, cfg):
                 for r in o["rs"]:
                     c["r"][r] = {}
         if o["type"] == "goto":
+            o["rep"] = cfg.get(f"{i}_rep", 0)
             o["i"] = cfg.get(f"{i}_i", i + 1)
         c["exec"].append(o)
     for p in c["p"]: # find all used pulses
@@ -78,15 +78,16 @@ def parse(soccfg, cfg):
     for r in range(10): # find all readout channels
         if f"r{r}_p" in cfg or f"r{r}_freq" in cfg:
             c["r"][r] = o = { "g": None }
-            o["p"] = cfg.get(f"r{r}_p", None)
-            o["freq"] = cfg.get(f"r{r}_freq", 0)
+            o["p"] = cfg.get(f"r{r}_p")
+            o["freq"] = cfg.get(f"r{r}_freq")
             o["phase"] = cfg.get(f"r{r}_phase", 0)
             o["length"] = cfg.get(f"r{r}_length", 2)
             if o["p"] is not None: # match corresponding pulse/channels
                 o["g"] = c["p"][o["p"]]["g"]
-                o["freq"] = c["p"][o["p"]]["freq"]
                 c["g"][o["g"]]["r"] = r
                 c["p"][o["p"]]["r"] = r
+                if o["freq"] is None:
+                    o["freq"] = c["p"][o["p"]]["freq"]
     cfg["rep"] = cfg.get("rep", 0)
     return c
 
@@ -124,16 +125,11 @@ class Mercator(AveragerProgramV2):
         self.delay(0.5)
     
     def _body(self, cfg):
-        reps = [] # get rep for each step
-        for o in self.c["exec"]:
-            reps.append(o["rep"])
+        c = self.c
+        goto_rep = {} # goto rep
         i = 0
-        while i < len(reps):
-            if reps[i] <= 0:
-                i += 1
-                continue
-            reps[i] -= 1
-            o = self.c["exec"][i]
+        while i < len(c["exec"]):
+            o = c["exec"][i]
             if o["type"] == "pulse":
                 if o["threshold"] is not None: # conditional
                     self.read_and_jump(ro_ch=o["r"], component="I", threshold=self.us2cycles(o["threshold"] * self.c["r"][o["r"]]["length"], ro_ch=o["r"]), test="<", label=f"after_{i}")
@@ -146,10 +142,11 @@ class Mercator(AveragerProgramV2):
             if o["type"] == "trigger":
                 self.trigger(ros=(o["rs"] or self.c["r"].keys()), t=o["t"], pins=[0])
             if o["type"] == "goto":
-                for j in range(o["i"], i):
-                    reps[j] += self.c["exec"][j]["rep"]
-                i = o["i"]
-            
+                goto_rep[i] = goto_rep.get(i, o["rep"]) - 1
+                i = o["i"] if goto_rep[i] >= 0 else i + 1
+            else:
+                i = i + 1
+
     def __init__(self, soccfg, cfg):
         self.c = parse(soccfg, cfg)
         super().__init__(soccfg, reps=cfg.get("hard_avg", 1), final_delay=0, cfg=cfg)
@@ -193,16 +190,10 @@ class Mercator(AveragerProgramV2):
                 data[g].append([end, 0])
             periodic[g] = (o["mode"] == "periodic")
             return end
-        reps = [] # get rep for each step
-        for o in self.c["exec"]:
-            reps.append(o["rep"])
+        goto_rep = {}
         i = 0
-        while i < len(reps):
-            if reps[i] <= 0:
-                i += 1
-                continue
-            reps[i] -= 1
-            o = self.c["exec"][i]
+        while i < len(c["exec"]):
+            o = c["exec"][i]
             start = delay + o["t"]
             end = start
             if o["type"] == "pulse":
@@ -214,19 +205,21 @@ class Mercator(AveragerProgramV2):
                 delay = delay + o["t"]
                 delays.append(delay)
             if o["type"] == "wait_auto":
-                end = max(start, pulse_until)
+                for g in range(17):
+                    generator_until[g] = max(generator_until[g], pulse_until + o["t"])
             if o["type"] == "delay_auto":
                 delay = max(pulse_until, delay) + o["t"]
                 delays.append(delay)
-            if o["type"] == "goto":
-                for j in range(o["i"], i):
-                    reps[j] += self.c["exec"][j]["rep"]
-                i = o["i"]
             if o["type"] == "trigger":
                 for r in (o["rs"] or c["r"]):
                     end = start + c["r"][r]["length"]
                     pulse_until = max(end, pulse_until)
                     ax.add_patch(patches.Rectangle((start, -1.05), end - start, 2.25, fill=True, color=('r' if r == 0 else 'b'), alpha=0.1, label=f"r{r}"))
+            if o["type"] == "goto":
+                goto_rep[i] = goto_rep.get(i, o["rep"]) - 1
+                i = o["i"] if goto_rep[i] >= 0 else i + 1
+            else:
+                i = i + 1
         final = max(pulse_until, delay)
         for g in data:
             if periodic.get(g):

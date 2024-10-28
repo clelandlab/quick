@@ -307,6 +307,7 @@ T2Ramsey: |
     i: 9
   - type: wait_auto
     t: {active_reset}
+  - type: delay_auto
   - type: pulse
     p: 1
     g: {q}
@@ -365,6 +366,7 @@ T2Echo: |
     i: 12
   - type: wait_auto
     t: {active_reset}
+  - type: delay_auto
   - type: pulse
     p: 1
     g: {q}

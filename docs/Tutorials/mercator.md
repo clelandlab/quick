@@ -100,7 +100,7 @@ r0_phase: 0        # [deg] readout phase
 
 ```yaml
 r0_p: 0            # match one pulse for frequency down-conversion
-                   # will overwrite r0_freq
+                   # r0_freq is not required then.
 ```
 
 ## Execution Steps
@@ -114,7 +114,6 @@ Each step will be in the following syntax:
 0_p: 0             # (for pulse) pulse index
 0_g: 0             # (for pulse) generator channel
 0_t: 0             # [us] time offset from last delay
-0_rep: 1           # repetition times of this step
 ```
 
 The step `type` is required. It takes one of the following values:
@@ -134,10 +133,10 @@ The step `type` is required. It takes one of the following values:
 ```yaml
 0_type: goto
 0_i: 0             # (REQUIRED) target step number
-0_rep: 1           # repetition times of this step
+0_rep: 0           # repetition times of this goto
 ```
 
-> Note: if `goto` a previous step, everything in between will be executed again, respecting the `rep` of the steps. The `goto` function will NOT create actual loops in the assembly code. Instead, it will expand the loop in Python and generate a program without loops.
+> Note: The `goto` function will NOT create actual jump in the assembly code. Instead, it will expand the jump in Python and generate a program without jumps/loops.
 
 ### Conditional Pulse
 
@@ -163,12 +162,13 @@ The execution steps can also be writen as an array in Mercator protocol, for exa
 ```yaml
 steps:
 - type: pulse
-  ch: 0
+  p: 0
+  g: 0
 - type: trigger
-  time: 0.5
+  t: 0.5
 - type: wait_auto
 - type: delay_auto
-  time: 1
+  t: 1
 ```
 
 The Mercator *class* accepts any **combination** of the array format and the flat key-value format as previously discussed. But it will first **flatten** the `steps` array into the flat key-value format. **The flat key-value format has higher priority during this flattening process.**
