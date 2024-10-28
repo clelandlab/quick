@@ -151,16 +151,17 @@ IQScatter: |
   3_type: trigger
   3_t: {r_offset}
   4_type: {"delay_auto" if active_reset else "goto"}
-  4_i: 7
+  4_i: 8
   5_type: wait_auto
   5_t: {active_reset}
-  6_type: pulse          # reset pulse
-  6_p: 1
-  6_g: {q}
-  6_threshold: {r_threshold}
-  6_r: {rr}
-  7_type: delay_auto
-  7_t: {r_relax}
+  6_type: delay_auto
+  7_type: pulse          # reset pulse
+  7_p: 1
+  7_g: {q}
+  7_threshold: {r_threshold}
+  7_r: {rr}
+  8_type: delay_auto
+  8_t: {r_relax}
 
 ActiveReset: |
   rep: 10000
@@ -255,16 +256,17 @@ T1: |
   3_type: trigger
   3_t: {r_offset}
   4_type: {"delay_auto" if active_reset else "goto"}
-  4_i: 7
+  4_i: 8
   5_type: wait_auto
   5_t: {active_reset}
-  6_type: pulse          # reset pulse
-  6_p: 1
-  6_g: {q}
-  6_threshold: {r_threshold}
-  6_r: {rr}
-  7_type: delay_auto
-  7_t: {r_relax}
+  6_type: delay_auto
+  7_type: pulse          # reset pulse
+  7_p: 1
+  7_g: {q}
+  7_threshold: {r_threshold}
+  7_r: {rr}
+  8_type: delay_auto
+  8_t: {r_relax}
 
 T2Ramsey: |
   rep: 10000
@@ -304,7 +306,7 @@ T2Ramsey: |
   - type: trigger
     t: {r_offset}
   - type: {"delay_auto" if active_reset else "goto"}
-    i: 9
+    i: 10
   - type: wait_auto
     t: {active_reset}
   - type: delay_auto
@@ -363,7 +365,7 @@ T2Echo: |
   - type: trigger
     t: {r_offset}
   - type: {"delay_auto" if active_reset else "goto"}
-    i: 12
+    i: 13
   - type: wait_auto
     t: {active_reset}
   - type: delay_auto
