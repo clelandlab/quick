@@ -4,6 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+listType = (list, np.ndarray)
+
 def generate_waveform(o, soccfg):
     f_fabric = soccfg["gens"][o["g"]]["f_fabric"]
     samps_per_clk = soccfg["gens"][o["g"]]["samps_per_clk"]
@@ -63,11 +65,12 @@ def parse(soccfg, cfg):
         c["g"][o["g"]]["freq"] = o["freq"]
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
         o["style"] = cfg.get(f"p{p}_style", "const")
-        o["phase"] = cfg.get(f"p{p}_phase", 0)
         o["length"] = cfg.get(f"p{p}_length", 2)
         o["sigma"] = cfg.get(f"p{p}_sigma", o["length"] / 5)
         o["delta"] = cfg.get(f"p{p}_delta", -200)
         o["gain"] = cfg.get(f"p{p}_gain", 0)
+        o["mask"] = cfg.get(f"p{p}_mask", list(range(len(o["freq"]))) if isinstance(o["freq"], listType) else None)
+        o["phase"] = cfg.get(f"p{p}_phase", list(np.zeros(len(o["freq"]))) if isinstance(o["freq"], listType) else 0)
         o["idata"] = cfg.get(f"p{p}_idata", None)
         o["qdata"] = cfg.get(f"p{p}_qdata", None)
         if f"p{p}_power" in cfg:
@@ -95,20 +98,33 @@ class Mercator(AveragerProgramV2):
     """General class for preparing and sending a pulse sequence."""
     def _initialize(self, cfg):
         c = self.c
+        mux_gain_factor = { 1: 1, 2: 2, 3: 4, 4: 4, 5: 8, 6: 8, 7: 8, 8: 8 }
         for g, o in c["g"].items(): # Declare Generator Channels
             kwargs = {}
             if self.soccfg["gens"][g]["has_mixer"]:
                 kwargs["mixer_freq"] = o["freq"]
                 kwargs["ro_ch"] = o["r"]
+                if isinstance(o["freq"], listType): # mux
+                    kwargs["mixer_freq"] = np.mean(o["freq"])
+                    kwargs["mux_freqs"] = o["freq"]
+                    kwargs["mux_gains"] = np.array(c["p"][o["p"]]["gain"]) * mux_gain_factor[len(o["freq"])]
+                    kwargs["mux_phases"] = c["p"][o["p"]]["phase"]
             self.declare_gen(ch=g, nqz=o["nqz"], **kwargs)
         for r, o in c["r"].items(): # Declare Readout Channels
-            self.declare_readout(ch=r, length=o["length"])
-            self.add_readoutconfig(ch=r, name=f"r{r}", freq=o['freq'], gen_ch=o["g"], phase=o["phase"])
-            self.send_readoutconfig(ch=r, name=f"r{r}", t=0)
+            if "tproc_ctrl" in self.soccfg["readouts"][r]:
+                self.declare_readout(ch=r, length=o["length"])
+                self.add_readoutconfig(ch=r, name=f"r{r}", freq=o["freq"], gen_ch=o["g"], phase=o["phase"])
+                self.send_readoutconfig(ch=r, name=f"r{r}", t=0)
+            else: # mux readout
+                self.declare_readout(ch=r, length=o["length"], freq=o["freq"], phase=o["phase"], gen_ch=o["g"])
         for p, o in c["p"].items(): # Setup pulses
-            kwargs = { "style": o["style"] }
+            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"] }
             if o["style"] == "const":
                 kwargs["mode"] = o["mode"]
+                if o["mask"] is not None: # mux mask
+                    kwargs["mask"] = o["mask"]
+                    for k in ["freq", "ro_ch", "mode", "phase", "gain"]:
+                        kwargs.pop(k, None)
             else: # non-const pulse
                 kwargs["envelope"] = f"e{p}"
                 maxv = self.soccfg.get_maxv(o["g"])
@@ -119,7 +135,7 @@ class Mercator(AveragerProgramV2):
                 kwargs["length"] = o["length"]
             else:
                 kwargs["style"] = "arb"
-            self.add_pulse(ch=o["g"], name=f"p{p}", ro_ch=o["r"], freq=o["freq"], phase=o["phase"], gain=o["gain"], **kwargs)
+            self.add_pulse(ch=o["g"], name=f"p{p}",  **kwargs)
         if cfg["rep"] > 0:
             self.add_loop("rep", cfg["rep"])
         self.delay(0.5)
@@ -174,18 +190,19 @@ class Mercator(AveragerProgramV2):
         def add_pulse(p, g, start, first=True):
             us = self.cycles2us(1, gen_ch=g) / self.soccfg["gens"][g]["samps_per_clk"]
             o = c["p"][p]
+            gain = o["gain"][0] if isinstance(o["gain"], listType) else o["gain"]
             if first:
                 data[g].append([start, 0])
-                ax.annotate(f"p{p}", (start, o["gain"] + 0.05))
+                ax.annotate(f"p{p}", (start, gain + 0.05))
             if o["idata"] is not None:
                 l = o["length"] if o["style"] == "flat_top" else 0
                 end = start + l + len(o["idata"]) * us
                 h = len(o["idata"]) // 2
-                data[g].extend(list(zip(np.arange(h)*us + start, o["gain"] * np.array(o["idata"])[:h])))
-                data[g].extend(list(zip(np.arange(h)*us + start + l + h*us, o["gain"] * np.array(o["idata"])[h:])))
+                data[g].extend(list(zip(np.arange(h)*us + start, gain * np.array(o["idata"])[:h])))
+                data[g].extend(list(zip(np.arange(h)*us + start + l + h*us, gain * np.array(o["idata"])[h:])))
             else:
                 end = start + o["length"]
-                data[g].extend([[start, o["gain"]], [end, o["gain"]]])
+                data[g].extend([[start, gain], [end, gain]])
             if o["mode"] != "periodic":
                 data[g].append([end, 0])
             periodic[g] = (o["mode"] == "periodic")

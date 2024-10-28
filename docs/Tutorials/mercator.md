@@ -74,6 +74,7 @@ p0_style: const    # [const|gaussian|DRAG|flat_top|arb] pulse style
 p0_phase: 0        # [deg] phase
 p0_length: 2       # [us] length
 p0_delta: -200     # [MHz] anharmonicity used in DRAG pulse
+p0_mask: None      # [list] mask used in multiplexed pulse (mux)
 p0_idata: None     # [-1, 1] used in arb pulse, in DAC sample rates
 p0_qdata: None     # [-1, 1] used in arb pulse, in DAC sample rates
 ```
@@ -84,6 +85,21 @@ p0_qdata: None     # [-1, 1] used in arb pulse, in DAC sample rates
 p0_power: -40      # [dBm] power, will overwrite p0_gain
 p0_sigma: 0.05     # [us] gaussian std in flat_top/gaussian/DRAG pulse.
                    # Its default value is 1/5 of p0_length
+```
+
+**multiplexed Pulse (mux)**:
+
+Passing list to `freq`, `gain`, and `phase`. The list lengths must match each other. Multiplexed pulse is configurated on generator level. Therefore all pulses on the mux generator must share the same mux settings. You can change `length` and `mask` for individual pulse.
+
+The gain value range shrinks with more tones. It takes `[-1, 1]` for 1 tone, `[-0.5, 0.5]` for 2 tones, `[-0.25, 0.25]` for 3 or 4 tones, and `[-0.125, 0.125]` for 5 to 8 tones.
+
+```yaml
+p0_style: const    # only support const
+p0_freq: [5500, 6000, 6500]
+p0_gain: [0.25, 0.25, 0.25]
+p0_phase: [0, 0, 0]
+p0_length: 2
+p0_mask: [0, 1, 2] # defaulted to all
 ```
 
 ## Readout Channel Setup
