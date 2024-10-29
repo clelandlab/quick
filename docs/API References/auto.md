@@ -78,7 +78,7 @@ Determine the readout power and readout frequency from PowerSpectroscopy.
 var, fig = a.calibrate()
 ```
 
-Calibrate the experiment variables from data. Call `self.measure` when data is not available.
+Calibrate the experiment variables from data. Use `quick.experiment` to acquire data when data is not available.
 
 **Return**:
 
