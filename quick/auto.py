@@ -8,20 +8,33 @@ from tqdm.notebook import tqdm
 from IPython.display import clear_output
 import matplotlib.pyplot as plt
 
+relevant_var = {
+    "BaseAuto": [],
+    "Resonator": ["r_freq", "r_power"],
+    "QubitFreq": ["q_freq"],
+    "Ramsey": ["q_freq"]
+}
+
 class BaseAuto:
     var = {}
     data = [[]]
-    def __init__(self, var):
+    def __init__(self, var, silent=False, data_path=None, soccfg=None, soc=None):
         self.var = dict(var)
+        self.silent = silent
+        self.data_path = data_path
+        self.soccfg = soccfg,
+        self.soc = soc
     def load_data(self, *paths):
         self.data = helper.load_data(*paths).T
+    def update(self, v):
+        for k in relevant_var[self.__class__.__name__]:
+            v[k] = self.var[k]
 
 class Resonator(BaseAuto):
-    def measure(self, silent=False, data_path=None, soccfg=None, soc=None):
+    def calibrate(self):
         self.var["r_relax"] = 1
-        self.data = experiment.ResonatorSpectroscopy(data_path=data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-60, -15, 1), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=soccfg, soc=soc, var=self.var).run(silent=silent).data.T
-        return self.data
-    def calibrate(self, silent=False):
+        if not self.data:
+            self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-60, -15, 1), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
         P, F, A = self.data[0], self.data[1], self.data[2]
         Fn = len(np.unique(F))
         F, P = F[0:Fn], P[0::Fn]
@@ -53,9 +66,43 @@ class Resonator(BaseAuto):
         self.var["r_freq"] = float(F[fi])
         self.var["r_power"] = float(P[pi])
         return self.var, fig
-    def update(self, v):
-        v["r_freq"] = self.var["r_freq"]
-        v["r_power"] = self.var["r_power"]
+
+class QubitFreq(BaseAuto):
+    def calibrate(self, q_freq=np.arange(3000, 4000, 1)):
+        self.var["r_relax"] = 1
+        if not self.data:
+            self.data = experiment.QubitSpectroscopy(data_path=self.data_path, title=f'(auto.QubitFreq) {int(self.var["r_freq"])}', q_freq=q_freq, soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
+        # Todo.
+        fig, ax = plt.subplots()
+        return False, fig
+
+class PiPulseLength(BaseAuto):
+    pass
+
+class PiPulseFreq(BaseAuto):
+    pass
+
+class ReadoutFreq(BaseAuto):
+    pass
+
+class Ramsey(BaseAuto):
+    def calibrate(self, fringe_freq=10, time=np.arange(0, 1, 0.01)):
+        self.var["fringe_freq"] = fringe_freq
+        if not self.data:
+            self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=time).run(silent=self.silent).data.T
+        L, A = self.data[0], self.data[1]
+        def m(x, p1, p2, p3):
+            return p1 * np.cos(p2 * x) + p3
+        popt, pcov = curve_fit(m, L, A, p0=[(np.max(A) - np.min(A)) / 2, helper.estimateOmega(L, A), 0.5])
+        fig, ax = plt.subplots()
+        ax.scatter(L, A, s=10, color="black")
+        ax.plot(np.arange(L[0], L[-1], 0.001), m(np.arange(L[0], L[-1], 0.001), *popt), color="red")
+        ax.set_title(f"Ramsey (fringe_freq = {self.var['fringe_freq']})")
+        self.var["q_freq"] = float(self.var["q_freq"] + popt[1] / 2 / np.pi - self.var["fringe_freq"])
+        return self.var, fig
+
+class Readout(BaseAuto):
+    pass
 
 def q_freq(var, span=[3000, 5000], soccfg=None, soc=None, data_path=None):
     """
@@ -146,26 +193,6 @@ def r_freq(var, soccfg=None, soc=None, data_path=None):
     plt.ylabel("Amplitude [log mag] (dB)")
     plt.title("DispersiveSpectroscopy")
     plt.show()
-    return v
-
-def ramsey(var, soccfg=None, soc=None, data_path=None):
-    v = dict(var)
-    v["r_phase"] = 0
-    data = experiment.IQScatter(soccfg=soccfg, soc=soc, var=v).run().data.T
-    c0, c1, _, _, _, _ = helper.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
-    v["r_phase"], v["r_threshold"] = helper.iq_rotation(c0, c1)
-    data = experiment.T2Ramsey(soccfg=soccfg, soc=soc, var=v, data_path=data_path, title=f"(auto.ramsey) {int(v['r_freq'])}", time=np.arange(0, 1, 0.01)).run().data.T
-    L, A = data[0], data[1]
-    def m(x, p1, p2, p3):
-        return p1 * np.cos(p2 * x) + p3
-    popt, pcov = curve_fit(m, L, A, p0=[(np.max(A) - np.min(A)) / 2, helper.estimateOmega(L, A), 0.5])
-    plt.clf()
-    plt.scatter(L, A, s=10, color="black")
-    plt.plot(np.arange(0, 1, 0.001), m(np.arange(0, 1, 0.001), *popt), color="red")
-    plt.title("Ramsey (fringe_freq = 10)")
-    plt.show()
-    v["q_freq"] = float(v["q_freq"] + popt[1] / 2 / np.pi - 10)
-    print(v["q_freq"], popt[1] / 2 / np.pi - 10)
     return v
 
 def readout(var, soccfg=None, soc=None):

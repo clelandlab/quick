@@ -7,7 +7,7 @@ Automatic scripts for qubit measurements. **Under active development.**
 ## 🔵BaseAuto
 
 ```python
-a = quick.auto.BaseAuto(var)
+a = quick.auto.BaseAuto(var, silent=False, data_path=None, soccfg=None, soc=None)
 ```
 
 General base *class* for other auto scripts.
@@ -15,6 +15,10 @@ General base *class* for other auto scripts.
 **Parameters**:
 
 - `var` experimental variables. It will NOT be modified.
+- `silent=False` (bool) whether to avoid any printing.
+- `data_path=None` (str) directory to save data. If not provided, data will not be saved to file.
+- `soccfg=None` QICK board socket config object. If not provided, the last connected one will be used by calling `quick.getSoc()`.
+- `soc=None` QICK board socket object.
 
 ### - BaseAuto.var
 
@@ -46,6 +50,18 @@ Load and transpose data using `quick.load_data`.
 
 - `*paths` (str) arbitrary number of data paths can be passed in. Multiple data will be combined.
 
+### - BaseAuto.update
+
+```python
+a.update(v)
+```
+
+Update relevant variables in external dictionary.
+
+**Parameters**:
+
+- `v` (dict) experiment variable to be updated. **Will be modified!**
+
 ## 🟢Resonator
 
 > Base *class*: `BaseAuto`
@@ -56,42 +72,16 @@ a = quick.auto.Resonator(**kwargs)
 
 Determine the readout power and readout frequency from PowerSpectroscopy.
 
-### - Resonator.measure
-
-```python
-a.measure(silent=False, data_path=None, soccfg=None, soc=None)
-```
-
-Run experiment to measure data.
-
-**Parameters**:
-
-- `silent=False` (bool) whether to avoid any printing.
-- `data_path=None` (str) directory to save data. If not provided, data will not be saved to file.
-- `soccfg=None` QICK board socket config object. If not provided, the last connected one will be used by calling `quick.getSoc()`.
-- `soc=None` QICK board socket object.
-
 ### - Resonator.calibrate
 
 ```python
-a.calibrate(silent=False)
+var, fig = a.calibrate()
 ```
 
-Calibrate the experiment variables from data.
+Calibrate the experiment variables from data. Call `self.measure` when data is not available.
 
-**Parameters**:
+**Return**:
 
-- `silent=False` (bool) whether to avoid any printing.
-
-### - Resonator.update
-
-```python
-a.update(v)
-```
-
-Update relavent variables (`r_freq`, `r_power`)
-
-**Parameters**:
-
-- `v` (dict) experiment variable to be updated. **Will be modified!**
+- `var` (dict|bool) `self.var` if succeeded. `False` if failed.
+- `fig` generated plot
 
