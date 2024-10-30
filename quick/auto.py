@@ -88,11 +88,11 @@ class ReadoutFreq(BaseAuto):
             self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(v["r_freq"] - 1, v["r_freq"] + 1, 0.02)).run(silent=self.silent).data.T
         F, A0, P0, A1, P1 = data[0], data[1], data[2], data[5], data[6]
         dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
-        v["r_freq"] = float(F[np.argmax(dP)])
+        self.var["r_freq"] = float(F[np.argmax(dP)])
         fig, ax = plt.subplots()
         ax.plot(F, A0, label="Amplitude 0", marker="o")
         ax.plot(F, A1, label="Amplitude 1", marker="o")
-        ax.vlines(v["r_freq"], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
+        ax.vlines(self.var["r_freq"], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
         ax.legend()
         ax.set_xlabel("Readout Frequency (MHz)")
         ax.set_ylabel("Amplitude [log mag] (dB)")
@@ -117,36 +117,6 @@ class Ramsey(BaseAuto):
 
 class Readout(BaseAuto):
     pass
-
-def q_freq(var, span=[3000, 5000], soccfg=None, soc=None, data_path=None):
-    """
-    find qubit frequency by peak finding in QubitSpectroscopy
-    provide value: r_freq, r_offset, r_power, r_length, q_gain
-    provide center: q_freq
-    update value: q_freq
-    return: True for success
-    """
-    def scan(r, nop, w=5, mean=False):
-        data = experiment.QubitSpectroscopy(data_path=data_path, title=f'(auto.q_freq) {int(var["r_freq"])}', q_freq=np.linspace(var["q_freq"] - r, var["q_freq"] + r, nop), soccfg=soccfg, soc=soc, var=var).run().data.T
-        F, A = data[0], data[1]
-        C = np.convolve(A, np.ones(w), 'same') / w if mean else median_filter(A, size=w)
-        plt.clf()
-        plt.scatter(F, A, s=2, label="Data")
-        plt.plot(F[w:-w], C[w:-w], color="red", label=f"{'Mean' if mean else 'Median'} w={w}")
-        plt.xlabel("Qubit Frequency (MHz)")
-        plt.ylabel("Amplitude [lin mag]")
-        plt.title(f"Qubit Spectroscopy (gain = {var['q_gain']})")
-        plt.legend()
-        plt.show()
-        return F, A, C
-    var["q_length"] = 2
-    var["q_freq"] = (span[1] + span[0]) / 2
-    r = (span[1] - span[0]) / 2
-    F, A, C = scan(r, int(r), 3)
-    var["q_freq"] = float(F[np.argmax(C)])
-    var["q_gain"] = 3000
-    F, A, C = scan(20, 100, 5, mean=True)
-    var["q_freq"] = helper.symmetryCenter(F, C)
 
 def pi_pulse(var, soccfg=None, soc=None, data_path=None):
     """
@@ -191,23 +161,6 @@ def pi_pulse(var, soccfg=None, soc=None, data_path=None):
     freq_scan(10, 5, 51)
     length_scan(10, 0.04, 41)
     return True
-
-def r_freq(var, soccfg=None, soc=None, data_path=None):
-    v = dict(var)
-    data = experiment.DispersiveSpectroscopy(soccfg=soccfg, soc=soc, var=v, data_path=data_path, title=f"(auto.r_freq) {int(v['r_freq'])}", r_freq=np.arange(v["r_freq"] - 1, v["r_freq"] + 1, 0.02)).run().data.T
-    F, A0, P0, A1, P1 = data[0], data[1], data[2], data[5], data[6]
-    dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
-    v["r_freq"] = float(F[np.argmax(dP)])
-    plt.clf()
-    plt.plot(F, A0, label="Amplitude 0", marker="o")
-    plt.plot(F, A1, label="Amplitude 1", marker="o")
-    plt.vlines(v["r_freq"], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
-    plt.legend()
-    plt.xlabel("Readout Frequency (MHz)")
-    plt.ylabel("Amplitude [log mag] (dB)")
-    plt.title("DispersiveSpectroscopy")
-    plt.show()
-    return v
 
 def readout(var, soccfg=None, soc=None):
     def negative_fidelity(x):
