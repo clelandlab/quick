@@ -83,7 +83,21 @@ class PiPulseFreq(BaseAuto):
     pass
 
 class ReadoutFreq(BaseAuto):
-    pass
+    def calibrate(self):
+        if not self.data:
+            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(v["r_freq"] - 1, v["r_freq"] + 1, 0.02)).run(silent=self.silent).data.T
+        F, A0, P0, A1, P1 = data[0], data[1], data[2], data[5], data[6]
+        dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
+        v["r_freq"] = float(F[np.argmax(dP)])
+        fig, ax = plt.subplots()
+        ax.plot(F, A0, label="Amplitude 0", marker="o")
+        ax.plot(F, A1, label="Amplitude 1", marker="o")
+        ax.vlines(v["r_freq"], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
+        ax.legend()
+        ax.set_xlabel("Readout Frequency (MHz)")
+        ax.set_ylabel("Amplitude [log mag] (dB)")
+        ax.set_title("DispersiveSpectroscopy")
+        return self.var, fig
 
 class Ramsey(BaseAuto):
     def calibrate(self, fringe_freq=10, time=np.arange(0, 1, 0.01)):
