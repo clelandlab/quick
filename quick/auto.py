@@ -3,9 +3,8 @@ import quick.helper as helper
 import numpy as np
 from scipy.optimize import minimize, curve_fit
 from scipy.ndimage import convolve1d, median_filter
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, peak_widths
 from tqdm.notebook import tqdm
-from IPython.display import clear_output
 import matplotlib.pyplot as plt
 
 relevant_var = {
@@ -17,12 +16,12 @@ relevant_var = {
 
 class BaseAuto:
     var = {}
-    data = [[]]
+    data = None
     def __init__(self, var, silent=False, data_path=None, soccfg=None, soc=None):
         self.var = dict(var)
         self.silent = silent
         self.data_path = data_path
-        self.soccfg = soccfg,
+        self.soccfg = soccfg
         self.soc = soc
     def load_data(self, *paths):
         self.data = helper.load_data(*paths).T
@@ -33,7 +32,7 @@ class BaseAuto:
 class Resonator(BaseAuto):
     def calibrate(self):
         self.var["r_relax"] = 1
-        if not self.data:
+        if self.data is None:
             self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-60, -15, 1), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
         P, F, A = self.data[0], self.data[1], self.data[2]
         Fn = len(np.unique(F))
@@ -70,7 +69,7 @@ class Resonator(BaseAuto):
 class QubitFreq(BaseAuto):
     def calibrate(self, q_freq=np.arange(3000, 4000, 1)):
         self.var["r_relax"] = 1
-        if not self.data:
+        if self.data is None:
             self.data = experiment.QubitSpectroscopy(data_path=self.data_path, title=f'(auto.QubitFreq) {int(self.var["r_freq"])}', q_freq=q_freq, soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
         # Todo.
         fig, ax = plt.subplots()
@@ -84,7 +83,7 @@ class PiPulseFreq(BaseAuto):
 
 class ReadoutFreq(BaseAuto):
     def calibrate(self):
-        if not self.data:
+        if self.data is None:
             self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(v["r_freq"] - 1, v["r_freq"] + 1, 0.02)).run(silent=self.silent).data.T
         F, A0, P0, A1, P1 = data[0], data[1], data[2], data[5], data[6]
         dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
@@ -102,7 +101,7 @@ class ReadoutFreq(BaseAuto):
 class Ramsey(BaseAuto):
     def calibrate(self, fringe_freq=10, time=np.arange(0, 1, 0.01)):
         self.var["fringe_freq"] = fringe_freq
-        if not self.data:
+        if self.data is None:
             self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=time).run(silent=self.silent).data.T
         L, A = self.data[0], self.data[1]
         def m(x, p1, p2, p3):
