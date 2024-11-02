@@ -11,6 +11,10 @@ relevant_var = {
     "BaseAuto": [],
     "Resonator": ["r_freq", "r_power"],
     "QubitFreq": ["q_freq"],
+    "PiPulseLength": ["q_length"],
+    "PiPulseFreq": ["q_freq"],
+    "ReadoutFreq": ["r_freq"],
+    "ReadoutState": ["r_threshold", "r_phase"],
     "Ramsey": ["q_freq"]
 }
 
@@ -56,8 +60,8 @@ class Resonator(BaseAuto):
         if s[-1] - np.min(s) < np.std(A):
             return False, fig
         threshold = (np.max(s) - np.min(s)) * 0.2 + np.min(s)
-        for i in range(len(s) - 1, 0, -1):
-            if s[i] < threshold:
+        for i in range(len(s) - 1, 1, -1):
+            if s[i] < threshold and (s[i] - s[i-1]) / (P[i] - P[i-1]) < 0.1:
                 pi = i
                 break
         fi = np.argmin(convolve1d(A[pi, :], np.ones(3) / 3))
@@ -99,7 +103,7 @@ class QubitFreq(BaseAuto):
         width = peak_widths(A, peak, rel_height = 0.8)
         ls = []
         for w in range(len(width[0])):
-            ls += [[F[peak[w]] - int(width[0][w]*unit), F[peak[w]] + int(width[0][w]*unit)]]
+            ls += [[F[peak[w]] - width[0][w]*unit, F[peak[w]] + width[0][w]*unit]]
         print(ls)
         for gain in np.arange(0.05, 0.4, 0.1):
             interval_score = []
@@ -140,6 +144,9 @@ class ReadoutFreq(BaseAuto):
         ax.set_ylabel("Amplitude [log mag] (dB)")
         ax.set_title("DispersiveSpectroscopy")
         return self.var, fig
+
+class ReadoutState(BaseAuto):
+    pass
 
 class Ramsey(BaseAuto):
     def calibrate(self, fringe_freq=10, max_time=1):
@@ -243,18 +250,5 @@ def pi_pulse(var, soccfg=None, soc=None, data_path=None):
     length_scan(1, 0.08, 51)
     freq_scan(10, 5, 51)
     length_scan(10, 0.04, 41)
-    return True
-
-def readout(var, soccfg=None, soc=None):
-    def negative_fidelity(x):
-        var["r_power"], var["r_length"], var["r_offset"] = float(x[0]), float(x[1]), float(x[2])
-        data = experiment.IQScatter(soccfg=soccfg, soc=soc, var=var).run(silent=True).data.T
-        _, _, _, Fg, Fe, _ = helper.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
-        plt.close()
-        print(x, min(Fg, Fe))
-        return -min(Fg, Fe)
-    x0 = [var["r_power"], var["r_length"], var["r_offset"]] 
-    bounds = [(var["r_power"] - 10, var["r_power"] + 10), (0.1, 5), (0, 2)]
-    minimize(negative_fidelity, x0=[var["r_power"], var["r_length"], var["r_offset"]], method="Nelder-Mead", options={ "maxfev": 100 })
     return True
 
