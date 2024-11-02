@@ -53,26 +53,69 @@ class Resonator(BaseAuto):
         axes[1].plot(P, s, marker="o")
         axes[1].grid()
         axes[1].set_xlabel("Power (dBm)")
-        if s[-1] - s[0] < np.std(A):
+        if s[-1] - np.min(s) < np.std(A):
             return False, fig
         threshold = (np.max(s) - np.min(s)) * 0.2 + np.min(s)
         for i in range(len(s) - 1, 0, -1):
             if s[i] < threshold:
                 pi = i
                 break
-        fi = np.argmin(A[pi, :])
+        fi = np.argmin(convolve1d(A[pi, :], np.ones(3) / 3))
         axes[1].vlines(P[pi], ymin=np.min(s), ymax=np.max(s), color="red")
         self.var["r_freq"] = float(F[fi])
         self.var["r_power"] = float(P[pi])
         return self.var, fig
 
 class QubitFreq(BaseAuto):
-    def calibrate(self, q_freq=np.arange(3000, 4000, 1)):
+    def calibrate(self, q_freq_min=3000, q_freq_max=5000, gain=0.5):
         self.var["r_relax"] = 1
-        if self.data is None:
-            self.data = experiment.QubitSpectroscopy(data_path=self.data_path, title=f'(auto.QubitFreq) {int(self.var["r_freq"])}', q_freq=q_freq, soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
-        # Todo.
+        self.var["q_gain"] = gain
+        def scan(scan_freq, title=""):
+            self.data = experiment.QubitSpectroscopy(data_path=self.data_path, title=f'(auto.QubitFreq) {int(self.var["r_freq"])} {title}', q_freq=scan_freq, soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
+        if self.data is None: 
+            scan(np.arange(q_freq_min, q_freq_max, 1))
         fig, ax = plt.subplots()
+        F, A = self.data[0], self.data[1]
+        Fn = len(F)
+        unit = (F[-1]-F[0])/Fn
+        ax.scatter(F, A, color="black", label="raw data", s=20)
+        std = np.std(A)
+        med = np.median(A)
+        A = median_filter(A, size = 7)
+        ax.plot(F, A, color="red", label="median filtered")
+        ax.legend()
+        ax.set_xlabel("Qubit Frequency (MHz)")
+        ax.set_ylabel("Amplitude [lin mag]")
+        ax.set_title("QubitSpectroscopy gain=0.5")
+        ax.hlines([med + 2*std, med - 2*std], xmin=F[0], xmax=F[-1], color="green")
+        ax.grid()
+        peak, _ = find_peaks(A, height=med+2*std, distance=10/unit)
+        print(F[peak])
+        if len(peak) == 0:
+            return False, fig
+        if len(peak) == 1:
+            self.var["q_freq"] = float(F[peak[0]])
+            return self.var, fig
+        width = peak_widths(A, peak, rel_height = 0.8)
+        ls = []
+        for w in range(len(width[0])):
+            ls += [[F[peak[w]] - int(width[0][w]*unit), F[peak[w]] + int(width[0][w]*unit)]]
+        print(ls)
+        for gain in np.arange(0.05, 0.4, 0.1):
+            interval_score = []
+            interval_peak = []
+            self.var["q_gain"] = gain
+            for i, l in enumerate(ls):
+                scan(np.arange(l[0], l[1], 0.5), title=f"({i})gain={gain}")
+                _A = median_filter(self.data[1], size=3)
+                interval_score.append(np.max(_A) - np.min(_A))
+                interval_peak.append(np.argmax(_A) * 0.5 + l[0])
+            _score = np.sort(interval_score)
+            if _score[-1] > 2 * _score[-2]:
+                li = np.argmax(interval_score)
+                print(interval_peak[li])
+                self.var["q_freq"] = float(interval_peak[li])
+                return self.var, fig
         return False, fig
 
 class PiPulseLength(BaseAuto):
@@ -99,10 +142,10 @@ class ReadoutFreq(BaseAuto):
         return self.var, fig
 
 class Ramsey(BaseAuto):
-    def calibrate(self, fringe_freq=10, time=np.arange(0, 1, 0.01)):
+    def calibrate(self, fringe_freq=10, max_time=1):
         self.var["fringe_freq"] = fringe_freq
         if self.data is None:
-            self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=time).run(silent=self.silent).data.T
+            self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=np.linspace(0, max_time, 100)).run(silent=self.silent).data.T
         L, A = self.data[0], self.data[1]
         def m(x, p1, p2, p3):
             return p1 * np.cos(p2 * x) + p3
@@ -116,6 +159,47 @@ class Ramsey(BaseAuto):
 
 class Readout(BaseAuto):
     pass
+
+def run(path):
+    config = helper.load_yaml(path)
+    qubits = config["qubits"]
+    steps = config["steps"]
+    qi = -1 # find the qubit to be run
+    min_run = 9e9
+    for i, q in enumerate(qubits):
+        if q["status"].get("step", "start") in ["end", "fail"]:
+            continue  # completed
+        run = q["status"].get("run", 0)
+        if run < min_run:
+            qi = i
+            min_run = run
+    config["current"] = qi
+    helper.save_yaml(path, config)
+    if qi < 0: # all completed
+        return False
+    step = qubits[qi]["status"].get("step", "start")
+    print("\n------------ quick.auto.run ------------\n")
+    print(f"qubits[{qi}]: {step}")
+    try:
+        name = steps[step].get("class", step)
+        a = globals()[name](var=qubits[qi]["var"])
+        v, fig = a.calibrate(**qubits[qi]["argument"].get(step, {}), **steps[step].get("argument", {}))
+    except:
+        v = True
+    qubits[qi]["status"]["run"] = qubits[qi]["status"].get("run", 0) + 1
+    qubits[qi]["status"][step] = qubits[qi]["status"].get(step, 0) + 1
+    if v is False: # failed
+        if qubits[qi]["status"][step] >= 3:
+            qubits[qi]["status"]["step"] = "fail"
+        else:
+            qubits[qi]["status"]["step"] = steps[step].get("fail", "fail")
+    else: # succeeded
+        if not v is True:
+            a.update(qubits[qi]["var"])
+        qubits[qi]["status"]["step"] = steps[step].get("next", "end")
+    config["current"] = -2
+    helper.save_yaml(path, config)
+    return True
 
 def pi_pulse(var, soccfg=None, soc=None, data_path=None):
     """
