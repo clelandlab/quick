@@ -36,7 +36,7 @@ class BaseAuto:
 
 class Resonator(BaseAuto):
     def calibrate(self):
-        self.var["r_relax"] = 1
+        self.var["r_relax"] = 0
         if self.data is None:
             self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-60, -15, 1), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
         P, F, A = self.data[0], self.data[1], self.data[2]

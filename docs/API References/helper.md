@@ -370,7 +370,7 @@ popt, perr, rchi2, fig = quick.fitT2(data[0], data[1], omega=omega)
 p, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, None])
 ```
 
-Fit and plot the resonator spectroscopy from data.
+Fit and plot the resonator spectroscopy from data. 100 data points away from the resonator dip are required to calculate the `electronic_delay`.
 
 **Parameters**:
 
@@ -381,13 +381,17 @@ Fit and plot the resonator spectroscopy from data.
 
 **Return**:
 
-- `p` (np.Array(4)) Fitted parameter values in the order of [Qi, Qc, fr, phi, electronic_delay, background, phase_shift]
+- `p` (np.Array(4)) Fitted parameter values in the order of `[Qi, Qc, fr, phi, electronic_delay, background, phase_shift]`
 - `fig` (matplotlib.figure) plotted fitting.
 
 **Example**:
 
 ```python
+# take data in lin mag.
 data = quick.load_data("path/to/your/data1.csv", "path/to/your/data2.csv").T
-p, fig = quick.fitResonator(data[0], data[1], data[2], fit="circle")
+I = data[1] * np.cos(data[2])
+Q = data[1] * np.sin(data[2])
+S = I + 1j * Q
+p, fig = quick.fitResonator(data[0], S, fit="circle")
 ```
 
