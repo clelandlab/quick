@@ -375,34 +375,6 @@ run the experiment.
 
 - `e` the experiment object itself.
 
-## 🔵ActiveReset
-
-> Base *class*: `BaseExperiment`
-
-```python
-e = quick.experiment.ActiveReset(**kwargs)
-```
-
-Test active reset. Performing an amplitude Rabi for 100 points. No variable sweeping.
-
-- `dep_params = [("Population", "", "before reset"), ("Population", "", "after reset")]`
-
-### - ActiveReset.run
-
-```python
-e.run(silent=False)
-```
-
-run the experiment.
-
-**Parameters**:
-
-- `silent=False` (bool) Whether to avoid any printing.
-
-**Return**:
-
-- `e` the experiment object itself.
-
 ## 🟢DispersiveSpectroscopy
 
 > Base *class*: `BaseExperiment`

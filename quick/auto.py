@@ -6,6 +6,7 @@ from scipy.ndimage import convolve1d, median_filter
 from scipy.signal import find_peaks, peak_widths
 from tqdm.notebook import tqdm
 import matplotlib.pyplot as plt
+import time
 
 relevant_var = {
     "BaseAuto": [],
@@ -123,7 +124,13 @@ class QubitFreq(BaseAuto):
         return False, fig
 
 class PiPulseLength(BaseAuto):
-    pass
+    def calibrate(self, q_length_max=0.5):
+        def scan(scan_length, cycle=0):
+            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseLength) {int(self.var['r_freq'])} length cycle={cycle}", q_length=scan_length).run(silent=self.silent).data.T
+        if self.data is None:
+            scan(np.arange(0.01, q_length_max, 0.01))
+        fig, ax = plt.subplots()
+        return False, fig
 
 class PiPulseFreq(BaseAuto):
     pass
@@ -181,18 +188,24 @@ def run(path):
             qi = i
             min_run = run
     config["current"] = qi
+    config["time"] = int(time.time() * 1000)
     helper.save_yaml(path, config)
     if qi < 0: # all completed
         return False
     step = qubits[qi]["status"].get("step", "start")
     print("\n------------ quick.auto.run ------------\n")
     print(f"qubits[{qi}]: {step}")
+    skip = False
     try:
-        name = steps[step].get("class", step)
-        a = globals()[name](var=qubits[qi]["var"])
-        v, fig = a.calibrate(**qubits[qi]["argument"].get(step, {}), **steps[step].get("argument", {}))
+        a = globals()[steps[step].get("class", step)](var=qubits[qi]["var"])
     except:
+        skip = True
         v = True
+    try:
+        if skip is False:
+            v, fig = a.calibrate(**qubits[qi]["argument"].get(step, {}), **steps[step].get("argument", {}))
+    except:
+        v = False
     qubits[qi]["status"]["run"] = qubits[qi]["status"].get("run", 0) + 1
     qubits[qi]["status"][step] = qubits[qi]["status"].get(step, 0) + 1
     if v is False: # failed
@@ -201,54 +214,12 @@ def run(path):
         else:
             qubits[qi]["status"]["step"] = steps[step].get("fail", "fail")
     else: # succeeded
-        if not v is True:
+        if skip is False:
             a.update(qubits[qi]["var"])
         qubits[qi]["status"]["step"] = steps[step].get("next", "end")
-    config["current"] = -2
-    helper.save_yaml(path, config)
+    _config = helper.load_yaml(path) # avoid overwrite
+    _config["current"] = -2
+    _config["time"] = int(time.time() * 1000)
+    _config["qubits"][qi] = qubits[qi]
+    helper.save_yaml(path, _config)
     return True
-
-def pi_pulse(var, soccfg=None, soc=None, data_path=None):
-    """
-    maximize amplitude
-    provide value: all variables for pi_pulse
-    update value: q_freq, q_length
-    return: True for success
-    """
-    var["q_gain"] = 30000
-    var["q_length"] = 0
-    def freq_scan(cycle, Δ, nop):
-        data = experiment.Rabi(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.pi_pulse) {int(var['r_freq'])} freq cycle={cycle}", q_freq=np.linspace(var["q_freq"] - Δ, var["q_freq"] + Δ, nop), **{ "2_reps": cycle * 2 }).run().data.T
-        F, A = data[0], data[2]
-        plt.clf()
-        var["q_freq"] = float(helper.symmetryCenter(F, A))
-        plt.plot(F, A, marker="o")
-        plt.vlines(var["q_freq"], ymin=np.min(A), ymax=np.max(A), colors="red")
-        plt.xlabel("Qubit Frequency (MHz)")
-        plt.ylabel("Amplitude [lin mag]")
-        plt.title(f"Rabi (cycle = {cycle})")
-        plt.show()
-        print(var["q_freq"], var["q_length"])
-    def length_scan(cycle, Δ, nop):
-        data = experiment.Rabi(soccfg=soccfg, soc=soc, var=var, data_path=data_path, title=f"(auto.pi_pulse) {int(var['r_freq'])} length cycle={cycle}", q_length=np.linspace(max(var["q_length"] - Δ, 0.01), var["q_length"] + Δ, nop), **{ "2_reps": 2 * cycle }).run().data.T
-        L, A = data[0], data[2]
-        def m(x, p1, p2, p3):
-            return p1 * np.sin(x * p2) ** 2 + p3
-        popt, pcov = curve_fit(m, L, A, p0=[np.max(A) - np.min(A), helper.estimateOmega(L, A) / 2, np.min(A)], bounds=([0.1, 6, 0.1], [np.inf, np.inf, np.inf]))
-        T = np.pi / popt[1]
-        var["q_length"] = float(int(var["q_length"] / T) * T + T / 2)
-        plt.clf()
-        plt.plot(L, A, marker="o")
-        plt.plot(L, m(L, *popt), color="red")
-        plt.xlabel("Pi Pulse Length (us)")
-        plt.ylabel("Amplitude [lin mag]")
-        plt.title(f"Rabi (cycle = {cycle})")
-        plt.show()
-        print(var["q_freq"], var["q_length"])
-    length_scan(0, 0.5, 101)
-    freq_scan(10, 10, 71)
-    length_scan(1, 0.08, 51)
-    freq_scan(10, 5, 51)
-    length_scan(10, 0.04, 41)
-    return True
-

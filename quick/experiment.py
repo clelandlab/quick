@@ -143,24 +143,6 @@ class IQScatter(BaseExperiment):
         self.add_data(np.transpose([I0, Q0, I1, Q1]))
         return self.conclude(silent)
 
-class ActiveReset(BaseExperiment):
-    def run(self, silent=False):
-        if not silent:
-            print(f"quick.experiment({self.key}) Starting")
-        self.data = []
-        indep_params = [("Qubit Pulse Gain", "a.u.")]
-        dep_params = [("Population", "", "before reset"), ("Population", "", "after reset")]
-        if self.data_path is not None:
-            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, self.config)
-        for c in helper.Sweep(self.config, { "p2_gain": np.arange(0, 1, 0.01) }, progressBar=(not silent)):
-            self.m = Mercator(self.soccfg, c)
-            I, Q = self.m.acquire(self.soc)
-            I1, I2 = I[0]
-            P1 = float(I1[I1 > self.var["r_threshold"]].size) / I1.size
-            P2 = float(I2[I2 > self.var["r_threshold"]].size) / I2.size
-            self.add_data([[c["p2_gain"], P1, P2 ]])
-        return self.conclude(silent)
-
 class DispersiveSpectroscopy(BaseExperiment):
     def __init__(self, r_freq=[], **kwargs):
         super().__init__(**kwargs)
