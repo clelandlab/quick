@@ -432,7 +432,7 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
     for i in range(len(p0)):
         if p0[i] is None:
             p0[i] = _p0[i]
-    bounds = ([0, 0, 0, -2 * π, p0[4]*0.95, p0[5] - 10, 0], [np.inf, np.inf, np.inf, 2 * π, p0[4]*1.05, p0[5] + 10, 2 * π])
+    bounds = ([0, 0, 0, -π, p0[4]*0.95, p0[5] - 10, 0], [np.inf, np.inf, np.inf, π, p0[4]*1.05, p0[5] + 10, 2 * π])
     def p_b2i(p):
         _p = []
         for i in range(len(p)):
