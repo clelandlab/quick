@@ -46,7 +46,7 @@ class Resonator(BaseAuto):
         A = A.reshape((-1, Fn))
         avg = np.mean(A, axis=0)
         avg = convolve1d(avg, np.ones(3) / 3)
-        peaks, _ = find_peaks(-avg, distance=0.3/unit, width=0.05/unit, prominence=0.2)
+        peaks, _ = find_peaks(-avg, distance=0.3/unit, width=0.05/unit, prominence=0.3)
         fig, axes = plt.subplots(1, 2, figsize=(16, 8))
         axes[0].plot(F, avg)
         axes[0].vlines(peaks * unit + F[0], ymin=np.min(avg), ymax=np.max(avg), color="red")

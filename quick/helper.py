@@ -427,12 +427,12 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
     s = F.argsort()
     F, S = F[s], S[s]
     S_inv, S_db = 1 / S, db(S)
-    _p0 = [100000, 10000, F[np.argmin(S_db)], 0.0, np.polyfit(-2 * π * F[0:100], np.angle(S[0:100]), deg=1)[0], (S_db[0] + S_db[-1]) / 2, 0.0]
+    _p0 = [100000, 10000, F[np.argmin(S_db)], 0.0, np.polyfit(-2 * π * F[0:100], np.unwrap(np.angle(S[0:100])), deg=1)[0], (S_db[0] + S_db[-1]) / 2, 0.0]
     p0 = list(p0)
     for i in range(len(p0)):
         if p0[i] is None:
             p0[i] = _p0[i]
-    bounds = ([0, 0, 0, -2 * π, p0[4] - 10, p0[5] - 10, 0], [np.inf, np.inf, np.inf, 2 * π, p0[4] + 10, p0[5] + 10, 2 * π])
+    bounds = ([0, 0, 0, -2 * π, p0[4]*0.95, p0[5] - 10, 0], [np.inf, np.inf, np.inf, 2 * π, p0[4]*1.05, p0[5] + 10, 2 * π])
     def p_b2i(p):
         _p = []
         for i in range(len(p)):
