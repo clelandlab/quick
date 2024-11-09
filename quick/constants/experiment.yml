@@ -116,10 +116,10 @@ Rabi: |
   0_p: 1
   0_g: {q}
   1_type: delay_auto
-  1_t: 0.01
+  1_t: 0.002
   2_type: goto
   2_i: 0
-  2_rep: {cycle} # (new var) extra cycle
+  2_rep: {cycle * 2} # (new var) extra cycle
   3_type: pulse
   3_p: 0
   3_g: {r}

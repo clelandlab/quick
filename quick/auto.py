@@ -174,7 +174,7 @@ class Ramsey(BaseAuto):
 class Readout(BaseAuto):
     pass
 
-def run(path):
+def run(path, soccfg=None, soc=None, data_path=None):
     config = helper.load_yaml(path)
     qubits = config["qubits"]
     steps = config["steps"]
@@ -197,7 +197,7 @@ def run(path):
     print(f"qubits[{qi}]: {step}")
     skip = False
     try:
-        a = globals()[steps[step].get("class", step)](var=qubits[qi]["var"])
+        a = globals()[steps[step].get("class", step)](var=qubits[qi]["var"], soccfg=soccfg, soc=soc, data_path=data_path)
     except:
         skip = True
         v = True
