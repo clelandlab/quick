@@ -204,6 +204,13 @@ def run(path):
     try:
         if skip is False:
             v, fig = a.calibrate(**qubits[qi]["argument"].get(step, {}), **steps[step].get("argument", {}))
+    except KeyboardInterrupt:
+        print("\n! KeyboardInterrupt !")
+        _config = helper.load_yaml(path) # avoid overwrite
+        _config["current"] = -2
+        _config["time"] = int(time.time() * 1000)
+        helper.save_yaml(path, _config)
+        return
     except:
         v = False
     qubits[qi]["status"]["run"] = qubits[qi]["status"].get("run", 0) + 1
