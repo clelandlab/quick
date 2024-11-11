@@ -351,7 +351,7 @@ def fitT1(T, S):
     popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
     residuals = S - m(T, *popt)
-    ss_res = np.sum(residuals**2)
+    ss_res = np.sum(residuals**2) / np.var(S)
     dof = len(T) - len(popt)
     rchi2 = ss_res / dof
     fig, ax = plt.subplots()
@@ -391,7 +391,7 @@ def fitT2(T, S, omega=2*π):
     popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
     residuals = S - m(T, *popt)
-    ss_res = np.sum(residuals**2)
+    ss_res = np.sum(residuals**2) / np.var(S)
     dof = len(T) - len(popt)
     rchi2 = ss_res / dof
     fig, ax = plt.subplots()

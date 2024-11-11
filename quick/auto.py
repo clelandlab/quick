@@ -124,13 +124,42 @@ class QubitFreq(BaseAuto):
         return False, fig
 
 class PiPulseLength(BaseAuto):
-    def calibrate(self, q_length_max=0.5):
+    def calibrate(self, q_length_max=0.5, cycles=[]):
+        self.var["q_gain"] = 1
+        self.var["r_relax"] = 500
+        fig, axes = plt.subplots(len(cycles) + 1, 1)
         def scan(scan_length, cycle=0):
-            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseLength) {int(self.var['r_freq'])} length cycle={cycle}", q_length=scan_length).run(silent=self.silent).data.T
+            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseLength) {int(self.var['r_freq'])} length cycle={cycle}", q_length=scan_length, cycle=cycle).run(silent=self.silent).data.T
+        def fit(cycle=0, ax=axes):
+            L, A = self.data[0], self.data[2]
+            def m(x, p1, p2, p3):
+                return p1 * np.sin(x * p2) ** 2 + p3
+            popt, pcov = curve_fit(m, L, A, p0=[np.max(A) - np.min(A), helper.estimateOmega(L, A) / 2, np.min(A)], bounds=([0.1, 0.1, 0.1], [np.inf, np.inf, np.inf]))
+            T = np.pi / popt[1]
+            residuals = A - m(L, *popt)
+            dof = len(L) - len(popt)
+            rchi2 = np.sum(residuals**2) / np.var(A) / dof
+            ax.scatter(L, A, color="black", s=20)
+            ax.plot(L, m(L, *popt), color="blue")
+            ax.set_xlabel("Pi Pulse Length (us)")
+            self.var["q_length"] = float(T * (cycle + 0.5))
+            ax.vlines([self.var["q_length"]], ymin=np.min(A), ymax=np.max(A), color="red")
+            print("χ^2 =", rchi2)
+            return rchi2
         if self.data is None:
             scan(np.arange(0.01, q_length_max, 0.01))
-        fig, ax = plt.subplots()
-        return False, fig
+        rchi2 = fit(cycle=0, ax=(axes[0] if len(cycles) > 0 else axes))
+        if rchi2 > 0.1:
+            return False, fig
+        for j in range(len(cycles)):
+            c = cycles[j]
+            if c <= 0:
+                continue
+            scan(np.linspace(self.var["q_length"] * (c - 0.5) / (c + 0.5), self.var["q_length"] * (c + 1.5) / (c + 0.5), 50), cycle=c)
+            rchi2 = fit(cycle=c, ax=axes[j+1])
+            if rchi2 > 0.1:
+                return False, fig
+        return self.var, fig
 
 class PiPulseFreq(BaseAuto):
     pass
