@@ -35,8 +35,8 @@ r_relax: 1        # [us] readout relax time
 q_freq: 5000      # [MHz] qubit pulse frequency
 q_length: 2       # [us] qubit pulse length
 q_delta: -180     # [MHz] qubit anharmonicity
-q_gain: 30000     # [0-32766] qubit pulse (pi pulse) gain
-q_gain_2: 15000   # [0-32766] half pi pulse gain
+q_gain: 1         # [-1, 1] qubit pulse (pi pulse) gain
+q_gain_2: 0.5     # [-1, 1] half pi pulse gain
 active_reset: 0   # [us] active reset wait time. 0 for disable.
 ```
 

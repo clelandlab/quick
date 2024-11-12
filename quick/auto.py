@@ -35,10 +35,10 @@ class BaseAuto:
             v[k] = self.var[k]
 
 class Resonator(BaseAuto):
-    def calibrate(self):
+    def calibrate(self, **kwargs):
         self.var["r_relax"] = 0
         if self.data is None:
-            self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-60, -15, 1), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
+            self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-60, -15, 2), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs).run(silent=self.silent).data.T
         P, F, A = self.data[0], self.data[1], self.data[2]
         Fn = len(np.unique(F))
         F, P = F[0:Fn], P[0::Fn]
@@ -72,11 +72,11 @@ class Resonator(BaseAuto):
         return self.var, fig
 
 class QubitFreq(BaseAuto):
-    def calibrate(self, q_freq_min=3000, q_freq_max=5000, gain=0.5):
+    def calibrate(self, q_freq_min=3000, q_freq_max=5000, gain=0.5, **kwargs):
         self.var["r_relax"] = 1
         self.var["q_gain"] = gain
         def scan(scan_freq, title=""):
-            self.data = experiment.QubitSpectroscopy(data_path=self.data_path, title=f'(auto.QubitFreq) {int(self.var["r_freq"])} {title}', q_freq=scan_freq, soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=self.silent).data.T
+            self.data = experiment.QubitSpectroscopy(data_path=self.data_path, title=f'(auto.QubitFreq) {int(self.var["r_freq"])} {title}', q_freq=scan_freq, soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs).run(silent=self.silent).data.T
         if self.data is None: 
             scan(np.arange(q_freq_min, q_freq_max, 1))
         fig, ax = plt.subplots()
@@ -124,12 +124,10 @@ class QubitFreq(BaseAuto):
         return False, fig
 
 class PiPulseLength(BaseAuto):
-    def calibrate(self, q_length_max=0.5, cycles=[]):
-        self.var["q_gain"] = 1
-        self.var["r_relax"] = 500
+    def calibrate(self, q_length_max=0.5, cycles=[], **kwargs):
         fig, axes = plt.subplots(len(cycles) + 1, 1)
         def scan(scan_length, cycle=0):
-            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseLength) {int(self.var['r_freq'])} length cycle={cycle}", q_length=scan_length, cycle=cycle).run(silent=self.silent).data.T
+            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseLength) {int(self.var['r_freq'])} length cycle={cycle}", q_length=scan_length, cycle=cycle, rep=2000, **kwargs).run(silent=self.silent).data.T
         def fit(cycle=0, ax=axes):
             L, A = self.data[0], self.data[2]
             def m(x, p1, p2, p3):
@@ -149,7 +147,7 @@ class PiPulseLength(BaseAuto):
         if self.data is None:
             scan(np.arange(0.01, q_length_max, 0.01))
         rchi2 = fit(cycle=0, ax=(axes[0] if len(cycles) > 0 else axes))
-        if rchi2 > 0.1:
+        if rchi2 > 0.5:
             return False, fig
         for j in range(len(cycles)):
             c = cycles[j]
@@ -157,7 +155,7 @@ class PiPulseLength(BaseAuto):
                 continue
             scan(np.linspace(self.var["q_length"] * (c - 0.5) / (c + 0.5), self.var["q_length"] * (c + 1.5) / (c + 0.5), 50), cycle=c)
             rchi2 = fit(cycle=c, ax=axes[j+1])
-            if rchi2 > 0.1:
+            if rchi2 > 0.5:
                 return False, fig
         return self.var, fig
 
@@ -167,7 +165,7 @@ class PiPulseFreq(BaseAuto):
 class ReadoutFreq(BaseAuto):
     def calibrate(self):
         if self.data is None:
-            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(v["r_freq"] - 1, v["r_freq"] + 1, 0.02)).run(silent=self.silent).data.T
+            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(self.var["r_freq"] - 1, self.var["r_freq"] + 1, 0.02)).run(silent=self.silent).data.T
         F, A0, P0, A1, P1 = data[0], data[1], data[2], data[5], data[6]
         dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
         self.var["r_freq"] = float(F[np.argmax(dP)])
@@ -182,7 +180,15 @@ class ReadoutFreq(BaseAuto):
         return self.var, fig
 
 class ReadoutState(BaseAuto):
-    pass
+    def calibrate(self):
+        self.var["r_phase"] = 0
+        if self.data is None:
+            self.data = experiment.IQScatter(var=self.var, soccfg=self.soccfg, soc=self.soc, data_path=self.data_path, title=f"(auto.ReadoutState)").run(silent=self.silent).data.T
+        c0, c1, visibility, Fg, Fe, fig = helper.iq_scatter(self.data[0] + 1j * self.data[1], self.data[2] + 1j * self.data[3])
+        if visibility < 0.1:
+            return False, fig
+        self.var["r_phase"], self.var["r_threshold"] = helper.iq_rotation(c0, c1)
+        return self.var, fig 
 
 class Ramsey(BaseAuto):
     def calibrate(self, fringe_freq=10, max_time=1):
