@@ -102,7 +102,7 @@ class Mercator(AveragerProgramV2):
         for g, o in c["g"].items(): # Declare Generator Channels
             kwargs = {}
             if self.soccfg["gens"][g]["has_mixer"]:
-                kwargs["mixer_freq"] = o["freq"]
+                kwargs["mixer_freq"] = int(o["freq"] / 100) * 100
                 kwargs["ro_ch"] = o["r"]
                 if isinstance(o["freq"], listType): # mux
                     kwargs["mixer_freq"] = np.mean(o["freq"])

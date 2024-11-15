@@ -16,7 +16,9 @@ relevant_var = {
     "PiPulseFreq": ["q_freq"],
     "ReadoutFreq": ["r_freq"],
     "ReadoutState": ["r_threshold", "r_phase"],
-    "Ramsey": ["q_freq"]
+    "Relax": ["r_relax"],
+    "Readout": ["r_power", "r_length"],
+    "Ramsey": ["q_freq"],
 }
 
 class BaseAuto:
@@ -72,9 +74,10 @@ class Resonator(BaseAuto):
         return self.var, fig
 
 class QubitFreq(BaseAuto):
-    def calibrate(self, q_freq_min=3000, q_freq_max=5000, gain=0.5, **kwargs):
+    def calibrate(self, q_freq_min=3000, q_freq_max=5000, q_gain=0.5, **kwargs):
         self.var["r_relax"] = 1
-        self.var["q_gain"] = gain
+        self.var["q_gain"] = q_gain
+        self.var["q_length"] = 2
         def scan(scan_freq, title=""):
             self.data = experiment.QubitSpectroscopy(data_path=self.data_path, title=f'(auto.QubitFreq) {int(self.var["r_freq"])} {title}', q_freq=scan_freq, soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs).run(silent=self.silent).data.T
         if self.data is None: 
@@ -124,10 +127,10 @@ class QubitFreq(BaseAuto):
         return False, fig
 
 class PiPulseLength(BaseAuto):
-    def calibrate(self, q_length_max=0.5, cycles=[], **kwargs):
+    def calibrate(self, q_length_max=0.5, cycles=[], tol=0.5, **kwargs):
         fig, axes = plt.subplots(len(cycles) + 1, 1)
         def scan(scan_length, cycle=0):
-            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseLength) {int(self.var['r_freq'])} length cycle={cycle}", q_length=scan_length, cycle=cycle, rep=2000, **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseLength) {int(self.var['r_freq'])} cycle={cycle}", q_length=scan_length, cycle=cycle, rep=2000, **kwargs).run(silent=self.silent).data.T
         def fit(cycle=0, ax=axes):
             L, A = self.data[0], self.data[2]
             def m(x, p1, p2, p3):
@@ -147,7 +150,7 @@ class PiPulseLength(BaseAuto):
         if self.data is None:
             scan(np.arange(0.01, q_length_max, 0.01))
         rchi2 = fit(cycle=0, ax=(axes[0] if len(cycles) > 0 else axes))
-        if rchi2 > 0.5:
+        if rchi2 > tol:
             return False, fig
         for j in range(len(cycles)):
             c = cycles[j]
@@ -155,24 +158,43 @@ class PiPulseLength(BaseAuto):
                 continue
             scan(np.linspace(self.var["q_length"] * (c - 0.5) / (c + 0.5), self.var["q_length"] * (c + 1.5) / (c + 0.5), 50), cycle=c)
             rchi2 = fit(cycle=c, ax=axes[j+1])
-            if rchi2 > 0.5:
+            if rchi2 > tol:
                 return False, fig
         return self.var, fig
 
 class PiPulseFreq(BaseAuto):
-    pass
+    def calibrate(self, cycles=[], r=10, **kwargs):
+        fig, axes = plt.subplots(len(cycles) + 1, 1)
+        def scan(cycle=0):
+            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseFreq) {int(self.var['r_freq'])} cycle={cycle}", q_freq=np.linspace(self.var["q_freq"]-r,self.var["q_freq"]+r,100), cycle=cycle, rep=2000, **kwargs).run(silent=self.silent).data.T
+        def fit(ax=axes):
+            F, A = self.data[0], self.data[2]
+            self.var["q_freq"] = float(helper.symmetryCenter(F, A))
+            ax.scatter(F, A, color="black", s=20)
+            ax.set_xlabel("Pi Pulse Freq (MHZ)")
+            ax.vlines([self.var["q_freq"]], ymin=np.min(A), ymax=np.max(A), color="red")
+        if self.data is None:
+            scan(cycle=0)
+        fit(ax=(axes[0] if len(cycles) > 0 else axes))
+        for j in range(len(cycles)):
+            c = cycles[j]
+            if c <= 0:
+                continue
+            scan(cycle=c)
+            fit(ax=axes[j+1])
+        return self.var, fig
 
 class ReadoutFreq(BaseAuto):
-    def calibrate(self):
+    def calibrate(self, **kwargs):
         if self.data is None:
-            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(self.var["r_freq"] - 1, self.var["r_freq"] + 1, 0.02)).run(silent=self.silent).data.T
-        F, A0, P0, A1, P1 = data[0], data[1], data[2], data[5], data[6]
+            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(self.var["r_freq"] - 1, self.var["r_freq"] + 1, 0.02), **kwargs).run(silent=self.silent).data.T
+        F, A0, P0, A1, P1 = self.data[0], self.data[1], self.data[2], self.data[5], self.data[6]
         dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
-        self.var["r_freq"] = float(F[np.argmax(dP)])
+        self.var["r_freq"] = float(F[np.argmax(np.abs(dP))])
         fig, ax = plt.subplots()
         ax.plot(F, A0, label="Amplitude 0", marker="o")
         ax.plot(F, A1, label="Amplitude 1", marker="o")
-        ax.vlines(self.var["r_freq"], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
+        ax.vlines([self.var["r_freq"]], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
         ax.legend()
         ax.set_xlabel("Readout Frequency (MHz)")
         ax.set_ylabel("Amplitude [log mag] (dB)")
@@ -180,10 +202,10 @@ class ReadoutFreq(BaseAuto):
         return self.var, fig
 
 class ReadoutState(BaseAuto):
-    def calibrate(self):
+    def calibrate(self, **kwargs):
         self.var["r_phase"] = 0
         if self.data is None:
-            self.data = experiment.IQScatter(var=self.var, soccfg=self.soccfg, soc=self.soc, data_path=self.data_path, title=f"(auto.ReadoutState)").run(silent=self.silent).data.T
+            self.data = experiment.IQScatter(var=self.var, soccfg=self.soccfg, soc=self.soc, data_path=self.data_path, title=f"(auto.ReadoutState)", **kwargs).run(silent=self.silent).data.T
         c0, c1, visibility, Fg, Fe, fig = helper.iq_scatter(self.data[0] + 1j * self.data[1], self.data[2] + 1j * self.data[3])
         if visibility < 0.1:
             return False, fig
@@ -191,10 +213,10 @@ class ReadoutState(BaseAuto):
         return self.var, fig 
 
 class Ramsey(BaseAuto):
-    def calibrate(self, fringe_freq=10, max_time=1):
+    def calibrate(self, fringe_freq=10, max_time=1, **kwargs):
         self.var["fringe_freq"] = fringe_freq
         if self.data is None:
-            self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=np.linspace(0, max_time, 100)).run(silent=self.silent).data.T
+            self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=np.linspace(0, max_time, 100), **kwargs).run(silent=self.silent).data.T
         L, A = self.data[0], self.data[1]
         def m(x, p1, p2, p3):
             return p1 * np.cos(p2 * x) + p3
@@ -207,7 +229,21 @@ class Ramsey(BaseAuto):
         return self.var, fig
 
 class Readout(BaseAuto):
-    pass
+    def calibrate(self):
+        def negative_score(x):
+            self.var["r_power"], self.var["r_length"] = float(x[0]), float(x[1])
+            data = experiment.IQScatter(var=self.var, soccfg=self.soccfg, soc=self.soc).run(silent=True).data.T
+            c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
+            c1m = np.median(data[2]) + 1j * np.median(data[3])
+            c1_shift = np.abs(c1 - c1m) / np.abs(c1m - c0)
+            plt.close()
+            score = min(Fg, Fe) - abs(Fg - Fe) - 10 * c1_shift ** 2
+            print(x, score)
+            return -score
+        initial_simplex = [[self.var["r_power"], self.var["r_length"]], [self.var["r_power"] + 4, self.var["r_length"]], [self.var["r_power"], self.var["r_length"] + 2]]
+        bounds = [(self.var["r_power"] - 10, self.var["r_power"] + 20), (0.1, 10)]
+        minimize(negative_score, x0=[self.var["r_power"], self.var["r_length"]], bounds=bounds, method="Nelder-Mead", options={ "maxfev": 100, "xatol": 0.05, "fatol": 1, "initial_simplex": initial_simplex })
+        return self.var, None
 
 def run(path, soccfg=None, soc=None, data_path=None):
     config = helper.load_yaml(path)
@@ -246,19 +282,17 @@ def run(path, soccfg=None, soc=None, data_path=None):
         _config["time"] = int(time.time() * 1000)
         helper.save_yaml(path, _config)
         return
-    except:
-        v = False
+    # except:
+    #    v = False
     qubits[qi]["status"]["run"] = qubits[qi]["status"].get("run", 0) + 1
     qubits[qi]["status"][step] = qubits[qi]["status"].get(step, 0) + 1
+    i = qubits[qi]["status"][step]
     if v is False: # failed
-        if qubits[qi]["status"][step] >= 3:
-            qubits[qi]["status"]["step"] = "fail"
-        else:
-            qubits[qi]["status"]["step"] = steps[step].get("fail", "fail")
+        qubits[qi]["status"]["step"] = steps[step].get(f"back{i}", steps[step].get("back", step))
     else: # succeeded
         if skip is False:
             a.update(qubits[qi]["var"])
-        qubits[qi]["status"]["step"] = steps[step].get("next", "end")
+        qubits[qi]["status"]["step"] = steps[step].get(f"next{i}", steps[step].get("next", "end"))
     _config = helper.load_yaml(path) # avoid overwrite
     _config["current"] = -2
     _config["time"] = int(time.time() * 1000)
