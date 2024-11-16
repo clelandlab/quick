@@ -202,12 +202,12 @@ class ReadoutFreq(BaseAuto):
         return self.var, fig
 
 class ReadoutState(BaseAuto):
-    def calibrate(self, **kwargs):
+    def calibrate(self, tol=0.1, **kwargs):
         self.var["r_phase"] = 0
         if self.data is None:
             self.data = experiment.IQScatter(var=self.var, soccfg=self.soccfg, soc=self.soc, data_path=self.data_path, title=f"(auto.ReadoutState)", **kwargs).run(silent=self.silent).data.T
         c0, c1, visibility, Fg, Fe, fig = helper.iq_scatter(self.data[0] + 1j * self.data[1], self.data[2] + 1j * self.data[3])
-        if visibility < 0.1:
+        if visibility < tol:
             return False, fig
         self.var["r_phase"], self.var["r_threshold"] = helper.iq_rotation(c0, c1)
         return self.var, fig 
@@ -230,14 +230,15 @@ class Ramsey(BaseAuto):
 
 class Readout(BaseAuto):
     def calibrate(self):
+        self.var["r_length"] = self.var.get("r_length", experiment.var["r_length"])
         def negative_score(x):
             self.var["r_power"], self.var["r_length"] = float(x[0]), float(x[1])
             data = experiment.IQScatter(var=self.var, soccfg=self.soccfg, soc=self.soc).run(silent=True).data.T
-            c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
+            c0, c1, visibility, Fg, Fe, fig = helper.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
             c1m = np.median(data[2]) + 1j * np.median(data[3])
             c1_shift = np.abs(c1 - c1m) / np.abs(c1m - c0)
             plt.close()
-            score = min(Fg, Fe) - abs(Fg - Fe) - 10 * c1_shift ** 2
+            score = visibility - abs(Fg - Fe) - 10 * c1_shift ** 2
             print(x, score)
             return -score
         initial_simplex = [[self.var["r_power"], self.var["r_length"]], [self.var["r_power"] + 4, self.var["r_length"]], [self.var["r_power"], self.var["r_length"] + 2]]
@@ -282,8 +283,8 @@ def run(path, soccfg=None, soc=None, data_path=None):
         _config["time"] = int(time.time() * 1000)
         helper.save_yaml(path, _config)
         return
-    # except:
-    #    v = False
+    except:
+       v = False
     qubits[qi]["status"]["run"] = qubits[qi]["status"].get("run", 0) + 1
     qubits[qi]["status"][step] = qubits[qi]["status"].get(step, 0) + 1
     i = qubits[qi]["status"][step]
