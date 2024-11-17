@@ -6,7 +6,7 @@ from scipy.ndimage import convolve1d, median_filter
 from scipy.signal import find_peaks, peak_widths
 from tqdm.notebook import tqdm
 import matplotlib.pyplot as plt
-import time
+import time, os
 
 relevant_var = {
     "BaseAuto": [],
@@ -18,7 +18,7 @@ relevant_var = {
     "ReadoutState": ["r_threshold", "r_phase"],
     "Relax": ["r_relax"],
     "Readout": ["r_power", "r_length"],
-    "Ramsey": ["q_freq"],
+    "Ramsey": ["q_freq"]
 }
 
 class BaseAuto:
@@ -48,7 +48,7 @@ class Resonator(BaseAuto):
         A = A.reshape((-1, Fn))
         avg = np.mean(A, axis=0)
         avg = convolve1d(avg, np.ones(3) / 3)
-        peaks, _ = find_peaks(-avg, distance=0.3/unit, width=0.05/unit, prominence=0.3)
+        peaks, _ = find_peaks(-avg, distance=0.3/unit, width=0.05/unit, prominence=0.3, height=-((np.max(avg) - np.min(avg)) * 0.7 + np.min(avg)))
         fig, axes = plt.subplots(1, 2, figsize=(16, 8))
         axes[0].plot(F, avg)
         axes[0].vlines(peaks * unit + F[0], ymin=np.min(avg), ymax=np.max(avg), color="red")
@@ -89,7 +89,7 @@ class QubitFreq(BaseAuto):
         ax.scatter(F, A, color="black", label="raw data", s=20)
         std = np.std(A)
         med = np.median(A)
-        A = median_filter(A, size = 7)
+        A = median_filter(A, size = 5)
         ax.plot(F, A, color="red", label="median filtered")
         ax.legend()
         ax.set_xlabel("Qubit Frequency (MHz)")
@@ -98,26 +98,26 @@ class QubitFreq(BaseAuto):
         ax.hlines([med + 2*std, med - 2*std], xmin=F[0], xmax=F[-1], color="green")
         ax.grid()
         peak, _ = find_peaks(A, height=med+2*std, distance=10/unit)
-        print(F[peak])
+        print("Peaks: ", F[peak])
         if len(peak) == 0:
             return False, fig
         if len(peak) == 1:
             self.var["q_freq"] = float(F[peak[0]])
             return self.var, fig
-        width = peak_widths(A, peak, rel_height = 0.8)
+        width = peak_widths(A, peak, rel_height=0.7)
         ls = []
         for w in range(len(width[0])):
             ls += [[F[peak[w]] - width[0][w]*unit, F[peak[w]] + width[0][w]*unit]]
-        print(ls)
         for gain in np.arange(0.05, 0.4, 0.1):
             interval_score = []
             interval_peak = []
             self.var["q_gain"] = gain
             for i, l in enumerate(ls):
-                scan(np.arange(l[0], l[1], 0.5), title=f"({i})gain={gain}")
+                scan(np.arange(l[0], l[1], 0.5), title=f"({i})gain={round(gain, 2)}")
                 _A = median_filter(self.data[1], size=3)
-                interval_score.append(np.max(_A) - np.min(_A))
+                interval_score.append(max(np.max(_A) - med - 1.5*std, 0))
                 interval_peak.append(np.argmax(_A) * 0.5 + l[0])
+            print("Interval Score: ", interval_score)
             _score = np.sort(interval_score)
             if _score[-1] > 2 * _score[-2]:
                 li = np.argmax(interval_score)
@@ -170,7 +170,7 @@ class PiPulseFreq(BaseAuto):
         def fit(ax=axes):
             F, A = self.data[0], self.data[2]
             self.var["q_freq"] = float(helper.symmetryCenter(F, A))
-            ax.scatter(F, A, color="black", s=20)
+            ax.plot(F, A, color="black", marker=".", markersize=20)
             ax.set_xlabel("Pi Pulse Freq (MHZ)")
             ax.vlines([self.var["q_freq"]], ymin=np.min(A), ymax=np.max(A), color="red")
         if self.data is None:
@@ -265,8 +265,7 @@ def run(path, soccfg=None, soc=None, data_path=None):
     if qi < 0: # all completed
         return False
     step = qubits[qi]["status"].get("step", "start")
-    print("\n------------ quick.auto.run ------------\n")
-    print(f"qubits[{qi}]: {step}")
+    print(f"\n------------ quick.auto.run [{qi}] {step} ------------\n")
     skip = False
     try:
         a = globals()[steps[step].get("class", step)](var=qubits[qi]["var"], soccfg=soccfg, soc=soc, data_path=data_path)
@@ -275,16 +274,17 @@ def run(path, soccfg=None, soc=None, data_path=None):
         v = True
     try:
         if skip is False:
-            v, fig = a.calibrate(**qubits[qi]["argument"].get(step, {}), **steps[step].get("argument", {}))
+            v, fig = a.calibrate(**steps[step].get("argument", {}), **qubits[qi]["argument"].get(step, {}))
     except KeyboardInterrupt:
-        print("\n! KeyboardInterrupt !")
+        print("\n!!!!! KeyboardInterrupt !!!!!")
         _config = helper.load_yaml(path) # avoid overwrite
         _config["current"] = -2
         _config["time"] = int(time.time() * 1000)
         helper.save_yaml(path, _config)
         return
-    except:
-       v = False
+    except Exception as e:
+        print(e)
+        v = False
     qubits[qi]["status"]["run"] = qubits[qi]["status"].get("run", 0) + 1
     qubits[qi]["status"][step] = qubits[qi]["status"].get(step, 0) + 1
     i = qubits[qi]["status"][step]
