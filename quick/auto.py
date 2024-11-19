@@ -62,7 +62,7 @@ class Resonator(BaseAuto):
         axes[1].set_xlabel("Power (dBm)")
         if s[-1] - np.min(s) < np.std(A):
             return False, fig
-        threshold = (np.max(s) - np.min(s)) * 0.2 + np.min(s)
+        threshold = (np.max(s) - np.min(s)) * 0.4 + np.min(s)
         for i in range(len(s) - 1, 1, -1):
             if s[i] < threshold and (s[i] - s[i-1]) / (P[i] - P[i-1]) < 0.1:
                 pi = i
@@ -115,11 +115,11 @@ class QubitFreq(BaseAuto):
             for i, l in enumerate(ls):
                 scan(np.arange(l[0], l[1], 0.5), title=f"({i})gain={round(gain, 2)}")
                 _A = median_filter(self.data[1], size=3)
-                interval_score.append(max(np.max(_A) - med - 1.5*std, 0))
+                interval_score.append(max(np.max(_A) - med - 1.5*std, 0) / std)
                 interval_peak.append(np.argmax(_A) * 0.5 + l[0])
             print("Interval Score: ", interval_score)
             _score = np.sort(interval_score)
-            if _score[-1] > 2 * _score[-2]:
+            if _score[-1] > _score[-2] + 0.2:
                 li = np.argmax(interval_score)
                 print(interval_peak[li])
                 self.var["q_freq"] = float(interval_peak[li])
@@ -170,8 +170,8 @@ class PiPulseFreq(BaseAuto):
         def fit(ax=axes):
             F, A = self.data[0], self.data[2]
             self.var["q_freq"] = float(helper.symmetryCenter(F, A))
-            ax.plot(F, A, color="black", marker=".", markersize=20)
-            ax.set_xlabel("Pi Pulse Freq (MHZ)")
+            ax.plot(F, A, marker="o")
+            ax.set_xlabel("Pi Pulse Freq (MHz)")
             ax.vlines([self.var["q_freq"]], ymin=np.min(A), ymax=np.max(A), color="red")
         if self.data is None:
             scan(cycle=0)
@@ -245,6 +245,15 @@ class Readout(BaseAuto):
         bounds = [(self.var["r_power"] - 10, self.var["r_power"] + 20), (0.1, 10)]
         minimize(negative_score, x0=[self.var["r_power"], self.var["r_length"]], bounds=bounds, method="Nelder-Mead", options={ "maxfev": 100, "xatol": 0.05, "fatol": 1, "initial_simplex": initial_simplex })
         return self.var, None
+
+class Relax(BaseAuto):
+    def calibrate(self, time_max=300):
+        if self.data is None:
+            self.data = quick.experiment.T1(var=self.var, data_path=self.data_path, soccfg=self.soccfg, soc=self.soc, title=f"{int(self.var['r_freq'])}",time=np.arange(0, time_max, 5)).run(silent=self.silent).data.T
+        popt, _, _, fig = quick.fitT1(self.data[0], self.data[1])
+        print("T1 =", popt[1])
+        self.var["r_relax"] = float(5 * popt[1])
+        return self.var, fig
 
 def run(path, soccfg=None, soc=None, data_path=None):
     config = helper.load_yaml(path)
