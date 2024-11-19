@@ -98,6 +98,7 @@ class QubitFreq(BaseAuto):
         ax.hlines([med + 2*std, med - 2*std], xmin=F[0], xmax=F[-1], color="green")
         ax.grid()
         peak, _ = find_peaks(A, height=med+2*std, distance=10/unit)
+        ax.scatter(F[peak], A[peak], marker="x", color="red")
         print("Peaks: ", F[peak])
         if len(peak) == 0:
             return False, fig
