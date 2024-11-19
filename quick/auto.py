@@ -249,8 +249,8 @@ class Readout(BaseAuto):
 class Relax(BaseAuto):
     def calibrate(self, time_max=300):
         if self.data is None:
-            self.data = quick.experiment.T1(var=self.var, data_path=self.data_path, soccfg=self.soccfg, soc=self.soc, title=f"{int(self.var['r_freq'])}",time=np.arange(0, time_max, 5)).run(silent=self.silent).data.T
-        popt, _, _, fig = quick.fitT1(self.data[0], self.data[1])
+            self.data = experiment.T1(var=self.var, data_path=self.data_path, soccfg=self.soccfg, soc=self.soc, title=f"(auto.Relax) {int(self.var['r_freq'])}",time=np.arange(0, time_max, 5)).run(silent=self.silent).data.T
+        popt, _, _, fig = helper.fitT1(self.data[0], self.data[1])
         print("T1 =", popt[1])
         self.var["r_relax"] = float(5 * popt[1])
         return self.var, fig
