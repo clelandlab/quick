@@ -74,6 +74,7 @@ p0_style: const    # [const|gaussian|DRAG|flat_top|arb] pulse style
 p0_phase: 0        # [deg] phase
 p0_length: 2       # [us] length
 p0_delta: -200     # [MHz] anharmonicity used in DRAG pulse
+p0_mixer: None     # [MHz] mixer frequency
 p0_mask: None      # [list] mask used in multiplexed pulse (mux)
 p0_idata: None     # [-1, 1] used in arb pulse, in DAC sample rates
 p0_qdata: None     # [-1, 1] used in arb pulse, in DAC sample rates

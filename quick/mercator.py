@@ -63,6 +63,7 @@ def parse(soccfg, cfg):
         c["g"][o["g"]]["nqz"] = cfg.get(f"p{p}_nqz", 2)
         o["freq"] = cfg.get(f"p{p}_freq", 0)
         c["g"][o["g"]]["freq"] = o["freq"]
+        o["mixer"] = cfg.get(f"p{p}_mixer", None)
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
         o["style"] = cfg.get(f"p{p}_style", "const")
         o["length"] = cfg.get(f"p{p}_length", 2)
@@ -102,10 +103,10 @@ class Mercator(AveragerProgramV2):
         for g, o in c["g"].items(): # Declare Generator Channels
             kwargs = {}
             if self.soccfg["gens"][g]["has_mixer"]:
-                kwargs["mixer_freq"] = int(o["freq"] / 100) * 100
+                kwargs["mixer_freq"] = o["mixer"] or int(o["freq"] / 100) * 100
                 kwargs["ro_ch"] = o["r"]
                 if isinstance(o["freq"], listType): # mux
-                    kwargs["mixer_freq"] = np.mean(o["freq"])
+                    kwargs["mixer_freq"] = o["mixer"] or np.mean(o["freq"])
                     kwargs["mux_freqs"] = o["freq"]
                     kwargs["mux_gains"] = np.array(c["p"][o["p"]]["gain"]) * mux_gain_factor[len(o["freq"])]
                     kwargs["mux_phases"] = c["p"][o["p"]]["phase"]
