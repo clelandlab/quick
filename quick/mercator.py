@@ -63,7 +63,7 @@ def parse(soccfg, cfg):
         c["g"][o["g"]]["nqz"] = cfg.get(f"p{p}_nqz", 2)
         o["freq"] = cfg.get(f"p{p}_freq", 0)
         c["g"][o["g"]]["freq"] = o["freq"]
-        o["mixer"] = cfg.get(f"p{p}_mixer", None)
+        c["g"][o["g"]]["mixer"] = c["g"][o["g"]].get("mixer", cfg.get(f"p{p}_mixer", None))
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
         o["style"] = cfg.get(f"p{p}_style", "const")
         o["length"] = cfg.get(f"p{p}_length", 2)
@@ -222,9 +222,6 @@ class Mercator(AveragerProgramV2):
             if o["type"] == "delay":
                 delay = delay + o["t"]
                 delays.append(delay)
-            if o["type"] == "wait_auto":
-                for g in range(17):
-                    generator_until[g] = max(generator_until[g], pulse_until + o["t"])
             if o["type"] == "delay_auto":
                 delay = max(pulse_until, delay) + o["t"]
                 delays.append(delay)

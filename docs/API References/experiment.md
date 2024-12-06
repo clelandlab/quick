@@ -146,7 +146,7 @@ Perform variable insertion and then config overwriting, generating `self.config`
 ### - BaseExperiment.prepare
 
 ```python
-e.prepare(indep_params=[], log_mag=False, population=False)
+e.prepare(indep_params=[], db=False, population=False)
 ```
 
 prepare the standard S21 measurements (amplitude, phase, I, Q), create data saver. Mostly for internal use.
@@ -154,7 +154,7 @@ prepare the standard S21 measurements (amplitude, phase, I, Q), create data save
 **Parameters**:
 
 - `indep_params=[]` (list) a list of 2-tuples, specifying meta information for independent variables, in the format of `("Name", "Unit")`. Note that variables in `self.sweep` are automatically added without passing in.
-- `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
+- `db=False` (bool) whether to measure amplitude in log scale (db with normalization).
 - `population=False` (bool) whether to measure the qubit population.
 
 ### - BaseExperiment.add_data
@@ -172,7 +172,7 @@ add and save data. Mostly for internal use.
 ### - BaseExperiment.acquire_S21
 
 ```python
-e.acquire_S21(indep_list, log_mag=False, decimated=False, population=False)
+e.acquire_S21(indep_list, db=False, decimated=False, population=False)
 ```
 
 acquire data for standard S21 measurement. Run the program specified by `self.config` in Mercator protocol. Mostly for internal use.
@@ -180,14 +180,14 @@ acquire data for standard S21 measurement. Run the program specified by `self.co
 **Parameters**:
 
 - `indep_list` (list) a list of values for independent variables, in the exact order as specified by `prepare`.
-- `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
+- `db=False` (bool) whether to measure amplitude in log scale (db with normalization).
 - `decimated=False` (bool) whether to acquire for time-series output.
 - `population=False` (bool) whether to measure the qubit population.
 
 ### = BaseExperiment.run
 
 ```python
-e = e.run(silent=False, log_mag=False, population=False)
+e = e.run(silent=False, db=False, population=False)
 ```
 
 Run the experiment. See details below.
@@ -195,7 +195,7 @@ Run the experiment. See details below.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
-- `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
+- `db=False` (bool) whether to measure amplitude in log scale (db with normalization).
 - `population=False` (bool) whether to measure the qubit population.
 
 **Return**:
@@ -256,7 +256,7 @@ Measure the loop-back signal. No variable sweeping.
 ### - LoopBack.run
 
 ```python
-e = e.run(silent=False, log_mag=False)
+e = e.run(silent=False, db=False)
 ```
 
 run the experiment.
@@ -264,7 +264,7 @@ run the experiment.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
-- `log_mag=False` (bool) whether to measure amplitude in log scale (with normalization).
+- `db=False` (bool) whether to measure amplitude in log scale (db with normalization).
 
 **Return**:
 
@@ -286,7 +286,7 @@ Measure the resonator spectroscopy, including the power spectroscopy.
 ### - ResonatorSpectroscopy.run
 
 ```python
-e = e.run(silent=False, log_mag=True)
+e = e.run(silent=False, db=True)
 ```
 
 run the experiment.
@@ -294,7 +294,7 @@ run the experiment.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
-- `log_mag=True` (bool) Whether to use log magnitude (dB).
+- `db=True` (bool) whether to measure amplitude in log scale (db with normalization).
 
 **Return**:
 
@@ -313,7 +313,7 @@ Measure the qubit spectroscopy, or two-tone spectroscopy.
 - Arbitrary variable sweeping
 - `dep_params = [("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
     - include `(Population, "")` by `e.run(population=True)`
-    - use log magnitude by `e.run(log_mag=True)`
+    - use log magnitude by `e.run(db=True)`
 
 ## 🟢Rabi
 
