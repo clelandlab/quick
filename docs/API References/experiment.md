@@ -505,3 +505,45 @@ run the experiment.
 **Return**:
 
 - `e` the experiment object itself.
+
+## 🔵Random
+
+> Base *class*: `BaseExperiment`
+
+```python
+e = quick.experiment.Random(**kwargs)
+```
+
+Generate a sequence of random bit by a qubit!
+
+### - Random.run
+
+```python
+e.run(silent=False)
+```
+
+run the experiment. `e.data` will be a list of random bits. It's guaranteed to be balanced, and the bit number is roughly 1/4 of the `rep`.
+
+**Parameters**:
+
+- `silent=False` (bool) Whether to avoid any printing.
+
+**Return**:
+
+- `e` the experiment object itself.
+
+### - Random.random
+
+```python
+a = e.random(silent=True)
+```
+
+generate a float number within range (0, 1) uniformly.
+
+**Parameters**:
+
+- `silent=True` (bool) Whether to avoid any printing.
+
+**Return**:
+
+- `a` (float) a random number between 0 and 1.

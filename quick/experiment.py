@@ -197,3 +197,27 @@ class T2Echo(BaseExperiment):
         super().__init__(**kwargs)
     def run(self, silent=False, population=True):
         return super().run(silent=silent, population=population)
+
+class Random(BaseExperiment):
+    def run(self, silent=False):
+        if not silent:
+            print(f"quick.experiment({self.key}) Starting")
+        self.eval_config(self.var)
+        self.m = Mercator(self.soccfg, self.config)
+        I, Q = self.m.acquire(self.soc)
+        raw = (I[0][0] > self.var["r_threshold"]).astype(int).reshape((-1, 2))
+        self.data = []
+        for r in raw:
+            if r[0] == 0 and r[1] == 1:
+                self.data.append(0)
+            if r[0] == 1 and r[1] == 0:
+                self.data.append(1)
+        return self.conclude(silent)
+    def random(self, silent=True):
+        self.run(silent)
+        res = 0
+        for i in range(len(self.data)):
+            if i > 64:
+                continue
+            res += self.data[i] * 2 ** (-i - 1)
+        return res
