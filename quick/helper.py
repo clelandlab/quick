@@ -169,6 +169,8 @@ class Saver:
             config["Dependent " + str(i + 1)] = { "label": self.dep_params[i][0], "units": self.dep_params[i][1], "category": self.dep_params[i][2] }
         n_param = 1 # Parameters
         for key, value in self.params.items():
+            if value is None:
+                continue
             if isinstance(value, (list, np.ndarray)):
                 value = np.array2string(np.ndarray(value), max_line_width=2147483647, separator=",", threshold=2147483647)
             if isinstance(value, dict):
