@@ -378,7 +378,7 @@ T2Echo: |
     t: {r_relax}
 
 Random: |
-  rep: 500
+  rep: 100
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}

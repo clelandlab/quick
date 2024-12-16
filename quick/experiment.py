@@ -215,9 +215,12 @@ class Random(BaseExperiment):
         return self.conclude(silent)
     def random(self, silent=True):
         self.run(silent)
+        c = 0
         res = 0
-        for i in range(len(self.data)):
-            if i > 64:
-                continue
-            res += self.data[i] * 2 ** (-i - 1)
+        for i in range(64):
+            if c >= len(self.data):
+                self.run(silent)
+                c = 0
+            res += self.data[c] * 2 ** (-i - 1)
+            c += 1
         return res
