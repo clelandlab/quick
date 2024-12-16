@@ -74,7 +74,7 @@ def parse(soccfg, cfg):
         o["phase"] = cfg.get(f"p{p}_phase", list(np.zeros(len(o["freq"]))) if isinstance(o["freq"], listType) else 0)
         o["idata"] = cfg.get(f"p{p}_idata", None)
         o["qdata"] = cfg.get(f"p{p}_qdata", None)
-        if f"p{p}_power" in cfg:
+        if cfg.get(f"p{p}_power", None) is not None:
             balun = cfg.get(f"p{p}_balun", 2)
             o["gain"] = dbm2gain(cfg[f"p{p}_power"], o["freq"], c["g"][o["g"]]["nqz"], balun)
             cfg[f"p{p}_gain"] = o["gain"] # write back computed gain

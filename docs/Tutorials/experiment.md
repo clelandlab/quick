@@ -107,10 +107,13 @@ Use your pi pulse to plot the IQ scatter to see the readout visibility and fidel
 
 ```python
 v["r_phase"] = 0
-data = quick.experiment.IQScatter(var=v).run().data.T
-c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
-v["r_phase"], v["r_threshold"] = quick.iq_rotation(c0, c1)
-fig.show()
+for _ in range(1): # iterate
+    data = quick.experiment.IQScatter(var=v).run().data.T
+    c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
+    phase_delta, v["r_threshold"] = quick.iq_rotation(c0, c1)
+    v["r_phase"] += phase_delta
+    v["r_phase"] %= 360
+    plt.show()
 ```
 
 You can also use the `DispersiveSpectroscopy` to find the best value for `v["r_freq"]`. See API References for details.
