@@ -16,15 +16,14 @@ qubits:
       q_length_max: 1
     QubitFreq:
       q_freq_max: 5500
-      q_freq_min: 3000
+      q_freq_min: 3500
   status:
-    Resonator: 2
-    run: 2
-    step: fail
+    run: 0
+    step: start
   var:
     q: 10
     r: 8
-    r_freq: 6156.520202020202
+    r_freq: 6000
     r_length: 4
     r_offset: 0.5
     r_relax: 500
