@@ -25,21 +25,15 @@ class BaseExperiment:
         template_var_label.update(self.var_label)
         self.var_label = template_var_label
         self.sweep = {}
-        self.config_update = {
-            "quick.experiment": self.key,
-            "quick.__version__": __version__
-        }
+        self.config_update = {}
         for k, v in kwargs.items():
             if k in self.var:
                 self.var[k] = v
                 if isinstance(v, listTypes):
                     self.sweep[k] = v
                     self.var[k] = v[0]
-                if hasattr(self.var[k], "dtype"): # np to native for saving.
-                    self.var[k] = self.var[k].item()
             else:
                 self.config_update[k] = v
-        self.config_update["var"] = self.var
         self.eval_config(self.var)
         self.soccfg, self.soc = helper.getSoc() if soccfg is None else (soccfg, soc)
         self.m = Mercator(self.soccfg, self.config)
@@ -58,7 +52,7 @@ class BaseExperiment:
             dep_params.append(("Population", ""))
         dep_params.extend([("Amplitude", "dB") if db else ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")])
         if self.data_path is not None:
-            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, self.config)
+            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
     def add_data(self, data): # add & save data
         self.data.extend(data)
         if self.data_path is not None:
@@ -131,7 +125,7 @@ class IQScatter(BaseExperiment):
         indep_params = []
         dep_params = [("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")]
         if self.data_path is not None:
-            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, self.config)
+            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
         self.config["0_type"] = "pulse" # send pi pulse
         self.m = Mercator(self.soccfg, self.config)
         I1, Q1 = self.m.acquire(self.soc)
@@ -154,7 +148,7 @@ class DispersiveSpectroscopy(BaseExperiment):
         indep_params = [("Readout Pulse Frequency", "MHz")]
         dep_params = [("Amplitude 0", "dB"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]
         if self.data_path is not None:
-            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, self.config)
+            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
         for c in helper.Sweep(self.config, { "p0_freq": self.r_freq }, progressBar=(not silent)):
             c["0_type"] = "pulse" # send pi pulse
             self.m = Mercator(self.soccfg, c)

@@ -12,6 +12,9 @@ from qick import QickConfig
 _soccfg, _soc = None, None
 π = np.pi
 
+yaml.add_representer(np.ndarray, lambda dumper, array: dumper.represent_sequence('tag:yaml.org,2002:seq', array.tolist(), flow_style=True))
+yaml.add_multi_representer(np.generic, lambda dumper, data: dumper.represent_data(data.item()))
+
 def connect(ip, port=8888, proxy_name="qick"):
     global _soc, _soccfg
     Pyro4.config.SERIALIZER = "pickle"
@@ -127,17 +130,13 @@ class Saver:
         os.path.exists(path)
         try: # check variables
             for value in indep_params:
-                _, _ = value[0], value[1] # format checking
-                self.indep_params.append(value)
+                self.indep_params.append([value[0], value[1]])
             for value in dep_params:
-                if len(value) < 3:
-                    value = (*value, "")
-                _, _, _ = value[0], value[1], value[2] # format checking
-                self.dep_params.append(value)
+                self.dep_params.append([value[0], value[1]])
         except KeyError:
-            print("Variables incorrectly formatted. Independent variable: ('label', 'unit'). Dependent variable: ('label', 'unit', 'category) \n ")
+            print("Variables incorrectly formatted. Variable: ('label', 'unit')")
         # Detect max existing file number
-        existing_files = [f for f in os.listdir(self.path) if re.search(r"^\d\d\d\d\d \- .*\.ini$", f)]
+        existing_files = [f for f in os.listdir(self.path) if re.search(r"^\d\d\d\d\d \- .*\.csv$", f)]
         if existing_files:
             existing_numbers = [int(f.split(' - ')[0]) for f in existing_files]
             next_number = max(existing_numbers) + 1
@@ -145,18 +144,19 @@ class Saver:
             next_number = 0
         # Creating file name + path based off ^
         self.file_name = self.path + f"/{next_number:05d} - {self.title}"
+        self.created_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
         self.write_ini()
+        self.write_yml()
         # Create empty csv
         np.savetxt(self.file_name + '.csv', [], delimiter=',')
 
     def write_ini(self):
         # Making FILLED ini
         config = configparser.ConfigParser()
-        formatted_date_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
         config["General"] = {
-            "created": formatted_date_time,
-            "accessed": formatted_date_time,
-            "modified": formatted_date_time,
+            "created": self.created_time,
+            "accessed": self.created_time,
+            "modified": self.created_time,
             "title": self.title,
             "independent": len(self.indep_params),
             "dependent": len(self.dep_params),
@@ -166,26 +166,30 @@ class Saver:
         for i in range(0, len(self.indep_params)): # Independents
             config["Independent " + str(i + 1)] = { "label": self.indep_params[i][0], "units": self.indep_params[i][1] }
         for i in range(0, len(self.dep_params)): # Dependents
-            config["Dependent " + str(i + 1)] = { "label": self.dep_params[i][0], "units": self.dep_params[i][1], "category": self.dep_params[i][2] }
-        n_param = 1 # Parameters
-        for key, value in self.params.items():
-            if value is None:
-                continue
-            if isinstance(value, (list, np.ndarray)):
-                value = np.array2string(np.ndarray(value), max_line_width=2147483647, separator=",", threshold=2147483647)
-            if isinstance(value, dict):
-                value = json.dumps(value, default=str)
-            config["Parameter " + str(n_param)] = { "label": key, "data": value }
-            n_param += 1
+            config["Dependent " + str(i + 1)] = { "label": self.dep_params[i][0], "units": self.dep_params[i][1] }
+        config["Parameter 1"] = { "label": "deprecated", "data": "meta_information_in_yml_file" }
         config["Comments"] = {} # No comments bc nobody uses them
         # Making file
         with open(self.file_name + ".ini", "w") as configfile:
             config.write(configfile)
 
+    def write_yml(self):
+        meta = {
+            "created": self.created_time,
+            "modified": datetime.now().strftime("%Y-%m-%d, %H:%M:%S"),
+            "title": self.title,
+            "independent": self.indep_params,
+            "dependent": self.dep_params,
+            "parameters": self.params,
+            "comments": []
+        }
+        save_yaml(self.file_name + ".yml", meta)
+
     def write_data(self, data):
         # Todo: check data dimension
         with open(self.file_name + '.csv', 'a+') as f:
             np.savetxt(f, data, fmt="%.9e", delimiter=',')
+        self.write_yml()
 
 dbm_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "./constants/dbm.npy")
 dbm_data = np.load(dbm_path)

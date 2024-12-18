@@ -150,14 +150,14 @@ for cfg in quick.Sweep(config, sweepConfig):
 s = quick.Saver(title, path, indep_params=[], dep_params=[], params={})
 ```
 
-The *class* to construct a data saver. The data will be saved in *LabRAD* fashion, where meta information will be saved in an ini file and data points will be saved in a csv file.
+The *class* to construct a data saver. The meta information will be saved in a yml file and data points will be saved in a csv file. (An ini file will also be generated for capability of *LabRAD*)
 
 **Parameters**:
 
 - `title` (str) filename (also the title) of the data.
 - `path` (str) path to the directory to save the data.
 - `indep_params=[]` (list) a list of 2-tuples, specifying meta information for independent variables, in the format of `("Name", "Unit")`
-- `dep_params=[]` (list) a list of 2- or 3-tuples, specifying meta information for dependent variables, in the format of `("Name", "Unit", "Catalog")`, where `"Catalog"` can be omitted.
+- `dep_params=[]` (list) a list of 2- or 3-tuples, specifying meta information for dependent variables, in the format of `("Name", "Unit")`
 - `params={}` (dict) a dictionary of other parameters, will be saved as meta information.
 
 > Most variables and methods are for internal use and therefore not documented here. To save data, use the `write_data` method below.
@@ -179,7 +179,7 @@ Write data to a data saver. The data will be **immediately appended** to the dat
 ```python
 path = "path/to/directory/"
 indep_params = [("Frequency", "MHz")]                            # a list of ("Name", "Unit")
-dep_params = [("Amplitude", "dB"), ("Data", "", "IQ Amplitude")] # a list of ("Name", "Unit", "Catalog")
+dep_params = [("Amplitude", "dB"), ("Data", "", "IQ Amplitude")] # a list of ("Name", "Unit")
 params = { "res_ch": 6, "ro_chs": [0], "reps": 1 }
 s = quick.Saver("Test Saving", path, indep_params, dep_params, params)
 data = [ # data to save is a 2D array
