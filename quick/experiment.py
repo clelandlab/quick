@@ -84,6 +84,8 @@ class BaseExperiment:
         if not silent:
             print(f"quick.experiment({self.key}) Completed. Data saved in {self.data_path}" if self.data_path is not None else f"quick.experiment({self.key}) Completed.")
         self.data = np.array(self.data)
+        if self.data_path is not None:
+            self.s.write_yml() # update the completed time
         return self
     def light(self):
         self.m.light()

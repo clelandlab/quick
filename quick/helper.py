@@ -176,7 +176,7 @@ class Saver:
     def write_yml(self):
         meta = {
             "created": self.created_time,
-            "modified": datetime.now().strftime("%Y-%m-%d, %H:%M:%S"),
+            "completed": datetime.now().strftime("%Y-%m-%d, %H:%M:%S"),
             "title": self.title,
             "independent": self.indep_params,
             "dependent": self.dep_params,
@@ -189,7 +189,7 @@ class Saver:
         # Todo: check data dimension
         with open(self.file_name + '.csv', 'a+') as f:
             np.savetxt(f, data, fmt="%.9e", delimiter=',')
-        self.write_yml()
+        # self.write_yml() # do not call it every time for efficiency
 
 dbm_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "./constants/dbm.npy")
 dbm_data = np.load(dbm_path)
