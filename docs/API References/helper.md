@@ -157,7 +157,7 @@ The *class* to construct a data saver. The meta information will be saved in a y
 - `title` (str) filename (also the title) of the data.
 - `path` (str) path to the directory to save the data.
 - `indep_params=[]` (list) a list of 2-tuples, specifying meta information for independent variables, in the format of `("Name", "Unit")`
-- `dep_params=[]` (list) a list of 2- or 3-tuples, specifying meta information for dependent variables, in the format of `("Name", "Unit")`
+- `dep_params=[]` (list) a list of 2-tuples, specifying meta information for dependent variables, in the format of `("Name", "Unit")`
 - `params={}` (dict) a dictionary of other parameters, will be saved as meta information.
 
 > Most variables and methods are for internal use and therefore not documented here. To save data, use the `write_data` method below.
@@ -187,6 +187,8 @@ data = [ # data to save is a 2D array
     [1.5, 101, 201] # defined in indep_params and dep_params
 ]
 s.write_data(data)
+# OPTIONAL: after complete, call s.write_yml()
+s.write_yml() # this will update the completed time.
 ```
 
 ## 🔵evalStr
