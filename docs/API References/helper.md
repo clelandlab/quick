@@ -81,22 +81,6 @@ Save a Python object to a yaml file.
 
 - `content` (str) the saved yaml string
 
-## 🔵load_ini
-
-```python
-data = quick.load_ini(path)
-```
-
-Load the parameters saved in an ini file (in the format produced by `Saver`).
-
-**Parameters**:
-
-- `path` (str) Path to the ini file
-
-**Return**:
-
-- `data` (dict) a Python dictionary
-
 ## 🟢load_data
 
 ```python

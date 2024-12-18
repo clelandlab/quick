@@ -43,29 +43,6 @@ def save_yaml(path, data):
     file.write(content)
     return content
 
-def load_ini(path):
-    config = configparser.ConfigParser()
-    config.read(path)
-    res = {}
-    for s in config.sections():
-        if not s.startswith('Parameter'):
-            continue
-        label = config[s]["label"]
-        data = config[s]["data"]
-        try: # Attempt to evaluate the value
-            # Check if the value is a numpy matrix
-            if re.match(r'^\[\[[\d\s.]+\]\s*\[[\d\s.]+\]\s*\[[\d\s.]+\]\]$', data):
-                data = np.array(ast.literal_eval(data.replace(' ', ','))) # Replace spaces with commas between rows
-            # Check if the value is a numpy array
-            elif re.match(r'^\[[\d\s.,]*\]$', data) and ',' not in data:
-                data = np.array(ast.literal_eval(data.replace(' ', ',')))
-            else:
-                data = ast.literal_eval(data)
-        except (ValueError, SyntaxError):
-            pass
-        res[label] = data
-    return res
-
 def load_data(*paths):
     data_list = []
     for p in paths:
