@@ -2,7 +2,6 @@ from qick.asm_v2 import AveragerProgramV2, QickSweep1D, AsmV2
 from .helper import dbm2gain
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
 
 listType = (list, np.ndarray)
 
@@ -229,7 +228,7 @@ class Mercator(AveragerProgramV2):
                 for r in (o["rs"] or c["r"]):
                     end = start + c["r"][r]["length"]
                     pulse_until = max(end, pulse_until)
-                    ax.add_patch(patches.Rectangle((start, -1.05), end - start, 2.25, fill=True, color=('r' if r == 0 else 'b'), alpha=0.1, label=f"r{r}"))
+                    ax.axvspan(xmin=start, xmax=end, color=('r' if r == 0 else 'b'), alpha=0.1, label=f"r{r}")
             if o["type"] == "goto":
                 goto_rep[i] = goto_rep.get(i, o["rep"]) - 1
                 i = o["i"] if goto_rep[i] >= 0 else i + 1

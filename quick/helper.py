@@ -357,7 +357,7 @@ def fitT1(T, S):
     ax.grid()
     ax.legend()
     mid_index = len(T) // 2
-    ax.annotate(annotation_text, (T[mid_index], S[mid_index]), fontsize=8, xycoords='data', textcoords='offset points', xytext=(20, 20), arrowprops=dict(arrowstyle="->", lw=0.5))
+    ax.annotate(annotation_text, (T[mid_index], S[mid_index]), fontsize=8, xycoords='data', textcoords='offset points', xytext=(20, 20))
     return popt, perr, rchi2, fig
 
 # T2 fit and plot
