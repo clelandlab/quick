@@ -162,8 +162,8 @@ Write data to a data saver. The data will be **immediately appended** to the dat
 
 ```python
 path = "path/to/directory/"
-indep_params = [("Frequency", "MHz")]                            # a list of ("Name", "Unit")
-dep_params = [("Amplitude", "dB"), ("Data", "", "IQ Amplitude")] # a list of ("Name", "Unit")
+indep_params = [("Frequency", "MHz")]           # a list of ("Name", "Unit")
+dep_params = [("Amplitude", "dB"), ("Data", ""] # a list of ("Name", "Unit")
 params = { "res_ch": 6, "ro_chs": [0], "reps": 1 }
 s = quick.Saver("Test Saving", path, indep_params, dep_params, params)
 data = [ # data to save is a 2D array

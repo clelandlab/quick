@@ -87,8 +87,7 @@ def parse(soccfg, cfg):
             o["length"] = cfg.get(f"r{r}_length", 2)
             if o["p"] is not None: # match corresponding pulse/channels
                 o["g"] = c["p"][o["p"]]["g"]
-                c["g"][o["g"]]["r"] = r
-                c["p"][o["p"]]["r"] = r
+                c["g"][o["g"]]["r"] = c["p"][o["p"]]["r"] = r
                 if o["freq"] is None:
                     o["freq"] = c["p"][o["p"]]["freq"]
     cfg["rep"] = cfg.get("rep", 0)
@@ -138,7 +137,7 @@ class Mercator(AveragerProgramV2):
             self.add_pulse(ch=o["g"], name=f"p{p}",  **kwargs)
         if cfg["rep"] > 0:
             self.add_loop("rep", cfg["rep"])
-        self.delay(0.5)
+        self.delay(0.3)
     
     def _body(self, cfg):
         c = self.c
@@ -182,9 +181,8 @@ class Mercator(AveragerProgramV2):
         for g in range(15, -1, -1):
             if g in c["g"]:
                 data[g] = [[0, 0]]
-        delays = [0]
-        delay = 0 # all t are absolute
-        pulse_until = 0
+        delays = [0] # all t are absolute
+        delay = pulse_until = 0
         generator_until = np.zeros(17)
         periodic = {}
         def add_pulse(p, g, start, first=True):
@@ -224,6 +222,13 @@ class Mercator(AveragerProgramV2):
             if o["type"] == "delay_auto":
                 delay = max(pulse_until, delay) + o["t"]
                 delays.append(delay)
+            if o["type"] == "wait":
+                for k in range(len(generator_until)):
+                    generator_until[k] = max(generator_until[k], start)
+            if o["type"] == "wait_all":
+                end = start = max(pulse_until, delay) + o["t"]
+                for k in range(len(generator_until)):
+                    generator_until[k] = max(generator_until[k], start)
             if o["type"] == "trigger":
                 for r in (o["rs"] or c["r"]):
                     end = start + c["r"][r]["length"]

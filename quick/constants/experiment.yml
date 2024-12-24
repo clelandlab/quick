@@ -39,7 +39,7 @@ var_label:
 # Programs below are exported as strings for variable insertion
 
 LoopBack: |
-  soft_avg: 100  
+  soft_avg: 100
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
