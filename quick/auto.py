@@ -263,7 +263,7 @@ def run(path, soccfg=None, soc=None, data_path=None):
     qi = -1 # find the qubit to be run
     min_run = 9e9
     for i, q in enumerate(qubits):
-        if q["status"].get("step", "start") in ["end", "fail"]:
+        if q["status"].get("step", "start") in ["end", "fail", "pause"]:
             continue  # completed
         run = q["status"].get("run", 0)
         if run < min_run:

@@ -332,7 +332,7 @@ def fitT1(T, S):
         d1 = p[0] * x / p[1] ** 2 * np.exp(-x / p[1])
         d2 = np.ones(len(x))
         return np.transpose([d0, d1, d2])
-    p0 = [1.0, 50.0, 1.0]
+    p0 = [1.0, 1.0, 1.0]
     popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
     residuals = S - m(T, *popt)
