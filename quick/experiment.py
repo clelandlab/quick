@@ -129,10 +129,12 @@ class IQScatter(BaseExperiment):
         if self.data_path is not None:
             self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
         self.config["0_type"] = "pulse" # send pi pulse
+        self.config["1_t"] = 0
         self.m = Mercator(self.soccfg, self.config)
         I1, Q1 = self.m.acquire(self.soc)
         I1, Q1 = I1[0][0], Q1[0][0]
         self.config["0_type"] = "delay_auto" # omit pi pulse
+        self.config["1_t"] = self.var["q_length"]
         self.m = Mercator(self.soccfg, self.config)
         I0, Q0 = self.m.acquire(self.soc)
         I0, Q0 = I0[0][0], Q0[0][0]
