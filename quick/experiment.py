@@ -155,10 +155,12 @@ class DispersiveSpectroscopy(BaseExperiment):
             self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
         for c in helper.Sweep(self.config, { "p0_freq": self.r_freq }, progressBar=(not silent)):
             c["0_type"] = "pulse" # send pi pulse
+            c["1_t"] = 0
             self.m = Mercator(self.soccfg, c)
             I1, Q1 = self.m.acquire(self.soc)
             S1 = I1[0][0] + 1j * Q1[0][0]
             c["0_type"] = "delay_auto" # omit pi pulse
+            c["1_t"] = self.var["q_length"]
             self.m = Mercator(self.soccfg, c)
             I0, Q0 = self.m.acquire(self.soc)
             S0 = I0[0][0] + 1j * Q0[0][0]
