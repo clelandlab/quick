@@ -89,6 +89,7 @@ class BaseExperiment:
         return self
     def light(self):
         self.m.light()
+        return self
 
 # All experiments are following
 class LoopBack(BaseExperiment):
