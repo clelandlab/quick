@@ -110,12 +110,15 @@ class Mercator(AveragerProgramV2):
                     kwargs["mux_phases"] = c["p"][o["p"]]["phase"]
             self.declare_gen(ch=g, nqz=o["nqz"], **kwargs)
         for r, o in c["r"].items(): # Declare Readout Channels
+            kwargs = { "phase": o["phase"], "freq": o["freq"] }
+            if "g" in o:
+                kwargs["gen_ch"] = o["g"]
             if "tproc_ctrl" in self.soccfg["readouts"][r]:
                 self.declare_readout(ch=r, length=o["length"])
-                self.add_readoutconfig(ch=r, name=f"r{r}", freq=o["freq"], gen_ch=o["g"], phase=o["phase"])
+                self.add_readoutconfig(ch=r, name=f"r{r}", **kwargs)
                 self.send_readoutconfig(ch=r, name=f"r{r}", t=0)
             else: # mux readout
-                self.declare_readout(ch=r, length=o["length"], freq=o["freq"], phase=o["phase"], gen_ch=o["g"])
+                self.declare_readout(ch=r, length=o["length"], **kwargs)
         for p, o in c["p"].items(): # Setup pulses
             kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"] }
             if o["style"] == "const":

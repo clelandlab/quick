@@ -221,77 +221,47 @@ def iq_rotation(c0, c1):
 
 # return c0, c1, visibility, Fg, Fe, fig
 def iq_scatter(S0s, S1s, c0=None, c1=None):
-    I0s, Q0s, I1s, Q1s = np.real(S0s), np.imag(S0s), np.real(S1s), np.imag(S1s)
     if c0 is None:
-        c0 = np.median(I0s) + 1j * np.median(Q0s)
+        c0 = np.median(S0s.real) + 1j * np.median(S0s.imag)
     if c1 is None:
-        c1 = np.median(I1s) + 1j * np.median(Q1s)
-    c0I, c0Q, c1I, c1Q = np.real(c0), np.imag(c0), np.real(c1), np.imag(c1)
-    def negative_visibility(p):
-        I0s_shift = I0s - (p[0] + c0I) / 2.0
-        Q0s_shift = Q0s - (p[1] + c0Q) / 2.0
-        I1s_shift = I1s - (p[0] + c0I) / 2.0
-        Q1s_shift = Q1s - (p[1] + c0Q) / 2.0
-        angle = np.angle(-1j * p[1] - p[0] + 1j * c0Q + c0I)
-        rot_mat = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
-        I0_rot = np.dot(rot_mat, np.vstack([I0s_shift, Q0s_shift]))[0]
-        I1_rot = np.dot(rot_mat, np.vstack([I1s_shift, Q1s_shift]))[0]
-        prob0 = float(I0_rot[I0_rot < 0].size) / I0_rot.size
-        prob1 = float(I1_rot[I1_rot < 0].size) / I1_rot.size
+        c1 = np.median(S1s.real) + 1j * np.median(S1s.imag)
+    def negative_visibility(_p):
+        p = _p[0] + 1j * _p[1]
+        angle = np.angle(c0 - p)
+        S0 = (S0s - (p + c0) / 2.0) * np.exp(-1j * angle)
+        S1 = (S1s - (p + c0) / 2.0) * np.exp(-1j * angle)
+        prob0 = float(S0.real[S0.real < 0].size) / S0.size
+        prob1 = float(S1.real[S1.real < 0].size) / S1.size
         return prob0 - prob1
-    res = minimize(negative_visibility, [c1I, c1Q], method='Nelder-Mead') # optimize c1
+    res = minimize(negative_visibility, [c1.real, c1.imag], method='Nelder-Mead') # optimize c1
     visibility = -1 * negative_visibility(res.x)
-    c1I, c1Q, c1 = res.x[0], res.x[1], res.x[0] + 1j * res.x[1]
+    c1 = res.x[0] + 1j * res.x[1]
     fig, axes = plt.subplots(1, 2, figsize=(12, 6)) # plot the histogram
-    new_center = [ 0.5 * (c1I + c0I), 0.5 * (c1Q + c0Q) ]
-    g_i_shift = I0s - new_center[0]
-    g_q_shift = Q0s - new_center[1]
-    e_i_shift = I1s - new_center[0]
-    e_q_shift = Q1s - new_center[1]
-    g_center_shift = [c0I - new_center[0], c0Q - new_center[1]]
-    g_proj, e_proj, g_proj_correct, e_proj_correct = [], [], [], []
-    I0_correct, Q0_correct, I1_correct, Q1_correct = [], [], [], []
-    I0_wrong, Q0_wrong, I1_wrong, Q1_wrong = [], [], [], []
-    g_count, e_count = 0, 0
-    for i in range(len(I0s)):
-        _g_proj = (g_i_shift[i] * g_center_shift[0] + g_q_shift[i] * g_center_shift[1]) / (g_center_shift[0]**2 + g_center_shift[1]**2)
-        g_proj.append(_g_proj)
-        if _g_proj > 0:
-            g_count += 1
-            g_proj_correct.append(_g_proj)
-            I0_correct.append(I0s[i])
-            Q0_correct.append(Q0s[i])
-        else:
-            I0_wrong.append(I0s[i])
-            Q0_wrong.append(Q0s[i])
-        _e_proj = (e_i_shift[i] * g_center_shift[0] + e_q_shift[i] * g_center_shift[1]) / (g_center_shift[0]**2 + g_center_shift[1]**2)
-        e_proj.append(_e_proj)
-        if _e_proj < 0:
-            e_proj_correct.append(_e_proj)
-            e_count += 1
-            I1_correct.append(I1s[i])
-            Q1_correct.append(Q1s[i])
-        else:
-            I1_wrong.append(I1s[i])
-            Q1_wrong.append(Q1s[i])
-    Fg, Fe = g_count / len(g_proj), e_count / len(e_proj)
-    proj_list = np.linspace(np.min(e_proj), np.max(g_proj), 2001)
-    g_hist, _ = np.histogram(g_proj, bins=100, density=True, range=[proj_list[0], proj_list[-1]])
-    e_hist, _ = np.histogram(e_proj, bins=100, density=True, range=[proj_list[0], proj_list[-1]])
-    g_cdf = np.cumsum(g_hist) * (proj_list[-1] - proj_list[0]) / 100
-    e_cdf = np.cumsum(e_hist) * (proj_list[-1] - proj_list[0]) / 100
-    axes[1].hist(g_proj, color='blue', alpha=0.5, bins=100, density=True, range=[proj_list[0], proj_list[-1]], label=r'$|g\rangle$')
-    axes[1].hist(e_proj, color='red', alpha=0.5, bins=100, density=True, range=[proj_list[0], proj_list[-1]], label=r'$|e\rangle$')
-    g_mu, g_std = stats.norm.fit(g_proj_correct)
-    axes[1].plot(proj_list, stats.norm.pdf(proj_list, g_mu, g_std), color='blue', linestyle='dotted')
-    e_mu, e_std = stats.norm.fit(e_proj_correct)
-    axes[1].plot(proj_list, stats.norm.pdf(proj_list, e_mu, e_std), color='red', linestyle='dotted')
+    o = (c0 + c1) / 2.0 # origin
+    g = c0 - o # project on g
+    S0p = np.real((S0s - o) * np.conj(g)) / np.abs(g) ** 2
+    S1p = np.real((S1s - o) * np.conj(g)) / np.abs(g) ** 2
+    S0p_right, S1p_right = S0p[S0p > 0], S1p[S1p < 0]
+    S0s_right, S0s_wrong = S0s[S0p > 0], S0s[S0p <= 0]
+    S1s_right, S1s_wrong = S1s[S1p < 0], S1s[S1p >= 0]
+    Fg, Fe = len(S0p_right) / len(S0p), len(S1p_right) / len(S1p)
+    xp = np.linspace(np.min(S1p), np.max(S0p), 2001) # axis of projection
+    g_hist, _ = np.histogram(S0p, bins=100, density=True, range=[xp[0], xp[-1]])
+    e_hist, _ = np.histogram(S1p, bins=100, density=True, range=[xp[0], xp[-1]])
+    g_cdf = np.cumsum(g_hist) * (xp[-1] - xp[0]) / 100
+    e_cdf = np.cumsum(e_hist) * (xp[-1] - xp[0]) / 100
+    axes[1].hist(S0p, color='blue', alpha=0.5, bins=100, density=True, range=[xp[0], xp[-1]], label=r'$|g\rangle$')
+    axes[1].hist(S1p, color='red', alpha=0.5, bins=100, density=True, range=[xp[0], xp[-1]], label=r'$|e\rangle$')
+    g_mu, g_std = stats.norm.fit(S0p_right)
+    axes[1].plot(xp, stats.norm.pdf(xp, g_mu, g_std), color='blue', linestyle='dotted')
+    e_mu, e_std = stats.norm.fit(S1p_right)
+    axes[1].plot(xp, stats.norm.pdf(xp, e_mu, e_std), color='red', linestyle='dotted')
     axr = axes[1].twinx()
     axr.set_ylim([0, 1])
     axr.set_ylabel("Cumulative Probability")
-    axr.plot(np.linspace(proj_list[0], proj_list[-1], 100), g_cdf, color='blue', linewidth=2)
-    axr.plot(np.linspace(proj_list[0], proj_list[-1], 100), e_cdf, color='red', linewidth=2)
-    axr.plot(np.linspace(proj_list[0], proj_list[-1], 100), e_cdf - g_cdf, color='green', linewidth=2)
+    axr.plot(np.linspace(xp[0], xp[-1], 100), g_cdf, color='blue', linewidth=2)
+    axr.plot(np.linspace(xp[0], xp[-1], 100), e_cdf, color='red', linewidth=2)
+    axr.plot(np.linspace(xp[0], xp[-1], 100), e_cdf - g_cdf, color='green', linewidth=2)
     axes[1].set_xlabel('Projected IQ Amplitude (a.u.)')
     axes[1].set_ylabel('Probability')
     axes[1].legend(shadow=False, loc=1, frameon=True)
@@ -300,65 +270,28 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     axes[1].text(0.05, 0.9, '$F_g$=%.3f' % Fg, ha='left', transform=axes[1].transAxes)
     axes[1].text(0.05, 0.85, '$F_e$=%.3f' % Fe, ha='left', transform=axes[1].transAxes)
     # scatter plot
-    axes[0].scatter(I0_correct, Q0_correct, s=10, marker='o', zorder=0, alpha=0.5, c='blue', linewidths=0.0)
-    axes[0].scatter(I1_correct, Q1_correct, s=10, marker='o', zorder=0, alpha=0.5, c='red', linewidths=0.0)
-    axes[0].scatter(I0_wrong, Q0_wrong, s=10, marker='o', zorder=0, alpha=0.5, c='blue', linewidths=0.0)
-    axes[0].scatter(I1_wrong, Q1_wrong, s=10, marker='o', zorder=0, alpha=0.5, c='red', linewidths=0.0)
+    axes[0].scatter(S0s_right.real, S0s_right.imag, s=10, marker='o', zorder=0, alpha=0.5, c='blue', linewidths=0.0)
+    axes[0].scatter(S1s_right.real, S1s_right.imag, s=10, marker='o', zorder=0, alpha=0.5, c='red', linewidths=0.0)
+    axes[0].scatter(S0s_wrong.real, S0s_wrong.imag, s=10, marker='o', zorder=0, alpha=0.5, c='blue', linewidths=0.0)
+    axes[0].scatter(S1s_wrong.real, S1s_wrong.imag, s=10, marker='o', zorder=0, alpha=0.5, c='red', linewidths=0.0)
     axes[0].grid()
     axes[0].set_xlabel('I (a.u.)')
     axes[0].set_ylabel('Q (a.u.)')
-    axes[0].set_xlim(min(min(I0s), min(I1s)) - 10, max(max(I0s), max(I1s)) + 10)
-    axes[0].set_ylim(min(min(Q0s), min(Q1s)) - 10, max(max(Q0s), max(Q1s)) + 10)
+    axes[0].set_xlim(min(np.min(S0s.real), np.min(S1s.real)) - 10, max(np.max(S0s.real), np.max(S1s.real)) + 10)
+    axes[0].set_ylim(min(np.min(S0s.imag), np.min(S1s.imag)) - 10, max(np.max(S0s.imag), np.max(S1s.imag)) + 10)
     # plot the cut
-    _x = np.linspace(min(min(I0s), min(I1s)) - 10, max(max(I0s), max(I1s)) + 10, 101)
-    axes[0].plot( _x, -(c0I - c1I) / (c0Q - c1Q) * (_x - (c0I + c1I) / 2) + (c0Q + c1Q) / 2, 'k--')
+    _x = np.linspace(min(np.min(S0s.real), np.min(S1s.real)) - 10, max(np.max(S0s.real), np.max(S1s.real)) + 10, 101)
+    axes[0].plot( _x, -(c0.real - c1.real) / (c0.imag - c1.imag) * (_x - (c0.real + c1.real) / 2) + (c0.imag + c1.imag) / 2, 'k--')
     # add the circle to the IQ scatter plot
     theta = np.linspace(-π, π, 1001)
-    I_g_fit_list = np.median(I0_correct) + np.cos(theta) * 3 * g_std * np.sqrt(g_center_shift[0]**2 + g_center_shift[1]**2)
-    Q_g_fit_list = np.median(Q0_correct) + np.sin(theta) * 3 * g_std * np.sqrt(g_center_shift[0]**2 + g_center_shift[1]**2)
-    I_e_fit_list = np.median(I1_correct) + np.cos(theta) * 3 * e_std * np.sqrt(g_center_shift[0]**2 + g_center_shift[1]**2)
-    Q_e_fit_list = np.median(Q1_correct) + np.sin(theta) * 3 * e_std * np.sqrt(g_center_shift[0]**2 + g_center_shift[1]**2)
+    I_g_fit_list = np.median(S0s_right.real) + np.cos(theta) * 3 * g_std * np.abs(g)
+    Q_g_fit_list = np.median(S0s_right.imag) + np.sin(theta) * 3 * g_std * np.abs(g)
+    I_e_fit_list = np.median(S1s_right.real) + np.cos(theta) * 3 * e_std * np.abs(g)
+    Q_e_fit_list = np.median(S1s_right.imag) + np.sin(theta) * 3 * e_std * np.abs(g)
     axes[0].plot(I_g_fit_list, Q_g_fit_list, color='darkblue', linestyle='--', label=r'$|g\rangle$, $3\sigma$')
     axes[0].plot(I_e_fit_list, Q_e_fit_list, color='darkred', linestyle='--', label=r'$|e\rangle$, $3\sigma$')
     axes[0].legend(shadow=False, loc=1, frameon=True)
     return c0, c1, visibility, Fg, Fe, fig
-
-# T1 fit and plot
-def fitT1(T, S):
-    def m(x, *p):
-        return p[0] * np.exp(-x / p[1]) + p[2]
-    def jac(x, *p):
-        d0 = np.exp(-x / p[1])
-        d1 = p[0] * x / p[1] ** 2 * np.exp(-x / p[1])
-        d2 = np.ones(len(x))
-        return np.transpose([d0, d1, d2])
-    p0 = [1.0, 1.0, 1.0]
-    popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
-    perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
-    residuals = S - m(T, *popt)
-    ss_res = np.sum(residuals**2) / np.var(S)
-    dof = len(T) - len(popt)
-    rchi2 = ss_res / dof
-    fig, ax = plt.subplots()
-    ax.scatter(T, S, color='black', s=10, label='Original Data')
-    ax.plot(T, m(T, *popt), color='red', label='Fit')
-    annotation_text = (
-        r"$S = S_0e^{-\tau/T_1} + C$" + "\n" +
-        "Fitting Result:\n" +
-        r"$S_0 = ({:.2f} \pm {:.2f})$".format(popt[0], perr[0]) + "\n" +
-        r"$T_1 = ({:.2f} \pm {:.2f})$ us".format(popt[1], perr[1]) + "\n" +
-        r"$C = ({:.2f} \pm {:.2f})$".format(popt[2], perr[2]) + "\n" +
-        r"$n = {}$ (DOF)".format(dof) + "\n" +
-        r"$\chi^2/n = {:.2e}$".format(rchi2)
-    )
-    ax.set_xlabel(r"Pulse Delay $\tau$ (us)")
-    ax.set_ylabel("Population")
-    ax.set_title("T1 Measurement")
-    ax.grid()
-    ax.legend()
-    mid_index = len(T) // 2
-    ax.annotate(annotation_text, (T[mid_index], S[mid_index]), fontsize=8, xycoords='data', textcoords='offset points', xytext=(20, 20))
-    return popt, perr, rchi2, fig
 
 # T2 fit and plot
 def fitT2(T, S, omega=2*π):
