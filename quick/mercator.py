@@ -111,7 +111,7 @@ class Mercator(AveragerProgramV2):
             self.declare_gen(ch=g, nqz=o["nqz"], **kwargs)
         for r, o in c["r"].items(): # Declare Readout Channels
             kwargs = { "phase": o["phase"], "freq": o["freq"] }
-            if "g" in o:
+            if o.get("g") is not None:
                 kwargs["gen_ch"] = o["g"]
             if "tproc_ctrl" in self.soccfg["readouts"][r]:
                 self.declare_readout(ch=r, length=o["length"])
