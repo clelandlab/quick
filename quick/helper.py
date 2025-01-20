@@ -239,8 +239,8 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     fig, axes = plt.subplots(1, 2, figsize=(12, 6)) # plot the histogram
     o = (c0 + c1) / 2.0 # origin
     g = c0 - o # project on g
-    S0p = np.real((S0s - o) * np.conj(g)) / np.abs(g) ** 2
-    S1p = np.real((S1s - o) * np.conj(g)) / np.abs(g) ** 2
+    S0p = np.real((S0s - o) * np.conj(g)) / np.abs(g)
+    S1p = np.real((S1s - o) * np.conj(g)) / np.abs(g)
     S0p_right, S1p_right = S0p[S0p > 0], S1p[S1p < 0]
     S0s_right, S0s_wrong = S0s[S0p > 0], S0s[S0p <= 0]
     S1s_right, S1s_wrong = S1s[S1p < 0], S1s[S1p >= 0]
@@ -284,10 +284,10 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     axes[0].plot( _x, -(c0.real - c1.real) / (c0.imag - c1.imag) * (_x - (c0.real + c1.real) / 2) + (c0.imag + c1.imag) / 2, 'k--')
     # add the circle to the IQ scatter plot
     theta = np.linspace(-π, π, 1001)
-    I_g_fit_list = np.median(S0s_right.real) + np.cos(theta) * 3 * g_std * np.abs(g)
-    Q_g_fit_list = np.median(S0s_right.imag) + np.sin(theta) * 3 * g_std * np.abs(g)
-    I_e_fit_list = np.median(S1s_right.real) + np.cos(theta) * 3 * e_std * np.abs(g)
-    Q_e_fit_list = np.median(S1s_right.imag) + np.sin(theta) * 3 * e_std * np.abs(g)
+    I_g_fit_list = np.median(S0s_right.real) + np.cos(theta) * 3 * g_std
+    Q_g_fit_list = np.median(S0s_right.imag) + np.sin(theta) * 3 * g_std
+    I_e_fit_list = np.median(S1s_right.real) + np.cos(theta) * 3 * e_std
+    Q_e_fit_list = np.median(S1s_right.imag) + np.sin(theta) * 3 * e_std
     axes[0].plot(I_g_fit_list, Q_g_fit_list, color='darkblue', linestyle='--', label=r'$|g\rangle$, $3\sigma$')
     axes[0].plot(I_e_fit_list, Q_e_fit_list, color='darkred', linestyle='--', label=r'$|e\rangle$, $3\sigma$')
     axes[0].legend(shadow=False, loc=1, frameon=True)
