@@ -248,9 +248,9 @@ class Readout(BaseAuto):
         return self.var, None
 
 class Relax(BaseAuto):
-    def calibrate(self, time_max=300):
+    def calibrate(self, max_time=300, **kwargs):
         if self.data is None:
-            self.data = experiment.T1(var=self.var, data_path=self.data_path, soccfg=self.soccfg, soc=self.soc, title=f"(auto.Relax) {int(self.var['r_freq'])}",time=np.arange(0, time_max, 5)).run(silent=self.silent).data.T
+            self.data = experiment.T1(var=self.var, data_path=self.data_path, soccfg=self.soccfg, soc=self.soc, title=f"(auto.Relax) {int(self.var['r_freq'])}",time=np.arange(0, max_time, 5), **kwargs).run(silent=self.silent).data.T
         popt, _, _, fig = helper.fitT1(self.data[0], self.data[1])
         print("T1 =", popt[1])
         self.var["r_relax"] = float(5 * popt[1])
