@@ -10,12 +10,12 @@ var:
   r_balun: 3
   r_threshold: 0
   r_relax: 1
+  r_reset: 0
   q_freq: 5000
   q_length: 2
   q_delta: -180
   q_gain: 1
   q_gain_2: 0.5
-  active_reset: 0
 
 var_label:
   rr: ["Readout Channel for Readout Pulse", ""]
@@ -29,12 +29,12 @@ var_label:
   r_balun: ["Readout Generator Balun", ""]
   r_threshold: ["Readout Threshold", ""]
   r_relax: ["Readout Relax", "us"]
+  r_reset: ["Reset Wait Time", "us"]
   q_freq: ["Qubit Pulse Frequency", "MHz"]
   q_length: ["Qubit Pulse Length", "us"]
   q_delta: ["Qubit Anharmonicity", "MHz"]
   q_gain: ["Qubit Pulse Gain", "a.u."]
   q_gain_2: ["Qubit Half Pulse Gain", "a.u."]
-  active_reset: ["Active Reset Wait Time", "us"]
 
 # Programs below are exported as strings for variable insertion
 
@@ -154,10 +154,10 @@ IQScatter: |
   2_g: {r}
   3_type: trigger
   3_t: {r_offset}
-  4_type: {"delay_auto" if active_reset else "goto"}
+  4_type: {"delay_auto" if r_reset else "goto"}
   4_i: 8
   5_type: wait_auto
-  5_t: {active_reset}
+  5_t: {r_reset}
   6_type: delay_auto
   7_type: pulse          # reset pulse
   7_p: 1
@@ -197,8 +197,8 @@ ActiveReset: |
     t: {r_offset}
   - type: delay_auto
   - type: wait_auto
-    t: {active_reset}
-  - type: {"pulse" if active_reset else "pass"}
+    t: {r_reset}
+  - type: {"pulse" if r_reset else "pass"}
     p: 1
     g: {q}
     threshold: {r_threshold}
@@ -262,10 +262,10 @@ T1: |
   2_g: {r}
   3_type: trigger
   3_t: {r_offset}
-  4_type: {"delay_auto" if active_reset else "goto"}
+  4_type: {"delay_auto" if r_reset else "goto"}
   4_i: 8
   5_type: wait_auto
-  5_t: {active_reset}
+  5_t: {r_reset}
   6_type: delay_auto
   7_type: pulse          # reset pulse
   7_p: 1
@@ -313,10 +313,10 @@ T2Ramsey: |
     g: {r}
   - type: trigger
     t: {r_offset}
-  - type: {"delay_auto" if active_reset else "goto"}
+  - type: {"delay_auto" if r_reset else "goto"}
     i: 10
   - type: wait_auto
-    t: {active_reset}
+    t: {r_reset}
   - type: delay_auto
   - type: pulse
     p: 1
@@ -373,10 +373,10 @@ T2Echo: |
     g: {r}
   - type: trigger
     t: {r_offset}
-  - type: {"delay_auto" if active_reset else "goto"}
+  - type: {"delay_auto" if r_reset else "goto"}
     i: 13
   - type: wait_auto
-    t: {active_reset}
+    t: {r_reset}
   - type: delay_auto
   - type: pulse
     p: 1

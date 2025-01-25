@@ -31,13 +31,13 @@ r_phase: 0        # [deg] readout pulse phase
 r_offset: 0       # [us] readout window offset
 r_balun: 3        # readout pulse balun
 r_threshold: 0    # threshold, above which is 1-state
+r_reset: 0        # [us] wait time for qubit reset (active reset).
 r_relax: 1        # [us] readout relax time
 q_freq: 5000      # [MHz] qubit pulse frequency
 q_length: 2       # [us] qubit pulse length
 q_delta: -180     # [MHz] qubit anharmonicity
 q_gain: 1         # [-1, 1] qubit pulse (pi pulse) gain
 q_gain_2: 0.5     # [-1, 1] half pi pulse gain
-active_reset: 0   # [us] active reset wait time. 0 for disable.
 ```
 
 ## 🟡configs
@@ -46,7 +46,7 @@ active_reset: 0   # [us] active reset wait time. 0 for disable.
 quick.experiment.configs
 ```
 
-Global config templates used by `BaseExperiment`. These are default Mercator protocols for the experiments. It is loaded from [here](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). Mostly internal use.
+Global config templates used by `BaseExperiment`. These are default Mercator protocols for the experiments. It is loaded from [here](https://github.com/clelandlab/quick/blob/main/quick/experiment.yml). Mostly internal use.
 
 All of the programs are saved as strings for variable insersion. The experiment variables will be inserted into the Mercator protocol templates with `quick.evalStr`.
 

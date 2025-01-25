@@ -7,7 +7,7 @@ import os, yaml
 listTypes = (list, np.ndarray)
 
 # global var & config for quick.experiment
-configs = helper.load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), "./constants/experiment.yml"))
+configs = helper.load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), "./experiment.yml"))
 var = configs["var"]
 
 class BaseExperiment:

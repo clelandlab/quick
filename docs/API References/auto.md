@@ -1,6 +1,6 @@
 # Auto
 
-Automatic scripts for qubit measurements. **Under active development.**
+Automatic scripts for qubit measurements.
 
 > Everything exposed to `quick.auto`.
 
