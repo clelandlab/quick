@@ -71,15 +71,16 @@ General base *class* for other experiments using Mercator protocol. If not overw
 
 It will gather some necessary information first:
 
-a. the template program (written in `quick.experiment.configs`)
-b. the template variable (written in `quick.experiment.var`)
-c. new variable defined before calling `__init__`, like `time` in `T1`
-d. input variable (`var` argument)
-e. other keyword arguments that has the same key as in (b), (c), (d) combined.
-f. other keyword arguments that does not belong to (e), and not predefined (predefined: `data_path` etc).
+- a. the template program (`quick.experiment.configs`)
+- b. the template variable (`quick.experiment.var`)
+- c. new variable defined before calling `__init__`, like `time` in `T1`
+- d. input variable (`var` argument)
+- e. other keyword arguments that has the same key as in (b), (c), (d) combined.
+- f. other keyword arguments that does not belong to (e), and not predefined (predefined: `data_path` etc).
+- g. internal variable (`self._var`)
 
 1. In `__init__`, iterables in (e) will be stored as `self.sweep`, initial values and non-iterables in (e) will overwrite (d). Then (d) will overwrite (c) and then overwrite (b), forming `self.var`.
-2. `self.eval_config` will evaluate the Mercator protocol by inserting a set of variable (eg. `self.var`) into (a), forming `self.config`. Then (f) will overwrite `self.config`
+2. `self.eval_config` will evaluate the Mercator protocol by inserting some variables (eg. `self.var`) with (g) into (a), forming `self.config`. Then (f) will overwrite `self.config`.
 3. During most runs, `self.sweep` will be performed by `quick.Sweep`. In each loop, a set of variable will be generated from `self.var`, and `self.eval_config` is called to generate the Mercator protocol config for that specific loop run.
 
 ### - BaseExperiment.key
@@ -97,6 +98,14 @@ e.var
 ```
 
 The experiment variable dictionary used in the experiment. Variables are inserted into the Mercator protocol of the experiment by `quick.evalStr` in each sweep/run.
+
+### - BaseExperiment._var
+
+```python
+e._var
+```
+
+The internal variable dictionary used in the experiment. This dictionary will be used as global variables in `self.eval_config`, but it will not be saved or modified by user input. Thus, you can use it as internal variables of the experiment for further flexibility.
 
 ### - BaseExperiment.var_label
 
@@ -120,7 +129,7 @@ Data acquired by the experiment. Same structure as saved by the data saver `quic
 e.config
 ```
 
-Program config (pulse sequence) dictionary in Mercator protocol, will be run to acquire data.
+Program config (pulse sequence) dictionary in Mercator protocol.
 
 ### - BaseExperiment.config_update
 
@@ -152,7 +161,7 @@ The Mercator instance created by the experiment.
 e.eval_config(v)
 ```
 
-Perform variable insertion and then config overwriting, generating `self.config` from the template `quick.experiment.configs[self.key]`
+Perform variable insertion and then config overwriting, generating `self.config` from the template `quick.experiment.configs[self.key]`. This function use `self._var` as global variables when evaluating strings.
 
 **Parameters**:
 

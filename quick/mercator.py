@@ -188,6 +188,7 @@ class Mercator(AveragerProgramV2):
         delay = pulse_until = 0
         generator_until = np.zeros(17)
         periodic = {}
+        r_label = {}
         def add_pulse(p, g, start, first=True):
             us = self.cycles2us(1, gen_ch=g) / self.soccfg["gens"][g]["samps_per_clk"]
             o = c["p"][p]
@@ -236,7 +237,8 @@ class Mercator(AveragerProgramV2):
                 for r in (o["rs"] or c["r"]):
                     end = start + c["r"][r]["length"]
                     pulse_until = max(end, pulse_until)
-                    ax.axvspan(xmin=start, xmax=end, color=('r' if r == 0 else 'b'), alpha=0.1, label=f"r{r}")
+                    ax.axvspan(xmin=start, xmax=end, color=('r' if r == 0 else 'b'), alpha=0.1, label=(None if r_label.get(r) else f"r{r}"))
+                    r_label[r] = True
             if o["type"] == "goto":
                 goto_rep[i] = goto_rep.get(i, o["rep"]) - 1
                 i = o["i"] if goto_rep[i] >= 0 else i + 1

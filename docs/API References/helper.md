@@ -178,7 +178,7 @@ s.write_yml() # this will update the completed time.
 ## 🔵evalStr
 
 ```python
-res = quick.evalStr(s, var)
+res = quick.evalStr(s, var, _var=None)
 ```
 
 Evaluate a string as f-string with the given local variables.
@@ -187,6 +187,7 @@ Evaluate a string as f-string with the given local variables.
 
 - `s` (str) a given template string
 - `var` (dict) given local variables
+- `_var=None` (dict) given global variables
 
 **Return**:
 

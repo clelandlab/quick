@@ -415,7 +415,7 @@ Random: |
     t: {r_relax}
 
 QND: |
-  rep: 10000
+  rep: 1000
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
@@ -428,6 +428,7 @@ QND: |
   r{rr}_length: {r_length}
   r{rr}_phase: {r_phase}
   steps:
+  {_get_steps(v=locals())}
   - type: wait_auto
   - type: delay_auto
     t: {r_relax}

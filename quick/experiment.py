@@ -13,6 +13,7 @@ var = configs["var"]
 class BaseExperiment:
     var = {}
     var_label = {}
+    _var = {}
     def __init__(self, data_path=None, title="", soccfg=None, soc=None, var=None, **kwargs):
         self.key = self.__class__.__name__ # get class name as experiment key
         self.data_path = data_path
@@ -39,7 +40,7 @@ class BaseExperiment:
         self.m = Mercator(self.soccfg, self.config)
     def eval_config(self, v):
         configStr = configs.get(self.key, "")
-        self.config = yaml.safe_load(helper.evalStr(configStr, v)) or {}
+        self.config = yaml.safe_load(helper.evalStr(configStr, v, self._var)) or {}
         self.config.update(self.config_update)
     def prepare(self, indep_params=[], db=False, population=False): # prepare saver
         self.data = []
@@ -227,4 +228,35 @@ class Random(BaseExperiment):
         return res
 
 class QND(BaseExperiment):
-    pass
+    def __init__(self, **kwargs):
+        def _get_steps(v={}):
+            res = ""
+            for i in range(5):
+                if i % 2 == 0:
+                    res += f"- type: pulse\n  p: 1\n  g: {v['q']}\n- type: delay_auto\n"
+                else:
+                    res += f"- type: delay_auto\n  t: {v['q_length']}\n"
+                res += f"- type: pulse\n  p: 0\n  g: {v['r']}\n"
+                res += f"- type: trigger\n  t: {v['r_offset']}\n"
+                res += f"- type: delay_auto\n  t: {v['r_reset']}\n"
+            return res
+        self.var = { "cycle": 10, "random": 10 } # add var
+        self.var_label = {
+            "cycle": ("Cycles", ""),
+            "random": ("Random", "")
+        }
+        self._var = { "_get_steps": _get_steps }
+        super().__init__(**kwargs)
+    def run(self, silent=False):
+        if not silent:
+            print(f"quick.experiment({self.key}) Starting")
+        self.eval_config(v)
+        indep = []
+        for k in self.sweep:
+            indep.append(v[k])
+        self.var = v
+        self.m = Mercator(self.soccfg, self.config)
+        I0, Q0 = self.m.acquire(self.soc)
+        print(I0)
+        # float(I[I > self.var.get("r_threshold", 0)].size) / I.size
+        return self.conclude(silent)

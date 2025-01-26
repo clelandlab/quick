@@ -176,8 +176,8 @@ def dbm2gain(dbm, freq, nqz, balun):
     dbm3e5 = f(freq*1e6)
     return 10**((dbm - dbm3e5)/20)
 
-def evalStr(s, var):
-    return eval(f"f'''{s}'''", None, var)
+def evalStr(s, var, _var=None):
+    return eval(f"f'''{s}'''", _var, var)
 
 def symmetryCenter(x, y, it=3):
     L = len(y)
