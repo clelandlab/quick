@@ -42,7 +42,7 @@ class BaseExperiment:
         configStr = configs.get(self.key, "")
         self.config = yaml.safe_load(helper.evalStr(configStr, v, self._var)) or {}
         self.config.update(self.config_update)
-    def prepare(self, indep_params=[], db=False, population=False): # prepare saver
+    def prepare(self, indep_params=[], dB=False, population=False): # prepare saver
         self.data = []
         indep_params = list(indep_params) # avoid modify in place
         for k in self.sweep:
@@ -51,14 +51,14 @@ class BaseExperiment:
         dep_params = []
         if population:
             dep_params.append(("Population", ""))
-        dep_params.extend([("Amplitude", "dB") if db else ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")])
+        dep_params.extend([("Amplitude", "dB") if dB else ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")])
         if self.data_path is not None:
             self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
     def add_data(self, data): # add & save data
         self.data.extend(data)
         if self.data_path is not None:
             self.s.write_data(data)
-    def acquire_S21(self, indep_list, db=False, population=False): # acquire & add data
+    def acquire_S21(self, indep_list, dB=False, population=False): # acquire & add data
         self.m = Mercator(self.soccfg, self.config)
         I, Q = self.m.acquire(self.soc)
         S21 = (np.array(I) + 1j * np.array(Q)).flatten()
@@ -67,19 +67,19 @@ class BaseExperiment:
             I = S21.real
             dep_list.append(float(I[I > self.var.get("r_threshold", 0)].size) / I.size)
         S21 = np.mean(S21)
-        dep_list.extend([(20 * np.log10(np.abs(S21) / self.config["p0_gain"]) if db else np.abs(S21)), np.angle(S21), S21.real, S21.imag])
+        dep_list.extend([(20 * np.log10(np.abs(S21) / self.config["p0_gain"]) if dB else np.abs(S21)), np.angle(S21), S21.real, S21.imag])
         self.add_data([[*indep_list, *dep_list]])
-    def run(self, silent=False, db=False, population=False):
+    def run(self, silent=False, dB=False, population=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.prepare(db=db, population=population)
+        self.prepare(dB=dB, population=population)
         for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
             self.eval_config(v)
             indep = []
             for k in self.sweep:
                 indep.append(v[k])
             self.var = v
-            self.acquire_S21(indep, db=db, population=population)
+            self.acquire_S21(indep, dB=dB, population=population)
         return self.conclude(silent)
     def conclude(self, silent=False): # last step of run
         if not silent:
@@ -94,21 +94,21 @@ class BaseExperiment:
 
 # All experiments are following
 class LoopBack(BaseExperiment):
-    def run(self, silent=False, db=False):
+    def run(self, silent=False, dB=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.prepare([("Time", "us")], db=db)
+        self.prepare([("Time", "us")], dB=dB)
         self.eval_config(self.var)
         self.m = Mercator(self.soccfg, self.config)
         I, Q = self.m.acquire_decimated(self.soc, progress=not silent)
         t = self.m.get_time_axis(ro_index=self.var["rr"])
         S21 = I[0] + 1j * Q[0]
-        self.add_data(np.transpose([t, (20 * np.log10(np.abs(S21) / self.config["p0_gain"]) if db else np.abs(S21)), np.angle(S21), S21.real, S21.imag]))
+        self.add_data(np.transpose([t, (20 * np.log10(np.abs(S21) / self.config["p0_gain"]) if dB else np.abs(S21)), np.angle(S21), S21.real, S21.imag]))
         return self.conclude(silent)
 
 class ResonatorSpectroscopy(BaseExperiment):
-    def run(self, silent=False, db=True):
-        return super().run(silent, db)
+    def run(self, silent=False, dB=True):
+        return super().run(silent, dB)
 
 class QubitSpectroscopy(BaseExperiment):
     pass
@@ -248,15 +248,15 @@ class QND(BaseExperiment):
         self._var = { "_get_steps": _get_steps }
         super().__init__(**kwargs)
     def run(self, silent=False):
+        self.data = []
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.eval_config(v)
-        indep = []
-        for k in self.sweep:
-            indep.append(v[k])
-        self.var = v
+        self.eval_config(self.var)
         self.m = Mercator(self.soccfg, self.config)
-        I0, Q0 = self.m.acquire(self.soc)
-        print(I0)
-        # float(I[I > self.var.get("r_threshold", 0)].size) / I.size
+        I_list, _ = self.m.acquire(self.soc)
+        C = []
+        for I in I_list[0]:
+            o = float(I[I > self.var.get("r_threshold", 0)].size) / I.size
+            C.append(o)
+        print(C)
         return self.conclude(silent)

@@ -22,7 +22,7 @@ var_label:
   r: ["Generator Channel for Readout Pulse", ""]
   q: ["Generator Channel for Qubit Pulse", ""]
   r_freq: ["Readout Pulse Frequency", "MHz"]
-  r_power: ["Readout Pulse Power", "dBm"]
+  r_power: ["Readout Pulse Power", "dB"]
   r_length: ["Readout Pulse Length", "us"]
   r_phase: ["Readout Pulse Phase", "deg"]
   r_offset: ["Readout Offset", "us"]

@@ -65,7 +65,7 @@ v["r_freq"] = 6000
 quick.experiment.ResonatorSpectroscopy(
 	var=v, data_path=DATA_PATH,
 	title=f"PowerSpectroscopy {int(v['r_freq'])}",
-	r_power=np.arange(-65, -15, 1), # first sweeping variable
+	r_power=np.arange(-50, 0, 1), # first sweeping variable
 	r_freq=np.arange(v["r_freq"] - 2, v["r_freq"] + 2, 0.05) # second sweeping variable
 ).run()
 ```

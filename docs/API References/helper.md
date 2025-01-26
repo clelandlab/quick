@@ -175,6 +175,22 @@ s.write_data(data)
 s.write_yml() # this will update the completed time.
 ```
 
+## 🔵dB2gain
+
+```python
+gain = quick.dB2gain(dB)
+```
+
+Convert power from dB unit to QICK board gain. 0 dB is the maximum gain.
+
+**Parameters**:
+
+- `dB` (float) power value in dB unit.
+
+**Returns**:
+
+- `gain` (float) value of gain
+
 ## 🔵evalStr
 
 ```python
@@ -235,7 +251,7 @@ Rough estimate the angular frequency using FFT. Useful for initial parameters in
 
 - `omega` (float) estimated angular frequency.
 
-## 🟢iq2prob
+## 🟢iq2probb
 
 ```python
 p = quick.iq2prob(Ss, c0, c1)

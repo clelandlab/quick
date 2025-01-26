@@ -1,5 +1,5 @@
 from qick.asm_v2 import AveragerProgramV2, QickSweep1D, AsmV2
-from .helper import dbm2gain
+from .helper import dB2gain
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -75,7 +75,7 @@ def parse(soccfg, cfg):
         o["qdata"] = cfg.get(f"p{p}_qdata", None)
         if cfg.get(f"p{p}_power", None) is not None:
             balun = cfg.get(f"p{p}_balun", 2)
-            o["gain"] = dbm2gain(cfg[f"p{p}_power"], o["freq"], c["g"][o["g"]]["nqz"], balun)
+            o["gain"] = dB2gain(cfg[f"p{p}_power"], o["freq"], c["g"][o["g"]]["nqz"], balun)
             cfg[f"p{p}_gain"] = o["gain"] # write back computed gain
         generate_waveform(o, soccfg)
     for r in range(10): # find all readout channels

@@ -40,7 +40,7 @@ class Resonator(BaseAuto):
     def calibrate(self, **kwargs):
         self.var["r_relax"] = 0
         if self.data is None:
-            self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-60, -15, 2), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-50, 0, 2), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs).run(silent=self.silent).data.T
         P, F, A = self.data[0], self.data[1], self.data[2]
         Fn = len(np.unique(F))
         F, P = F[0:Fn], P[0::Fn]
@@ -53,13 +53,13 @@ class Resonator(BaseAuto):
         axes[0].plot(F, avg)
         axes[0].vlines(peaks * unit + F[0], ymin=np.min(avg), ymax=np.max(avg), color="red")
         axes[0].set_xlabel("Frequency (MHz)")
-        axes[0].set_ylabel("Amplitude (dB) [log mag]")
+        axes[0].set_ylabel("Amplitude (dB)")
         axes[0].grid()
         fi = peaks[-1]
         s = convolve1d(A[:, fi], np.ones(5) / 5)
         axes[1].plot(P, s, marker="o")
         axes[1].grid()
-        axes[1].set_xlabel("Power (dBm)")
+        axes[1].set_xlabel("Power (dB)")
         if s[-1] - np.min(s) < np.std(A):
             return False, fig
         threshold = (np.max(s) - np.min(s)) * 0.4 + np.min(s)
@@ -198,7 +198,7 @@ class ReadoutFreq(BaseAuto):
         ax.vlines([self.var["r_freq"]], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
         ax.legend()
         ax.set_xlabel("Readout Frequency (MHz)")
-        ax.set_ylabel("Amplitude [log mag] (dB)")
+        ax.set_ylabel("Amplitude (dB)")
         ax.set_title("DispersiveSpectroscopy")
         return self.var, fig
 
@@ -243,7 +243,7 @@ class Readout(BaseAuto):
             print(x, score)
             return -score
         initial_simplex = [[self.var["r_power"], self.var["r_length"]], [self.var["r_power"] + 4, self.var["r_length"]], [self.var["r_power"], self.var["r_length"] + 2]]
-        bounds = [(self.var["r_power"] - 10, self.var["r_power"] + 20), (0.1, 10)]
+        bounds = [(-60, 0), (0.1, 10)]
         minimize(negative_score, x0=[self.var["r_power"], self.var["r_length"]], bounds=bounds, method="Nelder-Mead", options={ "maxfev": 100, "xatol": 0.05, "fatol": 1, "initial_simplex": initial_simplex })
         return self.var, None
 

@@ -168,13 +168,8 @@ class Saver:
             np.savetxt(f, data, fmt="%.9e", delimiter=',')
         # self.write_yml() # do not call it every time for efficiency
 
-dbm_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "./constants/dbm.npy")
-dbm_data = np.load(dbm_path)
-
-def dbm2gain(dbm, freq, nqz, balun):
-    f = interpolate.interp1d(np.linspace(1e8, 8e9, 80), dbm_data[balun*2 + nqz - 1])
-    dbm3e5 = f(freq*1e6)
-    return 10**((dbm - dbm3e5)/20)
+def dB2gain(dB):
+    return 10 ** (dB / 20)
 
 def evalStr(s, var, _var=None):
     return eval(f"f'''{s}'''", _var, var)
@@ -236,7 +231,7 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     res = minimize(negative_visibility, [c1.real, c1.imag], method='Nelder-Mead') # optimize c1
     visibility = -1 * negative_visibility(res.x)
     c1 = res.x[0] + 1j * res.x[1]
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6)) # plot the histogram
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5.44)) # plot the histogram
     o = (c0 + c1) / 2.0 # origin
     g = c0 - o # project on g
     S0p = np.real((S0s - o) * np.conj(g)) / np.abs(g)
@@ -277,10 +272,11 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     axes[0].grid()
     axes[0].set_xlabel('I (a.u.)')
     axes[0].set_ylabel('Q (a.u.)')
-    axes[0].set_xlim(min(np.min(S0s.real), np.min(S1s.real)) - 10, max(np.max(S0s.real), np.max(S1s.real)) + 10)
-    axes[0].set_ylim(min(np.min(S0s.imag), np.min(S1s.imag)) - 10, max(np.max(S0s.imag), np.max(S1s.imag)) + 10)
+    amax = max(np.max(np.abs(S0s)), np.max(np.abs(S1s)))
+    axes[0].set_xlim(-1.1 * amax, 1.1 * amax)
+    axes[0].set_ylim(-1.1 * amax, 1.1 * amax)
     # plot the cut
-    _x = np.linspace(min(np.min(S0s.real), np.min(S1s.real)) - 10, max(np.max(S0s.real), np.max(S1s.real)) + 10, 101)
+    _x = np.linspace(-1.1 * amax, 1.1 * amax, 101)
     axes[0].plot( _x, -(c0.real - c1.real) / (c0.imag - c1.imag) * (_x - (c0.real + c1.real) / 2) + (c0.imag + c1.imag) / 2, 'k--')
     # add the circle to the IQ scatter plot
     theta = np.linspace(-π, π, 1001)
@@ -334,7 +330,7 @@ def fitT2(T, S, omega=2*π):
     return popt, perr, rchi2, fig
 
 def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, None]):
-    def db(a):
+    def dB(a):
         return 20. * np.log10(np.abs(a))
     def background_noise(p, f):
         Qi, Qc, fr, phi, electronic_delay, background, phase_shift = p
@@ -344,8 +340,8 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
         return background_noise(p, f) / (1 + Qi / Qc * np.exp(1j * phi) / (1 + 2j * Qi * (f - fr) / f))
     s = F.argsort()
     F, S = F[s], S[s]
-    S_inv, S_db = 1 / S, db(S)
-    _p0 = [100000, 10000, F[np.argmin(S_db)], 0.0, np.polyfit(-2 * π * F[0:100], np.unwrap(np.angle(S[0:100])), deg=1)[0], (S_db[0] + S_db[-1]) / 2, 0.0]
+    S_inv, S_dB = 1 / S, dB(S)
+    _p0 = [100000, 10000, F[np.argmin(S_dB)], 0.0, np.polyfit(-2 * π * F[0:100], np.unwrap(np.angle(S[0:100])), deg=1)[0], (S_dB[0] + S_dB[-1]) / 2, 0.0]
     p0 = list(p0)
     for i in range(len(p0)):
         if p0[i] is None:
@@ -371,7 +367,7 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
         y = 1 / S21_th(F, *p_i2b(_p))
         return np.concatenate((np.real(S_inv - y), np.imag(S_inv - y)))
     def S21_amp_fit_err(_p):
-        return db(S21_th(F, *p_i2b(_p))) - S_db
+        return dB(S21_th(F, *p_i2b(_p))) - S_dB
     def S21_arg_fit_err(p):
         return np.angle(S / S21_th(F, *p))
     if fit == "circle":
@@ -393,8 +389,8 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
     axes[0].plot((1 / S21_fit * back_noise).real, (1 / S21_fit * back_noise).imag, "r-", label="fit")
     axes[0].set_xlabel(r"Re $\widetilde{S}_{21}^{-1}$")
     axes[0].set_ylabel(r"Im $\widetilde{S}_{21}^{-1}$")
-    axes[1].scatter(F, S_db, alpha=0.5, linewidths=0.0)
-    axes[1].plot(F, db(S21_fit), "r-")
+    axes[1].scatter(F, S_dB, alpha=0.5, linewidths=0.0)
+    axes[1].plot(F, dB(S21_fit), "r-")
     axes[1].set_xlim(F[0], F[-1])
     axes[1].set_xlabel(r"$f$ (MHz)")
     axes[1].set_ylabel(r"$|S_{21}|$(dB)")

@@ -83,7 +83,7 @@ p0_qdata: None     # [-1, 1] used in arb pulse, in DAC sample rates
 **Syntax Sugar**: (optional)
 
 ```yaml
-p0_power: -40      # [dBm] power, will overwrite p0_gain
+p0_power: -40      # [dB] power, 0 is the maximum power, will overwrite p0_gain
 p0_sigma: 0.05     # [us] gaussian std in flat_top/gaussian/DRAG pulse.
                    # Its default value is 1/5 of p0_length
 ```
