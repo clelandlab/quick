@@ -74,8 +74,7 @@ def parse(soccfg, cfg):
         o["idata"] = cfg.get(f"p{p}_idata", None)
         o["qdata"] = cfg.get(f"p{p}_qdata", None)
         if cfg.get(f"p{p}_power", None) is not None:
-            balun = cfg.get(f"p{p}_balun", 2)
-            o["gain"] = dB2gain(cfg[f"p{p}_power"], o["freq"], c["g"][o["g"]]["nqz"], balun)
+            o["gain"] = dB2gain(cfg[f"p{p}_power"])
             cfg[f"p{p}_gain"] = o["gain"] # write back computed gain
         generate_waveform(o, soccfg)
     for r in range(10): # find all readout channels

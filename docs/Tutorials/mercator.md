@@ -20,7 +20,6 @@ hard_avg: 1000
 p0_freq: 5000
 p0_length: 3
 p0_power: -30
-p0_balun: 3
 p1_freq: 4000
 p1_style: flat_top
 p1_sigma: 0.05
@@ -68,7 +67,6 @@ In this section, you can prepare your pulses. All properties in this section hav
 p0_freq: 5000      # (REQUIRED) [MHz] frequency
 p0_gain: 0         # [-1, 1] gain
 p0_nqz: 2          # [1, 2]nyquist zone
-p0_balun: 2        # [0, 3] balun
 p0_mode: oneshot   # [oneshot|periodic]
 p0_style: const    # [const|gaussian|DRAG|flat_top|arb] pulse style
 p0_phase: 0        # [deg] phase
@@ -83,7 +81,6 @@ p0_qdata: None     # [-1, 1] used in arb pulse, in DAC sample rates
 **Syntax Sugar**: (optional)
 
 ```yaml
-p0_power: -40      # [dB] power, 0 is the maximum power, will overwrite p0_gain
 p0_sigma: 0.05     # [us] gaussian std in flat_top/gaussian/DRAG pulse.
                    # Its default value is 1/5 of p0_length
 ```

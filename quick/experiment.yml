@@ -7,7 +7,6 @@ var:
   r_length: 2
   r_phase: 0
   r_offset: 0
-  r_balun: 3
   r_threshold: 0
   r_relax: 1
   r_reset: 0
@@ -26,7 +25,6 @@ var_label:
   r_length: ["Readout Pulse Length", "us"]
   r_phase: ["Readout Pulse Phase", "deg"]
   r_offset: ["Readout Offset", "us"]
-  r_balun: ["Readout Generator Balun", ""]
   r_threshold: ["Readout Threshold", ""]
   r_relax: ["Readout Relax", "us"]
   r_reset: ["Reset Wait Time", "us"]
@@ -43,7 +41,6 @@ LoopBack: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   r{rr}_p: 0
   r{rr}_length: {r_length}
   r{rr}_phase: {r_phase}
@@ -62,7 +59,6 @@ ResonatorSpectroscopy: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   r{rr}_p: 0
   r{rr}_length: {r_length}
   r{rr}_phase: {r_phase}
@@ -80,7 +76,6 @@ QubitSpectroscopy: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: flat_top
   p1_sigma: 0.05
   p1_freq: {q_freq}
@@ -107,7 +102,6 @@ Rabi: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: gaussian
   p1_freq: {q_freq}
   p1_length: {q_length}
@@ -137,7 +131,6 @@ IQScatter: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: gaussian
   p1_freq: {q_freq}
   p1_length: {q_length}
@@ -173,7 +166,6 @@ ActiveReset: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: gaussian
   p1_freq: {q_freq}
   p1_length: {q_length}
@@ -218,7 +210,6 @@ DispersiveSpectroscopy: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: gaussian
   p1_freq: {q_freq}
   p1_length: {q_length}
@@ -244,7 +235,6 @@ T1: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: gaussian
   p1_freq: {q_freq}
   p1_length: {q_length}
@@ -281,7 +271,6 @@ T2Ramsey: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: gaussian
   p1_freq: {q_freq}
   p1_length: {q_length}
@@ -332,7 +321,6 @@ T2Echo: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: gaussian
   p1_freq: {q_freq}
   p1_length: {q_length}
@@ -392,7 +380,6 @@ Random: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p2_style: gaussian
   p2_freq: {q_freq}
   p2_length: {q_length}
@@ -419,7 +406,6 @@ QND: |
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
-  p0_balun: {r_balun}
   p1_style: gaussian
   p1_freq: {q_freq}
   p1_length: {q_length}

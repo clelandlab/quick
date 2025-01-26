@@ -29,7 +29,6 @@ r_power: -30      # [dB] readout pulse power
 r_length: 2       # [us] readout pulse length
 r_phase: 0        # [deg] readout pulse phase
 r_offset: 0       # [us] readout window offset
-r_balun: 3        # readout pulse balun
 r_threshold: 0    # threshold, above which is 1-state
 r_reset: 0        # [us] wait time for qubit reset (active reset).
 r_relax: 1        # [us] readout relax time
