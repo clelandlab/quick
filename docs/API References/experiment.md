@@ -276,7 +276,7 @@ e = quick.experiment.LoopBack(**kwargs)
 Measure the loop-back signal. No variable sweeping.
 
 - `indep_params = [("Time", "us")]`
-- `dep_params = [("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
+- `dep_params = [("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")]`
 
 ### - LoopBack.run
 
@@ -306,7 +306,7 @@ e = quick.experiment.ResonatorSpectroscopy(**kwargs)
 Measure the resonator spectroscopy, including the power spectroscopy.
 
 - Arbitrary variable sweeping
-- `dep_params = [("Amplitude", "dB", "log mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
+- `dep_params = [("Amplitude", "dB"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
 
 ### - ResonatorSpectroscopy.run
 
@@ -336,7 +336,7 @@ e = quick.experiment.QubitSpectroscopy(**kwargs)
 Measure the qubit spectroscopy, or two-tone spectroscopy.
 
 - Arbitrary variable sweeping
-- `dep_params = [("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
+- `dep_params = [("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")]`
     - include `(Population, "")` by `e.run(population=True)`
     - use log magnitude by `e.run(dB=True)`
 
@@ -352,7 +352,7 @@ Measure the Rabi oscillation.
 
 - Arbitrary variable sweeping, plus:
     - `cycle=0` (int) extra pi pulse cycle. Every cycle gives two extra pi pulse. `cycle=0` gives 1 pi pulse.
-- `dep_params = [("Population", ""), ("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
+- `dep_params = [("Population", ""), ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")]`
     - remove `(Population, "")` by `e.run(population=False)`
 
 ### - Rabi.run
@@ -410,7 +410,7 @@ e = quick.experiment.DispersiveSpectroscopy(r_freq=[], **kwargs)
 
 Measure the dispersive spectroscopy. No variable sweeping.
 
-- `dep_params = [("Amplitude 0", "dB", "log mag"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB", "log mag"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]`
+- `dep_params = [("Amplitude 0", "dB"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]`
 
 **Parameters**:
 
@@ -444,7 +444,7 @@ Measure the T1 decay.
 
 - Arbitrary variable sweeping, plus:
     - `time=0` (us) readout delay time.
-- `dep_params = [("Population", ""), ("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
+- `dep_params = [("Population", ""), ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")]`
     - remove `(Population, "")` by `e.run(population=False)`
 
 ### - T1.run
@@ -477,7 +477,7 @@ Measure the T2 decay with fringe by Ramsey oscillation.
 - Arbitrary variable sweeping, plus:
     - `time=0` (us) readout delay time.
     - `fringe_freq=0` (MHz) fringe frequency.
-- `dep_params = [("Population", ""), ("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
+- `dep_params = [("Population", ""), ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")]`
     - remove `(Population, "")` by `e.run(population=False)`
 
 ### - T2Ramsey.run
@@ -511,7 +511,7 @@ Measure the T2 decay with fringe by Hahn echo or CPMG method. Pi pulses for echo
     - `time=0` (us) readout delay time.
     - `cycle=0` (int) extra cycle in the CPMG method. Each extra cycle introduces 1 extra pi pulse, implementing the CPMG pulse sequence. `cycle=0` gives 1 pi pulse.
     - `fringe_freq=0` (MHz) fringe frequency.
-- `dep_params = [("Population", ""), ("Amplitude", "", "lin mag"), ("Phase", "rad"), ("I", ""), ("Q", "")]`
+- `dep_params = [("Population", ""), ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")]`
     - remove `(Population, "")` by `e.run(population=False)`
 
 ### - T2Echo.run
