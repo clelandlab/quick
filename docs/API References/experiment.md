@@ -67,6 +67,21 @@ General base *class* for other experiments using Mercator protocol. If not overw
 - `var=None` experimental variables to be inserted into the corresponding Mercator protocol template of the experiment (in `quick.experiment.configs`) and pre-defined experiment-specific variables. It will NOT be modified. The default value in `quick.experiment.var` will be used if any keys are missing.
 - `**kwargs` other keyword arguments. Any keys in `self.var` can be used as variable overwriting(by a value) or sweeping(by a list). The sweeping order is determined by the order of keyword arguments. Keys not in `self.var` are used to overwrite Mercator protocol and therefore overwrite the pulse sequence. The overwriting happens after variable insertions.
 
+**Details**: (Advanced: How `BaseExperment` works?)
+
+It will gather some necessary information first:
+
+a. the template program (written in `quick.experiment.configs`)
+b. the template variable (written in `quick.experiment.var`)
+c. new variable defined before calling `__init__`, like `time` in `T1`
+d. input variable (`var` argument)
+e. other keyword arguments that has the same key as in (b), (c), (d) combined.
+f. other keyword arguments that does not belong to (e), and not predefined (predefined: `data_path` etc).
+
+1. In `__init__`, iterables in (e) will be stored as `self.sweep`, initial values and non-iterables in (e) will overwrite (d). Then (d) will overwrite (c) and then overwrite (b), forming `self.var`.
+2. `self.eval_config` will evaluate the Mercator protocol by inserting a set of variable (eg. `self.var`) into (a), forming `self.config`. Then (f) will overwrite `self.config`
+3. During most runs, `self.sweep` will be performed by `quick.Sweep`. In each loop, a set of variable will be generated from `self.var`, and `self.eval_config` is called to generate the Mercator protocol config for that specific loop run.
+
 ### - BaseExperiment.key
 
 ```python

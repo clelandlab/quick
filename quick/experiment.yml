@@ -413,3 +413,22 @@ Random: |
   - type: wait_auto
   - type: delay_auto
     t: {r_relax}
+
+QND: |
+  rep: 10000
+  p0_freq: {r_freq}
+  p0_length: {r_length}
+  p0_power: {r_power}
+  p0_balun: {r_balun}
+  p1_style: gaussian
+  p1_freq: {q_freq}
+  p1_length: {q_length}
+  p1_gain: {q_gain}
+  r{rr}_p: 0
+  r{rr}_length: {r_length}
+  r{rr}_phase: {r_phase}
+  steps:
+  - type: wait_auto
+  - type: delay_auto
+    t: {r_relax}
+

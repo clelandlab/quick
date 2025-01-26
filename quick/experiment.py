@@ -225,3 +225,6 @@ class Random(BaseExperiment):
             res += self.data[c] * 2 ** (-i - 1)
             c += 1
         return res
+
+class QND(BaseExperiment):
+    pass
