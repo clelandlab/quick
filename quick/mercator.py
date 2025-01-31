@@ -129,8 +129,8 @@ class Mercator(AveragerProgramV2):
             else: # non-const pulse
                 kwargs["envelope"] = f"e{p}"
                 maxv = self.soccfg.get_maxv(o["g"])
-                idata = maxv * o["idata"] if o["idata"] is not None else None
-                qdata = maxv * o["qdata"] if o["qdata"] is not None else None
+                idata = maxv * np.array(o["idata"]) if o["idata"] is not None else None
+                qdata = maxv * np.array(o["qdata"]) if o["qdata"] is not None else None
                 self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata)
             if o["style"] in ["flat_top", "const"]:
                 kwargs["length"] = o["length"]
