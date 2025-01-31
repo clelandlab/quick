@@ -42,7 +42,7 @@ setup(
         "ipython"
     ],
     package_data={
-        "quick": ["VERSION", "constants/*"]
+        "quick": ["VERSION", "experiment.yml"],
     },
     include_package_data=True,
     project_urls={
