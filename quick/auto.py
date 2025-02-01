@@ -40,7 +40,7 @@ class Resonator(BaseAuto):
     def calibrate(self, **kwargs):
         self.var["r_relax"] = 0
         if self.data is None:
-            self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-50, 0, 2), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 100), soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-50, 0, 2), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 101), soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs).run(silent=self.silent).data.T
         P, F, A = self.data[0], self.data[1], self.data[2]
         Fn = len(np.unique(F))
         F, P = F[0:Fn], P[0::Fn]
@@ -157,7 +157,7 @@ class PiPulseLength(BaseAuto):
             c = cycles[j]
             if c <= 0:
                 continue
-            scan(np.linspace(self.var["q_length"] * (c - 0.5) / (c + 0.5), self.var["q_length"] * (c + 1.5) / (c + 0.5), 50), cycle=c)
+            scan(np.linspace(self.var["q_length"] * (c - 0.5) / (c + 0.5), self.var["q_length"] * (c + 1.5) / (c + 0.5), 51), cycle=c)
             rchi2 = fit(cycle=c, ax=axes[j+1])
             if rchi2 > tol:
                 return False, fig
@@ -167,7 +167,7 @@ class PiPulseFreq(BaseAuto):
     def calibrate(self, cycles=[], r=10, **kwargs):
         fig, axes = plt.subplots(len(cycles) + 1, 1)
         def scan(cycle=0):
-            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseFreq) {int(self.var['r_freq'])} cycle={cycle}", q_freq=np.linspace(self.var["q_freq"]-r,self.var["q_freq"]+r,100), cycle=cycle, rep=2000, **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseFreq) {int(self.var['r_freq'])} cycle={cycle}", q_freq=np.linspace(self.var["q_freq"]-r,self.var["q_freq"]+r,101), cycle=cycle, rep=2000, **kwargs).run(silent=self.silent).data.T
         def fit(ax=axes):
             F, A = self.data[0], self.data[2]
             self.var["q_freq"] = float(helper.symmetryCenter(F, A))
@@ -217,7 +217,7 @@ class Ramsey(BaseAuto):
     def calibrate(self, fringe_freq=10, max_time=1, **kwargs):
         self.var["fringe_freq"] = fringe_freq
         if self.data is None:
-            self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=np.linspace(0, max_time, 100), **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=np.linspace(0, max_time, 101), **kwargs).run(silent=self.silent).data.T
         L, A = self.data[0], self.data[1]
         def m(x, p1, p2, p3):
             return p1 * np.cos(p2 * x) + p3
@@ -248,9 +248,9 @@ class Readout(BaseAuto):
         return self.var, None
 
 class Relax(BaseAuto):
-    def calibrate(self, max_time=300, **kwargs):
+    def calibrate(self, **kwargs):
         if self.data is None:
-            self.data = experiment.T1(var=self.var, data_path=self.data_path, soccfg=self.soccfg, soc=self.soc, title=f"(auto.Relax) {int(self.var['r_freq'])}",time=np.arange(0, max_time, 5), **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.T1(var=self.var, data_path=self.data_path, soccfg=self.soccfg, soc=self.soc, title=f"(auto.Relax) {int(self.var['r_freq'])}", time=np.linspace(0, self.var["r_relax"] * 0.8, 61), **kwargs).run(silent=self.silent).data.T
         popt, _, _, fig = helper.fitT1(self.data[0], self.data[1])
         print("T1 =", popt[1])
         self.var["r_relax"] = float(5 * popt[1])

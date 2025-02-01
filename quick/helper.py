@@ -289,6 +289,43 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     axes[0].legend(shadow=False, loc=1, frameon=True)
     return c0, c1, visibility, Fg, Fe, fig
 
+# T1 fit and plot
+def fitT1(T, S):
+    def m(x, *p):
+        return p[0] * np.exp(-x / p[1]) + p[2]
+    def jac(x, *p):
+        d0 = np.exp(-x / p[1])
+        d1 = p[0] * x / p[1] ** 2 * np.exp(-x / p[1])
+        d2 = np.ones(len(x))
+        return np.transpose([d0, d1, d2])
+    p0 = [1.0, 1.0, 1.0]
+    popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
+    perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
+    residuals = S - m(T, *popt)
+    ss_res = np.sum(residuals**2) / np.var(S)
+    dof = len(T) - len(popt)
+    rchi2 = ss_res / dof
+    fig, ax = plt.subplots()
+    ax.scatter(T, S, color='black', s=10, label='Original Data')
+    ax.plot(T, m(T, *popt), color='red', label='Fit')
+    annotation_text = (
+        r"$S = S_0e^{-\tau/T_1} + C$" + "\n" +
+        "Fitting Result:\n" +
+        r"$S_0 = ({:.2f} \pm {:.2f})$".format(popt[0], perr[0]) + "\n" +
+        r"$T_1 = ({:.2f} \pm {:.2f})$ us".format(popt[1], perr[1]) + "\n" +
+        r"$C = ({:.2f} \pm {:.2f})$".format(popt[2], perr[2]) + "\n" +
+        r"$n = {}$ (DOF)".format(dof) + "\n" +
+        r"$\chi^2/n = {:.2e}$".format(rchi2)
+    )
+    ax.set_xlabel(r"Pulse Delay $\tau$ (us)")
+    ax.set_ylabel("Population")
+    ax.set_title("T1 Measurement")
+    ax.grid()
+    ax.legend()
+    mid_index = len(T) // 2
+    ax.annotate(annotation_text, (T[mid_index], S[mid_index]), fontsize=8, xycoords='data', textcoords='offset points', xytext=(20, 20))
+    return popt, perr, rchi2, fig
+
 # T2 fit and plot
 def fitT2(T, S, omega=2*π):
     def m(x, *p):

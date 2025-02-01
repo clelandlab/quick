@@ -280,19 +280,15 @@ Run the calibration.
 a = quick.auto.Relax(**kwargs)
 ```
 
-Estimate qubit relax time by T1. `r_relax` will be set as 5 times of measured T1.
+Estimate qubit relax time by T1. The scan will go to `0.8 * r_relax`. `r_relax` will be set as 5 times of measured T1.
 
 ### - Relax.calibrate
 
 ```python
-var, fig = a.calibrate(max_time=300, **kwargs)
+var, fig = a.calibrate(**kwargs)
 ```
 
 Run the calibration.
-
-**Parameters**:
-
-- `max_time=300` (float) [us] T1 maximum delay time.
 
 **Return**:
 
