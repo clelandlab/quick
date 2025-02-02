@@ -144,18 +144,24 @@ class IQScatter(BaseExperiment):
         return self.conclude(silent)
 
 class DispersiveSpectroscopy(BaseExperiment):
-    def __init__(self, r_freq=[], **kwargs):
-        super().__init__(**kwargs)
-        self.r_freq = r_freq
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
         self.data = []
-        indep_params = [("Readout Pulse Frequency", "MHz")]
+        indep_params = []
+        for k in self.sweep:
+            label = self.var_label.get(k, (k, ""))
+            indep_params.append(label)
         dep_params = [("Amplitude 0", "dB"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]
         if self.data_path is not None:
             self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
-        for c in helper.Sweep(self.config, { "p0_freq": self.r_freq }, progressBar=(not silent)):
+        for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
+            self.eval_config(v)
+            indep = []
+            for k in self.sweep:
+                indep.append(v[k])
+            self.var = v
+            c = self.config
             c["0_type"] = "pulse" # send pi pulse
             c["1_t"] = 0
             self.m = Mercator(self.soccfg, c)
@@ -229,10 +235,10 @@ class Random(BaseExperiment):
 
 class QND(BaseExperiment):
     def __init__(self, **kwargs):
-        def _get_steps(v={}):
+        def get_steps(seq, v={}):
             res = ""
-            for i in range(5):
-                if i % 2 == 0:
+            for s in seq:
+                if s > 0:
                     res += f"- type: pulse\n  p: 1\n  g: {v['q']}\n- type: delay_auto\n"
                 else:
                     res += f"- type: delay_auto\n  t: {v['q_length']}\n"
@@ -245,18 +251,24 @@ class QND(BaseExperiment):
             "cycle": ("Cycles", ""),
             "random": ("Random", "")
         }
-        self._var = { "_get_steps": _get_steps }
+        self._var = { "get_steps": get_steps, "seq": [1] }
         super().__init__(**kwargs)
     def run(self, silent=False):
         self.data = []
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.eval_config(self.var)
-        self.m = Mercator(self.soccfg, self.config)
-        I_list, _ = self.m.acquire(self.soc)
-        C = []
-        for I in I_list[0]:
-            o = float(I[I > self.var.get("r_threshold", 0)].size) / I.size
-            C.append(o)
+        Cs = []
+        for _ in helper.Sweep({}, { "i": range(self.var["random"]) }, progressBar=(not silent)):
+            self._var["seq"] = np.random.randint(2, size=self.var["cycle"])
+            self.eval_config(self.var)
+            self.m = Mercator(self.soccfg, self.config)
+            I_list, _ = self.m.acquire(self.soc)
+            R = (I_list[0] > self.var.get("r_threshold", 0)).astype(int)
+            R_shift = np.concatenate(([np.zeros(len(R[0]))], R[:-1])).astype(int)
+            O = np.bitwise_xor(R, R_shift)
+            O = np.mean(O, axis=1)
+            C = 1 - 2 * np.abs(self._var["seq"] - O)
+            Cs.append(C)
+        C = np.mean(Cs, axis=0)
         print(C)
         return self.conclude(silent)

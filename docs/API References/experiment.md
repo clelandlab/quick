@@ -408,8 +408,9 @@ run the experiment.
 e = quick.experiment.DispersiveSpectroscopy(r_freq=[], **kwargs)
 ```
 
-Measure the dispersive spectroscopy. No variable sweeping.
+Measure the dispersive spectroscopy.
 
+- Arbitrary variable sweeping
 - `dep_params = [("Amplitude 0", "dB"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]`
 
 **Parameters**:
@@ -539,7 +540,7 @@ run the experiment.
 e = quick.experiment.Random(**kwargs)
 ```
 
-Generate a sequence of random bit by a qubit!
+Generate a sequence of random bit by a qubit! No variable sweeping.
 
 ### - Random.run
 
