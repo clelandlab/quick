@@ -414,6 +414,13 @@ QND: |
   r{rr}_length: {r_length}
   r{rr}_phase: {r_phase}
   steps:
+  - type: pulse
+    p: 0
+    g: {r}
+  - type: trigger
+    t: {r_offset}
+  - type: delay_auto
+    t: {r_reset}
   {get_steps(seq, v=locals())}
   - type: wait_auto
   - type: delay_auto

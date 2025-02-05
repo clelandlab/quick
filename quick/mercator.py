@@ -64,6 +64,7 @@ def parse(soccfg, cfg):
         c["g"][o["g"]]["freq"] = o["freq"]
         c["g"][o["g"]]["mixer"] = c["g"][o["g"]].get("mixer", cfg.get(f"p{p}_mixer", None))
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
+        o["phrst"] = cfg.get(f"p{p}_phrst", None)
         o["style"] = cfg.get(f"p{p}_style", "const")
         o["length"] = cfg.get(f"p{p}_length", 2)
         o["sigma"] = cfg.get(f"p{p}_sigma", o["length"] / 5)
@@ -119,7 +120,7 @@ class Mercator(AveragerProgramV2):
             else: # mux readout
                 self.declare_readout(ch=r, length=o["length"], **kwargs)
         for p, o in c["p"].items(): # Setup pulses
-            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"] }
+            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"], "phrst": o["phrst"] }
             if o["style"] == "const":
                 kwargs["mode"] = o["mode"]
                 if o["mask"] is not None: # mux mask

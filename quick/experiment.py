@@ -246,7 +246,7 @@ class QND(BaseExperiment):
                 res += f"- type: trigger\n  t: {v['r_offset']}\n"
                 res += f"- type: delay_auto\n  t: {v['r_reset']}\n"
             return res
-        self.var = { "cycle": 10, "random": 10 } # add var
+        self.var = { "cycle": 10, "random": 100 } # add var
         self.var_label = {
             "cycle": ("Cycles", ""),
             "random": ("Random", "")
@@ -254,21 +254,34 @@ class QND(BaseExperiment):
         self._var = { "get_steps": get_steps, "seq": [1] }
         super().__init__(**kwargs)
     def run(self, silent=False):
-        self.data = []
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        Cs = []
-        for _ in helper.Sweep({}, { "i": range(self.var["random"]) }, progressBar=(not silent)):
-            self._var["seq"] = np.random.randint(2, size=self.var["cycle"])
-            self.eval_config(self.var)
-            self.m = Mercator(self.soccfg, self.config)
-            I_list, _ = self.m.acquire(self.soc)
-            R = (I_list[0] > self.var.get("r_threshold", 0)).astype(int)
-            R_shift = np.concatenate(([np.zeros(len(R[0]))], R[:-1])).astype(int)
-            O = np.bitwise_xor(R, R_shift)
-            O = np.mean(O, axis=1)
-            C = 1 - 2 * np.abs(self._var["seq"] - O)
-            Cs.append(C)
-        C = np.mean(Cs, axis=0)
-        print(C)
+        self.data = []
+        indep_params = [("Cycle Index", "")]
+        for k in self.sweep:
+            label = self.var_label.get(k, (k, ""))
+            indep_params.append(label)
+        dep_params = [("Correlation", "")]
+        if self.data_path is not None:
+            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
+        for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
+            indep = []
+            for k in self.sweep:
+                indep.append(v[k] + np.zeros(v["cycle"]))
+            self.var = v
+            Cs = []
+            for _ in range(v["random"]):
+                self._var["seq"] = np.random.randint(2, size=v["cycle"])
+                self.eval_config(v)
+                self.m = Mercator(self.soccfg, self.config)
+                I_list, _ = self.m.acquire(self.soc)
+                R = (I_list[0] > v.get("r_threshold", 0)).astype(int) # {0, 1} readout
+                R_shift = np.concatenate(([np.zeros(len(R[0]))], R[:-1])).astype(int)
+                O = np.bitwise_xor(R, R_shift).astype(int) # {0, 1} 1 if state changes
+                O = O[:, O[0, :] < 1] # post-select state-prep in g
+                O = np.mean(O, axis=1)[1:] # average across rep, ignore first readout
+                C = 1 - 2 * np.abs(self._var["seq"] - O) # correlation with pi pulse
+                Cs.append(C)
+            C = np.mean(Cs, axis=0)
+            self.add_data(np.transpose([np.arange(0, v["cycle"]), *indep, C ]))
         return self.conclude(silent)
