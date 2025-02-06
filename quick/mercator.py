@@ -140,7 +140,6 @@ class Mercator(AveragerProgramV2):
             self.add_pulse(ch=o["g"], name=f"p{p}",  **kwargs)
         if cfg["rep"] > 0:
             self.add_loop("rep", cfg["rep"])
-        self.delay(0.3)
     
     def _body(self, cfg):
         c = self.c
@@ -229,8 +228,8 @@ class Mercator(AveragerProgramV2):
             if o["type"] == "wait":
                 for k in range(len(generator_until)):
                     generator_until[k] = max(generator_until[k], start)
-            if o["type"] == "wait_all":
-                end = start = max(pulse_until, delay) + o["t"]
+            if o["type"] == "wait_auto":
+                end = start = pulse_until + o["t"]
                 for k in range(len(generator_until)):
                     generator_until[k] = max(generator_until[k], start)
             if o["type"] == "trigger":
