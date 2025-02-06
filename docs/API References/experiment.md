@@ -573,3 +573,36 @@ generate a float number within range (0, 1) uniformly.
 **Return**:
 
 - `a` (float) a random number between 0 and 1.
+
+## 🟢QND
+
+> Base *class*: `BaseExperiment`
+
+```python
+e = quick.experiment.QND(**kwargs)
+```
+
+QNDness measurement by randomized Pi pulse and repeated readout.
+
+- Arbitrary variable sweeping, plus:
+    - `cycle=10` (int) cycles of randomized Pi pulse and readout.
+    - `random=100` (int) number of randomization.
+- `dep_params = [("Correlation", "")]`
+
+### - QND.run
+
+```python
+e.run(silent=False)
+```
+
+run the experiment.
+
+**Parameters**:
+
+- `silent=False` (bool) Whether to avoid any printing.
+
+**Return**:
+
+- `e` the experiment object itself.
+
+
