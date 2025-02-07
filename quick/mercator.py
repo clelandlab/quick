@@ -64,7 +64,7 @@ def parse(soccfg, cfg):
         c["g"][o["g"]]["freq"] = o["freq"]
         c["g"][o["g"]]["mixer"] = c["g"][o["g"]].get("mixer", cfg.get(f"p{p}_mixer", None))
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
-        o["phrst"] = cfg.get(f"p{p}_phrst", None)
+        o["phrst"] = cfg.get(f"p{p}_phrst", 0)
         o["style"] = cfg.get(f"p{p}_style", "const")
         o["length"] = cfg.get(f"p{p}_length", 2)
         o["sigma"] = cfg.get(f"p{p}_sigma", o["length"] / 5)
@@ -166,7 +166,7 @@ class Mercator(AveragerProgramV2):
 
     def __init__(self, soccfg, cfg):
         self.c = parse(soccfg, cfg)
-        super().__init__(soccfg, reps=cfg.get("hard_avg", 1), final_delay=0, cfg=cfg)
+        super().__init__(soccfg, reps=cfg.get("hard_avg", 1), final_delay=None, final_wait=None, cfg=cfg)
 
     def acquire(self, soc, progress=False, **kwargs):
         res = super().acquire(soc, progress=progress, soft_avgs=self.cfg.get("soft_avg", 1), **kwargs)
