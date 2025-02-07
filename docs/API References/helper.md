@@ -134,7 +134,7 @@ for cfg in quick.Sweep(config, sweepConfig):
 s = quick.Saver(title, path, indep_params=[], dep_params=[], params={})
 ```
 
-The *class* to construct a data saver. The meta information will be saved in a yml file and data points will be saved in a csv file. (An ini file will also be generated for capability of *LabRAD*)
+The *class* to construct a data saver. The meta information will be saved in a yml file and data points will be saved in a csv file.
 
 **Parameters**:
 
@@ -145,6 +145,14 @@ The *class* to construct a data saver. The meta information will be saved in a y
 - `params={}` (dict) a dictionary of other parameters, will be saved as meta information.
 
 > Most variables and methods are for internal use and therefore not documented here. To save data, use the `write_data` method below.
+
+### - Saver.write_yml
+
+```python
+s.write_yml()
+```
+
+Write a yml file, recording the metainformation of the current saver. This will overwrite any existing yml file produced by the same saver. This function will be called during the saver initialization. It is recommended to call this function after all data writings to update the completed time.
 
 ### - Saver.write_data
 

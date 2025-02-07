@@ -4,7 +4,7 @@ from scipy import interpolate, stats
 import matplotlib.pyplot as plt
 import yaml, json
 from tqdm.notebook import tqdm
-import os, re, ast, configparser
+import os, re, ast
 from datetime import datetime
 import Pyro4
 from qick import QickConfig
@@ -51,7 +51,6 @@ def load_data(*paths):
     return np.concatenate(data_list)
 
 class Sweep:
-    """ Sweeping Tool """
     def __init__(self, config, sweepConfig, progressBar=True):
         self.config = dict(config) # Copy config, avoid changing the original
         self.sweep = [] # [{ 'key': 'key', 'list': [value list], 'index': 0 }]
@@ -66,7 +65,6 @@ class Sweep:
             self.sweep.reverse() # Match Labrad sweeping sequence
         except:
             print("Invalid Sweep Iterator. \n ")
-        
     def __iter__(self): # initialze all iterator
         self.done = False
         self.start = False
@@ -75,7 +73,6 @@ class Sweep:
         for s in self.sweep:
             s['index'] = 0
         return self
-        
     def __next__(self):
         if self.progressBar and self.start:
             self.progress.update()
@@ -96,7 +93,6 @@ class Sweep:
         return self.config
 
 class Saver:
-    """ Save data in Labrad-compatible format """
     def __init__(self, title, path, indep_params=[], dep_params=[], params={}):
         self.indep_params = []
         self.dep_params = []
@@ -119,37 +115,11 @@ class Saver:
             next_number = max(existing_numbers) + 1
         else:
             next_number = 0
-        # Creating file name + path based off ^
+        # Creating file name + path
         self.file_name = self.path + f"/{next_number:05d} - {self.title}"
         self.created_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
-        self.write_ini()
         self.write_yml()
-        # Create empty csv
         np.savetxt(self.file_name + '.csv', [], delimiter=',')
-
-    def write_ini(self):
-        # Making FILLED ini
-        config = configparser.ConfigParser()
-        config["General"] = {
-            "created": self.created_time,
-            "accessed": self.created_time,
-            "modified": self.created_time,
-            "title": self.title,
-            "independent": len(self.indep_params),
-            "dependent": len(self.dep_params),
-            "parameters": len(self.params),
-            "comments": 0 # Can add comment compatability if people want
-        }
-        for i in range(0, len(self.indep_params)): # Independents
-            config["Independent " + str(i + 1)] = { "label": self.indep_params[i][0], "units": self.indep_params[i][1] }
-        for i in range(0, len(self.dep_params)): # Dependents
-            config["Dependent " + str(i + 1)] = { "label": self.dep_params[i][0], "units": self.dep_params[i][1] }
-        config["Parameter 1"] = { "label": "deprecated", "data": "meta_information_in_yml_file" }
-        config["Comments"] = {} # No comments bc nobody uses them
-        # Making file
-        with open(self.file_name + ".ini", "w") as configfile:
-            config.write(configfile)
-
     def write_yml(self):
         meta = {
             "created": self.created_time,
@@ -161,9 +131,7 @@ class Saver:
             "comments": []
         }
         save_yaml(self.file_name + ".yml", meta)
-
     def write_data(self, data):
-        # Todo: check data dimension
         with open(self.file_name + '.csv', 'a+') as f:
             np.savetxt(f, data, fmt="%.9e", delimiter=',')
         # self.write_yml() # do not call it every time for efficiency
