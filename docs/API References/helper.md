@@ -251,7 +251,7 @@ Rough estimate the angular frequency using FFT. Useful for initial parameters in
 
 - `omega` (float) estimated angular frequency.
 
-## 🟢iq2probb
+## 🟢iq2prob
 
 ```python
 p = quick.iq2prob(Ss, c0, c1)
