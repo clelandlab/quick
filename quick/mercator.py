@@ -72,8 +72,8 @@ def parse(soccfg, cfg):
         o["gain"] = cfg.get(f"p{p}_gain", 0)
         o["mask"] = cfg.get(f"p{p}_mask", list(range(len(o["freq"]))) if isinstance(o["freq"], listType) else None)
         o["phase"] = cfg.get(f"p{p}_phase", list(np.zeros(len(o["freq"]))) if isinstance(o["freq"], listType) else 0)
-        o["idata"] = cfg.get(f"p{p}_idata", None)
-        o["qdata"] = cfg.get(f"p{p}_qdata", None)
+        o["idata"] = cfg.get(f"p{p}_idata", None) and np.array(cfg[f"p{p}_idata"])
+        o["qdata"] = cfg.get(f"p{p}_qdata", None) and np.array(cfg[f"p{p}_qdata"])
         if cfg.get(f"p{p}_power", None) is not None:
             o["gain"] = dB2gain(cfg[f"p{p}_power"])
             cfg[f"p{p}_gain"] = o["gain"] # write back computed gain
@@ -130,8 +130,8 @@ class Mercator(AveragerProgramV2):
             else: # non-const pulse
                 kwargs["envelope"] = f"e{p}"
                 maxv = self.soccfg.get_maxv(o["g"])
-                idata = maxv * np.array(o["idata"]) if o["idata"] is not None else None
-                qdata = maxv * np.array(o["qdata"]) if o["qdata"] is not None else None
+                idata = o["idata"] and maxv * np.array(o["idata"])
+                qdata = o["qdata"] and maxv * np.array(o["qdata"])
                 self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata)
             if o["style"] in ["flat_top", "const"]:
                 kwargs["length"] = o["length"]
