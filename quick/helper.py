@@ -127,8 +127,7 @@ class Saver:
             "title": self.title,
             "independent": self.indep_params,
             "dependent": self.dep_params,
-            "parameters": self.params,
-            "comments": []
+            "parameters": self.params
         }
         save_yaml(self.file_name + ".yml", meta)
     def write_data(self, data):
