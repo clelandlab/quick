@@ -141,10 +141,10 @@ class IQScatter(BaseExperiment):
         return self.conclude(silent)
 
 class IQTrace(BaseExperiment):
-    def init(self, **kwargs):
+    def __init__(self, **kwargs):
         self.var = { "rr_length": 0.1 } # add one var
         self.var_label = { "rr_length": ("Readout Window Time", "us") }
-        super().init(**kwargs)
+        super().__init__(**kwargs)
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
