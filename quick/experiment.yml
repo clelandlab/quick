@@ -161,8 +161,8 @@ IQScatter: |
   9_type: delay_auto
   9_t: {r_relax}
 
-ActiveReset: |
-  rep: 10000
+IQTrace: |
+  hard_avg: 1000
   p0_freq: {r_freq}
   p0_length: {r_length}
   p0_power: {r_power}
@@ -170,31 +170,13 @@ ActiveReset: |
   p1_freq: {q_freq}
   p1_length: {q_length}
   p1_gain: {q_gain}
-  p2_style: gaussian
-  p2_freq: {q_freq}
-  p2_length: {q_length}
-  p2_gain: {q_gain}
   r{rr}_p: 0
-  r{rr}_length: {r_length}
+  r{rr}_length: {rr_length}
   r{rr}_phase: {r_phase}
   steps:
   - type: pulse
-    p: 2
-    g: {q}
-  - type: delay_auto
-  - type: pulse
-    p: 0
-    g: {r}
-  - type: trigger
-    t: {r_offset}
-  - type: delay_auto
-  - type: wait_auto
-    t: {r_reset}
-  - type: {"pulse" if r_reset else "pass"}
     p: 1
     g: {q}
-    threshold: {r_threshold}
-    r: {rr}
   - type: delay_auto
   - type: pulse
     p: 0

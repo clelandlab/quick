@@ -140,6 +140,35 @@ class IQScatter(BaseExperiment):
         self.add_data(np.transpose([I0, Q0, I1, Q1]))
         return self.conclude(silent)
 
+class IQTrace(BaseExperiment):
+    def init(self, **kwargs):
+        self.var = { "rr_length": 0.1 } # add one var
+        self.var_label = { "rr_length": ("Readout Window Time", "us") }
+        super().init(**kwargs)
+    def run(self, silent=False):
+        if not silent:
+            print(f"quick.experiment({self.key}) Starting")
+        self.prepare(dep_params=[("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")])
+        for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
+            self.eval_config(v)
+            indep = []
+            for k in self.sweep:
+                indep.append(v[k])
+            self.var = v
+            c = self.config
+            c["0_type"] = "pulse" # send pi pulse
+            c["1_t"] = 0
+            self.m = Mercator(self.soccfg, c)
+            I1, Q1 = self.m.acquire(self.soc)
+            S1 = I1[0][0] + 1j * Q1[0][0]
+            c["0_type"] = "delay_auto" # omit pi pulse
+            c["1_t"] = self.var["q_length"]
+            self.m = Mercator(self.soccfg, c)
+            I0, Q0 = self.m.acquire(self.soc)
+            S0 = I0[0][0] + 1j * Q0[0][0]
+            self.add_data([[*indep, np.real(S0), np.imag(S0), np.real(S1), np.imag(S1) ]])
+        return self.conclude(silent)
+
 class DispersiveSpectroscopy(BaseExperiment):
     def run(self, silent=False):
         if not silent:

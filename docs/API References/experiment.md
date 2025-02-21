@@ -401,6 +401,36 @@ run the experiment.
 
 - `e` the experiment object itself.
 
+## 🟢IQTrace
+
+> Base *class*: `BaseExperiment`
+
+```python
+e = quick.experiment.IQTrace(**kwargs)
+```
+
+Measure the IQ scatter data with hard average.
+
+- Arbitrary variable sweeping, plus:
+    - `rr_length=0.1` (us) readout window length (independent from `r_length` here).
+- `dep_params = [("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")]`
+
+### - IQTrace.run
+
+```python
+e.run(silent=False)
+```
+
+run the experiment.
+
+**Parameters**:
+
+- `silent=False` (bool) Whether to avoid any printing.
+
+**Return**:
+
+- `e` the experiment object itself.
+
 ## 🟢DispersiveSpectroscopy
 
 > Base *class*: `BaseExperiment`
