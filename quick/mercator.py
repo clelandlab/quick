@@ -2,6 +2,7 @@ from qick.asm_v2 import AveragerProgramV2, QickSweep1D, AsmV2
 from .helper import dB2gain
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter
 
 listType = (list, np.ndarray)
 
@@ -12,12 +13,20 @@ def generate_waveform(o, soccfg):
     σ = o["sigma"] * samps_per_clk * f_fabric # keep float!
     if o["style"] == "const":
         o["idata"] = None
-    if o["style"] == "flat_top":
+    if o["style"] in ["flat_top", "stage"]: # l computed from σ
         l = int(σ * 5 / samps_per_clk / 2) * 2 * samps_per_clk
     if o["style"] in ["gaussian", "flat_top", "DRAG"]:
         x = np.arange(0, l)
         μ = l/2 - 0.5
         o["idata"] = np.exp(-(x - μ) ** 2 / σ ** 2)
+    if o["style"] == "stage":
+        o["idata"] = np.zeros(int(σ * 4))
+        for s in o["stage"]:
+            o["idata"] = np.append(o["idata"], np.zeros(int(s[1] * f_fabric * samps_per_clk)) + s[0])
+        o["idata"] = np.append(o["idata"], np.zeros(int(σ*4)))
+        # pad o["idata"] to be integer multiple of samps_per_clk
+        o["idata"] = np.append(o["idata"], np.zeros(samps_per_clk - len(o["idata"]) % samps_per_clk))
+        o["idata"] = gaussian_filter(o["idata"], σ)
     if o["style"] == "DRAG":
         δ = -o["delta"] / (samps_per_clk * f_fabric)
         o["qdata"] = 0.5 * (x - μ) / (2 * σ ** 2) * o["idata"] / δ
@@ -72,6 +81,7 @@ def parse(soccfg, cfg):
         o["gain"] = cfg.get(f"p{p}_gain", 0)
         o["mask"] = cfg.get(f"p{p}_mask", list(range(len(o["freq"]))) if isinstance(o["freq"], listType) else None)
         o["phase"] = cfg.get(f"p{p}_phase", list(np.zeros(len(o["freq"]))) if isinstance(o["freq"], listType) else 0)
+        o["stage"] = cfg.get(f"p{p}_stage", [])
         o["idata"] = cfg.get(f"p{p}_idata", None) and np.array(cfg[f"p{p}_idata"])
         o["qdata"] = cfg.get(f"p{p}_qdata", None) and np.array(cfg[f"p{p}_qdata"])
         if cfg.get(f"p{p}_power", None) is not None:
@@ -130,8 +140,8 @@ class Mercator(AveragerProgramV2):
             else: # non-const pulse
                 kwargs["envelope"] = f"e{p}"
                 maxv = self.soccfg.get_maxv(o["g"])
-                idata = o["idata"] and maxv * np.array(o["idata"])
-                qdata = o["qdata"] and maxv * np.array(o["qdata"])
+                idata = None if o["idata"] is None else maxv * np.array(o["idata"])
+                qdata = None if o["qdata"] is None else maxv * np.array(o["qdata"])
                 self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata)
             if o["style"] in ["flat_top", "const"]:
                 kwargs["length"] = o["length"]

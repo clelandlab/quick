@@ -42,16 +42,17 @@ class BaseExperiment:
         configStr = configs.get(self.key, "")
         self.config = yaml.safe_load(helper.evalStr(configStr, v, self._var)) or {}
         self.config.update(self.config_update)
-    def prepare(self, indep_params=[], dB=False, population=False): # prepare saver
+    def prepare(self, indep_params=[], dep_params=[], dB=False, population=False): # prepare saver
         self.data = []
         indep_params = list(indep_params) # avoid modify in place
         for k in self.sweep:
             label = self.var_label.get(k, (k, ""))
             indep_params.append(label)
-        dep_params = []
-        if population:
-            dep_params.append(("Population", ""))
-        dep_params.extend([("Amplitude", "dB") if dB else ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")])
+        dep_params = list(dep_params)
+        if len(dep_params) == 0:
+            if population:
+                dep_params.append(("Population", ""))
+            dep_params.extend([("Amplitude", "dB") if dB else ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")])
         if self.data_path is not None:
             self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
     def add_data(self, data): # add & save data
@@ -97,7 +98,7 @@ class LoopBack(BaseExperiment):
     def run(self, silent=False, dB=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.prepare([("Time", "us")], dB=dB)
+        self.prepare(indep_params=[("Time", "us")], dB=dB)
         self.eval_config(self.var)
         self.m = Mercator(self.soccfg, self.config)
         I, Q = self.m.acquire_decimated(self.soc, progress=not silent)
@@ -125,11 +126,7 @@ class IQScatter(BaseExperiment):
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.data = []
-        indep_params = []
-        dep_params = [("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")]
-        if self.data_path is not None:
-            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
+        self.prepare(dep_params=[("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")])
         self.config["0_type"] = "pulse" # send pi pulse
         self.config["1_t"] = 0
         self.m = Mercator(self.soccfg, self.config)
@@ -147,14 +144,7 @@ class DispersiveSpectroscopy(BaseExperiment):
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.data = []
-        indep_params = []
-        for k in self.sweep:
-            label = self.var_label.get(k, (k, ""))
-            indep_params.append(label)
-        dep_params = [("Amplitude 0", "dB"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]
-        if self.data_path is not None:
-            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
+        self.prepare(dep_params=[("Amplitude 0", "dB"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")])
         for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
             self.eval_config(v)
             indep = []
@@ -172,7 +162,7 @@ class DispersiveSpectroscopy(BaseExperiment):
             self.m = Mercator(self.soccfg, c)
             I0, Q0 = self.m.acquire(self.soc)
             S0 = I0[0][0] + 1j * Q0[0][0]
-            self.add_data([[c["p0_freq"], 20 * np.log10(np.abs(S0) / c["p0_gain"]), np.angle(S0), np.real(S0), np.imag(S0), 20 * np.log10(np.abs(S1) / c["p0_gain"]), np.angle(S1), np.real(S1), np.imag(S1) ]])
+            self.add_data([[*indep, 20 * np.log10(np.abs(S0) / c["p0_gain"]), np.angle(S0), np.real(S0), np.imag(S0), 20 * np.log10(np.abs(S1) / c["p0_gain"]), np.angle(S1), np.real(S1), np.imag(S1) ]])
         return self.conclude(silent)
 
 class T1(BaseExperiment):
@@ -256,14 +246,7 @@ class QND(BaseExperiment):
     def run(self, silent=False):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.data = []
-        indep_params = [("Cycle Index", "")]
-        for k in self.sweep:
-            label = self.var_label.get(k, (k, ""))
-            indep_params.append(label)
-        dep_params = [("Correlation", "")]
-        if self.data_path is not None:
-            self.s = helper.Saver(f"({self.key})" + self.title, self.data_path, indep_params, dep_params, { "quick_experiment": self.key, "quick_version": __version__, "config": self.config, "var": self.var })
+        self.prepare(indep_params=[("Cycle Index", "")], dep_params=[("Correlation", "")])
         for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
             indep = []
             for k in self.sweep:

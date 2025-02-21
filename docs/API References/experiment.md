@@ -171,7 +171,7 @@ Perform variable insertion and then config overwriting, generating `self.config`
 ### - BaseExperiment.prepare
 
 ```python
-e.prepare(indep_params=[], dB=False, population=False)
+e.prepare(indep_params=[], dep_params=[], dB=False, population=False)
 ```
 
 prepare the standard S21 measurements (amplitude, phase, I, Q), create data saver. Mostly for internal use.
@@ -179,6 +179,7 @@ prepare the standard S21 measurements (amplitude, phase, I, Q), create data save
 **Parameters**:
 
 - `indep_params=[]` (list) a list of 2-tuples, specifying meta information for independent variables, in the format of `("Name", "Unit")`. Note that variables in `self.sweep` are automatically added without passing in.
+- `dep_params=[]` (list) a list of 2-tuples, specifying meta information for dependent variables, in the format of `("Name", "Unit")`. If empty, default values will be generated according to the following arguments.
 - `dB=False` (bool) whether to measure amplitude in log scale (dB with normalization).
 - `population=False` (bool) whether to measure the qubit population.
 

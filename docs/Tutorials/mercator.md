@@ -68,12 +68,13 @@ p0_freq: 5000      # (REQUIRED) [MHz] frequency
 p0_gain: 0         # [-1, 1] gain
 p0_nqz: 2          # [1, 2]nyquist zone
 p0_mode: oneshot   # [oneshot|periodic]
-p0_style: const    # [const|gaussian|DRAG|flat_top|arb] pulse style
+p0_style: const    # [const|gaussian|DRAG|flat_top|stage|arb] pulse style
 p0_phase: 0        # [deg] phase
 p0_length: 2       # [us] length
 p0_delta: -200     # [MHz] anharmonicity used in DRAG pulse
 p0_mixer: None     # [MHz] mixer frequency
 p0_mask: None      # [list] mask used in multiplexed pulse (mux)
+p0_stage: []       # [list] list of stages [amplitude, time]
 p0_idata: None     # [-1, 1] used in arb pulse, in DAC sample rates
 p0_qdata: None     # [-1, 1] used in arb pulse, in DAC sample rates
 ```
@@ -100,6 +101,16 @@ p0_phase: [0, 0, 0]
 p0_length: 2
 p0_mask: [0, 1, 2] # defaulted to all
 ```
+
+**Multiple Stage Pulse**:
+
+```yaml
+p0_style: stage
+p0_stage: [[1, 0.1], [0.3, 1], [-1, 0.1], [0.1, 0.1]]
+p0_sigma: 0.01     # [us] the standard deviation for gaussian filter.
+```
+
+Note: the total length of the pulse will be the sum of stage lengths, plus 8*sigma, and then pad zeros to the end until integer multiples of clock ticks.
 
 ## Readout Channel Setup
 
