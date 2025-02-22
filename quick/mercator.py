@@ -4,8 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 
-listType = (list, np.ndarray)
-
 def generate_waveform(o, soccfg):
     f_fabric = soccfg["gens"][o["g"]]["f_fabric"]
     samps_per_clk = soccfg["gens"][o["g"]]["samps_per_clk"]
@@ -79,8 +77,8 @@ def parse(soccfg, cfg):
         o["sigma"] = cfg.get(f"p{p}_sigma", o["length"] / 5)
         o["delta"] = cfg.get(f"p{p}_delta", -200)
         o["gain"] = cfg.get(f"p{p}_gain", 0)
-        o["mask"] = cfg.get(f"p{p}_mask", list(range(len(o["freq"]))) if isinstance(o["freq"], listType) else None)
-        o["phase"] = cfg.get(f"p{p}_phase", list(np.zeros(len(o["freq"]))) if isinstance(o["freq"], listType) else 0)
+        o["mask"] = cfg.get(f"p{p}_mask", list(range(len(o["freq"]))) if np.iterable(o["freq"]) else None)
+        o["phase"] = cfg.get(f"p{p}_phase", list(np.zeros(len(o["freq"]))) if np.iterable(o["freq"]) else 0)
         o["stage"] = cfg.get(f"p{p}_stage", [])
         o["idata"] = cfg.get(f"p{p}_idata", None) and np.array(cfg[f"p{p}_idata"])
         o["qdata"] = cfg.get(f"p{p}_qdata", None) and np.array(cfg[f"p{p}_qdata"])
@@ -113,7 +111,7 @@ class Mercator(AveragerProgramV2):
             if self.soccfg["gens"][g]["has_mixer"]:
                 kwargs["mixer_freq"] = o["mixer"] or int(o["freq"] / 100) * 100
                 kwargs["ro_ch"] = o["r"]
-                if isinstance(o["freq"], listType): # mux
+                if np.iterable(o["freq"]): # mux
                     kwargs["mixer_freq"] = o["mixer"] or np.mean(o["freq"])
                     kwargs["mux_freqs"] = o["freq"]
                     kwargs["mux_gains"] = np.array(c["p"][o["p"]]["gain"]) * mux_gain_factor[len(o["freq"])]
@@ -201,7 +199,7 @@ class Mercator(AveragerProgramV2):
         def add_pulse(p, g, start, first=True):
             us = self.cycles2us(1, gen_ch=g) / self.soccfg["gens"][g]["samps_per_clk"]
             o = c["p"][p]
-            gain = o["gain"][0] if isinstance(o["gain"], listType) else o["gain"]
+            gain = o["gain"][0] if np.iterable(o["gain"]) else o["gain"]
             if first:
                 data[g].append([start, 0])
                 ax.annotate(f"p{p}", (start, gain + 0.05))

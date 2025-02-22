@@ -4,8 +4,6 @@ from quick import __version__
 from .mercator import Mercator
 import os, yaml
 
-listTypes = (list, np.ndarray)
-
 # global var & config for quick.experiment
 configs = helper.load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), "experiment.yml"))
 var = configs["var"]
@@ -30,7 +28,7 @@ class BaseExperiment:
         for k, v in kwargs.items():
             if k in self.var:
                 self.var[k] = v
-                if isinstance(v, listTypes):
+                if np.iterable(v):
                     self.sweep[k] = v
                     self.var[k] = v[0]
             else:
