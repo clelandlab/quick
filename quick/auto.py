@@ -144,7 +144,7 @@ class PiPulseLength(BaseAuto):
             ax.scatter(L, A, color="black", s=20)
             ax.plot(L, m(L, *popt), color="blue")
             ax.set_xlabel("Pi Pulse Length (us)")
-            self.var["q_length"] = float(T * (cycle + 0.5))
+            self.var["q_length"] = float(T * (cycle / 2 + 0.5))
             ax.vlines([self.var["q_length"]], ymin=np.min(A), ymax=np.max(A), color="red")
             print("χ^2 =", rchi2)
             return rchi2

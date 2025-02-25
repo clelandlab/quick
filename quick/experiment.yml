@@ -12,6 +12,7 @@ var:
   r_reset: 0
   q_freq: 5000
   q_length: 2
+  q_length_2: null
   q_delta: -180
   q_gain: 1
   q_gain_2: 0.5
@@ -30,6 +31,7 @@ var_label:
   r_reset: ["Reset Wait Time", "us"]
   q_freq: ["Qubit Pulse Frequency", "MHz"]
   q_length: ["Qubit Pulse Length", "us"]
+  q_length_2: ["Qubit Half Pulse Length", "us"]
   q_delta: ["Qubit Anharmonicity", "MHz"]
   q_gain: ["Qubit Pulse Gain", "a.u."]
   q_gain_2: ["Qubit Half Pulse Gain", "a.u."]
@@ -116,7 +118,7 @@ Rabi: |
   1_t: 0.002
   2_type: goto
   2_i: 0
-  2_rep: {cycle * 2} # (new var) extra cycle
+  2_rep: {cycle}
   3_type: pulse
   3_p: 0
   3_g: {r}
@@ -259,7 +261,7 @@ T2Ramsey: |
   p1_gain: {q_gain}
   p2_style: gaussian
   p2_freq: {q_freq}
-  p2_length: {q_length}
+  p2_length: {q_length_2 or q_length}
   p2_gain: {q_gain_2}
   p3_style: gaussian
   p3_freq: {q_freq}
@@ -310,11 +312,11 @@ T2Echo: |
   p1_phase: 90   # pi pulse on y-axis
   p2_style: gaussian
   p2_freq: {q_freq}
-  p2_length: {q_length}
+  p2_length: {q_length_2 or q_length}
   p2_gain: {q_gain_2}
   p3_style: gaussian
   p3_freq: {q_freq}
-  p3_length: {q_length}
+  p3_length: {q_length_2 or q_length}
   p3_gain: {q_gain_2}
   p3_phase: {-360 * time * fringe_freq % 360}
   r{rr}_p: 0
@@ -364,7 +366,7 @@ Random: |
   p0_power: {r_power}
   p2_style: gaussian
   p2_freq: {q_freq}
-  p2_length: {q_length}
+  p2_length: {q_length_2 or q_length}
   p2_gain: {q_gain_2}
   r{rr}_p: 0
   r{rr}_length: {r_length}

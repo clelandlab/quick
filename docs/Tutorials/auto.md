@@ -37,7 +37,7 @@ steps:
     next: PiPulseLength0
   PiPulseFreq1:
     argument:
-      cycles: [1]
+      cycles: [2]
       r: 10
     class: PiPulseFreq
     next: PiPulseLength1
@@ -51,7 +51,7 @@ steps:
     next: PiPulseFreq1
   PiPulseLength1:
     argument:
-      cycles: [1, 5]
+      cycles: [2, 10]
       tol: 0.3
     back: fail
     back1: PiPulseFreq0

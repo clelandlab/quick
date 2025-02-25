@@ -115,7 +115,7 @@ class QubitSpectroscopy(BaseExperiment):
 class Rabi(BaseExperiment):
     def __init__(self, **kwargs):
         self.var = { "cycle": 0 } # add one var
-        self.var_label = { "cycle": ("Extra Cycles", "") }
+        self.var_label = { "cycle": ("Extra Pi Pulse", "") }
         super().__init__(**kwargs)
     def run(self, silent=False, population=True):
         return super().run(silent=silent, population=population)

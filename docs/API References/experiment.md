@@ -34,10 +34,13 @@ r_reset: 0        # [us] wait time for qubit reset (active reset).
 r_relax: 1        # [us] readout relax time
 q_freq: 5000      # [MHz] qubit pulse frequency
 q_length: 2       # [us] qubit pulse length
+q_length_2: null  # [us] half pi pulse length
 q_delta: -180     # [MHz] qubit anharmonicity
 q_gain: 1         # [-1, 1] qubit pulse (pi pulse) gain
 q_gain_2: 0.5     # [-1, 1] half pi pulse gain
 ```
+
+> Note: in most experiments here, if `q_length_2` is false value (eg. `None`), `q_length` will be used in place.
 
 ## 🟡configs
 
@@ -352,7 +355,7 @@ e = quick.experiment.Rabi(**kwargs)
 Measure the Rabi oscillation.
 
 - Arbitrary variable sweeping, plus:
-    - `cycle=0` (int) extra pi pulse cycle. Every cycle gives two extra pi pulse. `cycle=0` gives 1 pi pulse.
+    - `cycle=0` (int) number of extra pi pulse. `cycle=0` gives 1 pi pulse.
 - `dep_params = [("Population", ""), ("Amplitude", ""), ("Phase", "rad"), ("I", ""), ("Q", "")]`
     - remove `(Population, "")` by `e.run(population=False)`
 
