@@ -121,26 +121,8 @@ class Rabi(BaseExperiment):
         return super().run(silent=silent, population=population)
 
 class IQScatter(BaseExperiment):
-    def run(self, silent=False):
-        if not silent:
-            print(f"quick.experiment({self.key}) Starting")
-        self.prepare(dep_params=[("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")])
-        self.config["0_type"] = "pulse" # send pi pulse
-        self.config["1_t"] = 0
-        self.m = Mercator(self.soccfg, self.config)
-        I1, Q1 = self.m.acquire(self.soc)
-        I1, Q1 = I1[0][0], Q1[0][0]
-        self.config["0_type"] = "delay_auto" # omit pi pulse
-        self.config["1_t"] = self.var["q_length"]
-        self.m = Mercator(self.soccfg, self.config)
-        I0, Q0 = self.m.acquire(self.soc)
-        I0, Q0 = I0[0][0], Q0[0][0]
-        self.add_data(np.transpose([I0, Q0, I1, Q1]))
-        return self.conclude(silent)
-
-class IQTrace(BaseExperiment):
     def __init__(self, **kwargs):
-        self.var = { "rr_length": 0.1 } # add one var
+        self.var = { "rr_length": None } # add one var
         self.var_label = { "rr_length": ("Readout Window Time", "us") }
         super().__init__(**kwargs)
     def run(self, silent=False):
@@ -149,22 +131,22 @@ class IQTrace(BaseExperiment):
         self.prepare(dep_params=[("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")])
         for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
             self.eval_config(v)
-            indep = []
-            for k in self.sweep:
-                indep.append(v[k])
             self.var = v
             c = self.config
-            c["0_type"] = "pulse" # send pi pulse
-            c["1_t"] = 0
-            self.m = Mercator(self.soccfg, c)
+            self.config["0_type"] = "pulse" # send pi pulse
+            self.config["1_t"] = 0
+            self.m = Mercator(self.soccfg, self.config)
             I1, Q1 = self.m.acquire(self.soc)
-            S1 = I1[0][0] + 1j * Q1[0][0]
-            c["0_type"] = "delay_auto" # omit pi pulse
-            c["1_t"] = self.var["q_length"]
-            self.m = Mercator(self.soccfg, c)
+            I1, Q1 = np.array(I1[0][0]).flatten(), np.array(Q1[0][0]).flatten()
+            self.config["0_type"] = "delay_auto" # omit pi pulse
+            self.config["1_t"] = self.var["q_length"]
+            self.m = Mercator(self.soccfg, self.config)
             I0, Q0 = self.m.acquire(self.soc)
-            S0 = I0[0][0] + 1j * Q0[0][0]
-            self.add_data([[*indep, np.real(S0), np.imag(S0), np.real(S1), np.imag(S1) ]])
+            I0, Q0 = np.array(I0[0][0]).flatten(), np.array(Q0[0][0]).flatten()
+            indep = []
+            for k in self.sweep:
+                indep.append(np.zeros(len(I0)) + v[k])
+            self.add_data(np.transpose([*indep, I0, Q0, I1, Q1]))
         return self.conclude(silent)
 
 class DispersiveSpectroscopy(BaseExperiment):

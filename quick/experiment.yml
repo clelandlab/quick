@@ -138,7 +138,7 @@ IQScatter: |
   p1_length: {q_length}
   p1_gain: {q_gain}
   r{rr}_p: 0
-  r{rr}_length: {r_length}
+  r{rr}_length: {rr_length or r_length}
   r{rr}_phase: {r_phase}
   0_type: pulse
   0_p: 1
@@ -162,32 +162,6 @@ IQScatter: |
   8_type: wait_auto
   9_type: delay_auto
   9_t: {r_relax}
-
-IQTrace: |
-  hard_avg: 1000
-  p0_freq: {r_freq}
-  p0_length: {r_length}
-  p0_power: {r_power}
-  p1_style: gaussian
-  p1_freq: {q_freq}
-  p1_length: {q_length}
-  p1_gain: {q_gain}
-  r{rr}_p: 0
-  r{rr}_length: {rr_length}
-  r{rr}_phase: {r_phase}
-  steps:
-  - type: pulse
-    p: 1
-    g: {q}
-  - type: delay_auto
-  - type: pulse
-    p: 0
-    g: {r}
-  - type: trigger
-    t: {r_offset}
-  - type: wait_auto
-  - type: delay_auto
-    t: {r_relax}
 
 DispersiveSpectroscopy: |
   hard_avg: 1000
