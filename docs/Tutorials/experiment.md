@@ -72,6 +72,20 @@ quick.experiment.ResonatorSpectroscopy(
 
 Find the sweet spot before the non-linear region and update `v["r_freq"]` and `v["r_power"]`
 
+**Advanced**: measure spectrum using continuous pulse and long readout window like VNA:
+
+```python
+v["r_relax"] = 0.5
+quick.experiment.ResonatorSpectroscopy(
+  var=v, data_path=DATA_PATH,
+  title=f"VNA-like {int(v['r_freq'])}",
+	r_freq=np.arange(v["r_freq"] - 2, v["r_freq"] + 2, 0.05),
+  # use continuous pulse and long readout window (213.33 us is the longest readout)
+  p0_mode="periodic", r0_length=213, hard_avg=10
+).run()
+quick.experiment.Continuous(p0_mode="oneshot").run() # stop the continuous pulse
+```
+
 ## Qubit Spectroscopy
 
 Play with `v["q_gain"]` and update `v["q_freq"]`.

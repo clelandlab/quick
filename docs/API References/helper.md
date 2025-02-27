@@ -398,11 +398,8 @@ Fit and plot the resonator spectroscopy from data. 100 data points away from the
 **Example**:
 
 ```python
-# take data in lin mag.
 data = quick.load_data("path/to/your/data1.csv", "path/to/your/data2.csv").T
-I = data[1] * np.cos(data[2])
-Q = data[1] * np.sin(data[2])
-S = I + 1j * Q
+S = data[3] + 1j * data[4]
 p, fig = quick.fitResonator(data[0], S, fit="circle")
 ```
 

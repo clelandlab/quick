@@ -214,7 +214,7 @@ class Mercator(AveragerProgramV2):
                 data[g].extend([[start, gain], [end, gain]])
             if o["mode"] != "periodic":
                 data[g].append([end, 0])
-            periodic[g] = (o["mode"] == "periodic")
+            periodic[g] = (o["mode"] == "periodic" and p)
             return end
         goto_rep = {}
         i = 0
@@ -253,10 +253,10 @@ class Mercator(AveragerProgramV2):
                 i = i + 1
         final = max(pulse_until, delay)
         for g in data:
-            if periodic.get(g):
+            if periodic.get(g) is not False:
                 end = data[g][-1][0]
                 while end < final:
-                    end = add_pulse(g, end + 1, False)
+                    end = add_pulse(periodic[g], g, end + 1, False)
             else:
                 data[g].append([final, 0])
             xy = np.transpose(data[g])
