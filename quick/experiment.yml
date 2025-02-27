@@ -56,18 +56,6 @@ LoopBack: |
   - type: delay_auto
     t: {r_relax}
 
-Continuous: |
-  p0_freq: {r_freq}
-  p0_power: {r_power}
-  p0_mode: periodic
-  r{rr}_p: 0
-  r{rr}_length: 0.1
-  0_type: pulse
-  0_p: 0
-  0_g: {r}
-  1_type: trigger
-  2_type: wait_auto
-
 ResonatorSpectroscopy: |
   hard_avg: 300
   p0_freq: {r_freq}
