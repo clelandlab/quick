@@ -40,7 +40,13 @@ class Resonator(BaseAuto):
     def calibrate(self, **kwargs):
         self.var["r_relax"] = 0
         if self.data is None:
-            self.data = experiment.ResonatorSpectroscopy(data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}', r_power=np.arange(-50, 0, 2), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 101), soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.ResonatorSpectroscopy(
+                data_path=self.data_path, title=f'(auto.Resonator) {int(self.var["r_freq"])}',
+                r_power=np.arange(-50, 0, 2), r_freq=np.linspace(self.var["r_freq"] - 2, self.var["r_freq"] + 2, 101),
+                p0_mode="periodic", r0_length=213, hard_avg=10, # VNA style
+                soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs
+            ).run(silent=self.silent).data.T
+            experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
         P, F, A = self.data[0], self.data[1], self.data[2]
         Fn = len(np.unique(F))
         F, P = F[0:Fn], P[0::Fn]

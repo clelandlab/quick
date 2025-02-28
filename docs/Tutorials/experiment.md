@@ -83,7 +83,7 @@ quick.experiment.ResonatorSpectroscopy(
   # use continuous pulse and long readout window (213.33 us is the longest readout)
   p0_mode="periodic", r0_length=213, hard_avg=10
 ).run()
-quick.experiment.LoopBack(var=v).run() # stop the continuous pulse
+quick.experiment.LoopBack(var=v).run(silent=True) # stop the continuous pulse
 ```
 
 ## Qubit Spectroscopy
