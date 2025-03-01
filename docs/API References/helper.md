@@ -378,28 +378,29 @@ popt, perr, rchi2, fig = quick.fitT2(data[0], data[1], omega=omega)
 ## 🟢fitResonator
 
 ```python
-p, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, None])
+p, perr, rchi2, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None])
 ```
 
-Fit and plot the resonator spectroscopy from data. 100 data points away from the resonator dip are required to calculate the `electronic_delay`.
+Circle fit of inversed S21 for quality factor of resonator.
 
 **Parameters**:
 
 - `F` (1D ArrayLike) a list of frequency
 - `S` (1D ArrayLike complex) a list of corresponding complex S21.
-- `fit="circle` (str) "circle", "amp" or "angle". the target of the fitting.
-- `p0=[None, None, None, None, None, None, None]` (1D ArrayLike) initial value of the fitting parameters. If None, then default value will be used. 
+- `fit="circle` (str) "circle", "amp" or "arg". the target of the fitting.
+- `p0=[None, None, None, None]` (1D ArrayLike) initial value of the fitting parameters. If None, then default value will be used. 
 
 **Return**:
 
-- `p` (np.Array(4)) Fitted parameter values in the order of `[Qi, Qc, fr, phi, electronic_delay, background, phase_shift]`
+- `p` (np.Array(4)) Fitted parameter values in the order of `[Qi, Qc, fr, phi]`
+- `perr` (np.Array(4)) Fitted parameter errors. `perr[1]` is the error for T2.
+- `rchi2` (float) relative chi square of the fitting.
 - `fig` (matplotlib.figure) plotted fitting.
 
 **Example**:
 
 ```python
 data = quick.load_data("path/to/your/data1.csv", "path/to/your/data2.csv").T
-S = data[3] + 1j * data[4]
-p, fig = quick.fitResonator(data[0], S, fit="circle")
+p, fig = quick.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
 ```
 
