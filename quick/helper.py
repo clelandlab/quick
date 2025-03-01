@@ -333,15 +333,12 @@ def fitT2(T, S, omega=2*π):
     ax.annotate(annotation_text, (T[mid_index], me(T[mid_index], *popt)), fontsize=8, xycoords='data', textcoords='offset points', xytext=(10, 10))
     return popt, perr, rchi2, fig
 
-def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, None]):
+def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
     def dB(a):
         return 20. * np.log10(np.abs(a))
-    def background_noise(p, f):
-        Qi, Qc, fr, phi, electronic_delay, background, phase_shift = p
-        return 10**(background / 20) * np.exp(1j * (-2 * π * f * electronic_delay + phase_shift))
     def S21_th(f, *p):
-        Qi, Qc, fr, phi, electronic_delay, background, phase_shift = p
-        return background_noise(p, f) / (1 + Qi / Qc * np.exp(1j * phi) / (1 + 2j * Qi * (f - fr) / f))
+        Qi, Qc, fr, phi = p
+        return 1 / (1 + Qi / Qc * np.exp(1j * phi) / (1 + 2j * Qi * (f - fr) / f))
     def normalize(F, S):
         s = F.argsort()
         F, S = F[s], S[s]
@@ -359,12 +356,12 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
         return F, S
     F, S = normalize(F, S)
     S_inv, S_dB = 1 / S, dB(S)
-    _p0 = [100000, 10000, F[np.argmin(S_dB)], 0.0, np.polyfit(-2 * π * F[0:100], np.unwrap(np.angle(S[0:100])), deg=1)[0], (S_dB[0] + S_dB[-1]) / 2, 0.0]
+    _p0 = [100000, 10000, F[np.argmin(S_dB)], 0.0]
     p0 = list(p0)
     for i in range(len(p0)):
         if p0[i] is None:
             p0[i] = _p0[i]
-    bounds = ([0, 0, 0, -π, p0[4]*0.95, p0[5] - 10, 0], [np.inf, np.inf, np.inf, π, p0[4]*1.05, p0[5] + 10, 2 * π])
+    bounds = ([0, 0, 0, -π], [np.inf, np.inf, np.inf, π])
     def p_b2i(p):
         _p = []
         for i in range(len(p)):
@@ -381,44 +378,60 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
             else:
                 p.append(bounds[0][i] + (np.sin(_p[i]) + 1) * (bounds[1][i] - bounds[0][i]) / 2)
         return p
+    def err_i2b(_p, _perr):
+        perr = []
+        for i in range(len(_p)):
+            if bounds[1][i] == np.inf:
+                perr.append(np.abs(_p[i] / np.sqrt(_p[i]**2 + 1)) * _perr[i])
+            else:
+                perr.append(np.abs(np.cos(_p[i]) * (bounds[1][i] - bounds[0][i]) / 2) * _perr[i])
+        return perr
     def S21_circle_fit_err(_p):
         y = 1 / S21_th(F, *p_i2b(_p))
         return np.concatenate((np.real(S_inv - y), np.imag(S_inv - y)))
     def S21_amp_fit_err(_p):
         return dB(S21_th(F, *p_i2b(_p))) - S_dB
-    def S21_arg_fit_err(p):
-        return np.angle(S / S21_th(F, *p))
-    if fit == "circle":
-        result = leastsq(S21_circle_fit_err, p_b2i(p0), maxfev=50000, xtol=1.e-7, ftol=1.e-7, col_deriv=False, gtol=1.e-7)
-        p = p_i2b(result[0])
-    elif fit == "amp":
-        bounds[0][4], bounds[1][4] = p0[4] - 0.01, p0[4] + 0.01
-        bounds[0][6], bounds[1][6] = p0[6] - 0.01, p0[6] + 0.01
-        result = leastsq(S21_amp_fit_err, p_b2i(p0), maxfev=50000, xtol=1.e-7, ftol=1.e-7, col_deriv=False, gtol=1.e-7)
-        p = p_i2b(result[0])
-    else:
-        bounds[0][5], bounds[1][5] = p0[5] - 0.01, p0[5] + 0.01
-        result = least_squares(S21_arg_fit_err, p0, bounds=bounds)
-        p = result.x
+    def S21_arg_fit_err(_p):
+        return np.angle(S / S21_th(F, *p_i2b(_p)))
+    fun = { "circle": S21_circle_fit_err, "amp": S21_amp_fit_err, "arg": S21_arg_fit_err }
+    result, cov, _, _, _ = leastsq(fun[fit], p_b2i(p0), maxfev=50000, xtol=1.e-7, ftol=1.e-7, col_deriv=False, gtol=1.e-7, full_output=True)
+    p = p_i2b(result)
+    perr = err_i2b(result, np.sqrt(np.diag(cov)))
     S21_fit = S21_th(F, *p)
-    back_noise = background_noise(p, F)
-    fig, axes = plt.subplots(1, 3, figsize=(12, 4.1), constrained_layout=True, sharex=False)
-    axes[0].scatter((1 / S * back_noise).real, (1 / S * back_noise).imag, label="raw", alpha=0.5, linewidths=0.0)
-    axes[0].plot((1 / S21_fit * back_noise).real, (1 / S21_fit * back_noise).imag, "r-", label="fit")
+    residuals = 1/S - 1/S21_fit
+    residuals = np.concatenate((np.real(residuals), np.imag(residuals)))
+    ss_res = np.sum(residuals**2) / np.var(np.concatenate((np.real(S_inv), np.imag(S_inv))))
+    dof = len(residuals) - len(p)
+    rchi2 = ss_res / dof
+    print(rchi2)
+    fig = plt.figure(figsize=(12, 6), tight_layout=True)
+    axes = [fig.add_subplot(121), fig.add_subplot(222), fig.add_subplot(224)]
+    axes[0].scatter((1 / S).real, (1 / S).imag, label="raw", alpha=0.5, linewidths=0.0)
+    axes[0].plot((1 / S21_fit).real, (1 / S21_fit).imag, "r-", label="fit")
     axes[0].set_xlabel(r"Re $\widetilde{S}_{21}^{-1}$")
     axes[0].set_ylabel(r"Im $\widetilde{S}_{21}^{-1}$")
+    axes[0].grid()
     axes[1].scatter(F, S_dB, alpha=0.5, linewidths=0.0)
     axes[1].plot(F, dB(S21_fit), "r-")
-    axes[1].set_xlim(F[0], F[-1])
-    axes[1].set_xlabel(r"$f$ (MHz)")
     axes[1].set_ylabel(r"$|S_{21}|$(dB)")
-    axes[1].text(0.7, 0.29, r"Qi=%d" % p[0], ha="left", va="bottom", transform=axes[1].transAxes)
-    axes[1].text(0.7, 0.21, r"Qc=%d" % p[1], ha="left", va="bottom", transform=axes[1].transAxes)
-    axes[1].text(0.7, 0.13, r"$f$=%.4f" % p[2], ha="left", va="bottom", transform=axes[1].transAxes)
-    axes[1].text(0.7, 0.05, r"bg=%.1fdB" % p[5], ha="left", va="bottom", transform=axes[1].transAxes)
-    axes[2].scatter(F, np.unwrap((np.angle(S) + 2*π) % (2*π)), alpha=0.5, linewidths=0.0)
-    axes[2].plot(F, np.unwrap((np.angle(S21_fit) + 2*π) % (2*π)), 'r-')
+    axes[1].text(0.05, 0.29, "Fitting:", ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.05, 0.21, r"$Q_i = %.3e$" % p[0], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.05, 0.13, r"$Q_c = %.3e$" % p[1], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.05, 0.05, r"$f = %.3e$" % p[2], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.7, 0.29, "Error:", ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.7, 0.21, r"$\Delta Q_i = %.3e$" % perr[0], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.7, 0.13, r"$\Delta Q_c = %.3e$" % perr[1], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].text(0.7, 0.05, r"$\Delta f = %.3e$" % perr[2], ha="left", va="bottom", transform=axes[1].transAxes)
+    axes[1].grid()
+    mean_phase_data, mean_phase_fit = np.mean(np.unwrap(np.angle(S))), np.mean(np.unwrap(np.angle(S21_fit)))
+    match = int((mean_phase_fit - mean_phase_data) / (2 * π) + 0.5)
+    axes[2].sharex(axes[1])
+    axes[2].scatter(F, np.unwrap(np.angle(S)), alpha=0.5, linewidths=0.0)
+    axes[2].plot(F, np.unwrap(np.angle(S21_fit)) - match * 2 * π, 'r-')
+    axes[2].text(0.05, 0.95, r"n = {} (DOF)".format(dof), ha="left", va="top", transform=axes[2].transAxes)
+    axes[2].text(0.05, 0.87, r"$\chi^2/n = {:.2e}$".format(rchi2), ha="left", va="top", transform=axes[2].transAxes)
     axes[2].set_xlim(F[0], F[-1])
-    axes[2].set_xlabel(r"$f$ (GHz)")
+    axes[2].set_xlabel(r"Frequency (MHz)")
     axes[2].set_ylabel(r"$arg~S_{21}$")
-    return p, fig
+    axes[2].grid()
+    return p, perr, rchi2, fig
