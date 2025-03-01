@@ -342,8 +342,22 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None, None, None, Non
     def S21_th(f, *p):
         Qi, Qc, fr, phi, electronic_delay, background, phase_shift = p
         return background_noise(p, f) / (1 + Qi / Qc * np.exp(1j * phi) / (1 + 2j * Qi * (f - fr) / f))
-    s = F.argsort()
-    F, S = F[s], S[s]
+    def normalize(F, S):
+        s = F.argsort()
+        F, S = F[s], S[s]
+        raw_logmag = 20 * np.log10(np.abs(S))
+        magoffset = np.mean(np.concatenate((raw_logmag[:4],raw_logmag[-4:])))
+        logmag = raw_logmag - magoffset
+        fit_logmag_background = np.polyfit(np.concatenate((F[:4], F[-4:])), np.concatenate((logmag[:4], logmag[-4:])), 1)
+        logmag_background_line = np.poly1d(fit_logmag_background)
+        logmag = logmag - logmag_background_line(F)
+        raw_phase = np.unwrap(np.angle(S))
+        fitphase = np.polyfit(np.concatenate((F[:4], F[-4:])), np.concatenate((raw_phase[:4], raw_phase[-4:])), 1)
+        phaseline = np.poly1d(fitphase)
+        phase = raw_phase - phaseline(F)
+        S = 10**(logmag/20.)*np.exp(1j*phase)
+        return F, S
+    F, S = normalize(F, S)
     S_inv, S_dB = 1 / S, dB(S)
     _p0 = [100000, 10000, F[np.argmin(S_dB)], 0.0, np.polyfit(-2 * π * F[0:100], np.unwrap(np.angle(S[0:100])), deg=1)[0], (S_dB[0] + S_dB[-1]) / 2, 0.0]
     p0 = list(p0)
