@@ -403,7 +403,6 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
     ss_res = np.sum(residuals**2) / np.var(np.concatenate((np.real(S_inv), np.imag(S_inv))))
     dof = len(residuals) - len(p)
     rchi2 = ss_res / dof
-    print(rchi2)
     fig = plt.figure(figsize=(12, 6), tight_layout=True)
     axes = [fig.add_subplot(121), fig.add_subplot(222), fig.add_subplot(224)]
     axes[0].scatter((1 / S).real, (1 / S).imag, label="raw", alpha=0.5, linewidths=0.0)
