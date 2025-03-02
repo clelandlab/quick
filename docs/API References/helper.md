@@ -401,6 +401,6 @@ Circle fit of inversed S21 for quality factor of resonator.
 
 ```python
 data = quick.load_data("path/to/your/data1.csv", "path/to/your/data2.csv").T
-p, fig = quick.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
+p, perr, rchi2, fig = quick.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
 ```
 
