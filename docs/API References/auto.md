@@ -136,7 +136,7 @@ Run the calibration.
 
 - `q_length_max=0.5` (float) [us] maximum qubit pulse length.
 - `cycles=[]` (list) extra cycles in Rabi. Cycle 0 (one pi pulse) will always be included.
-- `tol=0.5` (float) the threshold on fitting relative chi square to reject the result.
+- `tol=0.5` (float) the threshold on fitting R-squared to accept the result.
 
 **Return**:
 

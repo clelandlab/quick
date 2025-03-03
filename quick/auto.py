@@ -146,26 +146,26 @@ class PiPulseLength(BaseAuto):
             T = np.pi / popt[1]
             residuals = A - m(L, *popt)
             dof = len(L) - len(popt)
-            rchi2 = np.sum(residuals**2) / np.var(A) / dof
+            r2 = 1 - np.sum((residuals - np.mean(residuals))**2) / np.sum((A - np.mean(A))**2)
             ax.scatter(L, A, color="black", s=20)
             ax.plot(L, m(L, *popt), color="blue")
             ax.set_xlabel("Pi Pulse Length (us)")
             self.var["q_length"] = float(T * (cycle / 2 + 0.5))
             ax.vlines([self.var["q_length"]], ymin=np.min(A), ymax=np.max(A), color="red")
-            print("χ^2 =", rchi2)
-            return rchi2
+            print("R^2 =", r2)
+            return r2
         if self.data is None:
             scan(np.arange(0.01, q_length_max, 0.01))
-        rchi2 = fit(cycle=0, ax=(axes[0] if len(cycles) > 0 else axes))
-        if rchi2 > tol:
+        r2 = fit(cycle=0, ax=(axes[0] if len(cycles) > 0 else axes))
+        if r2 < tol:
             return False, fig
         for j in range(len(cycles)):
             c = cycles[j]
             if c <= 0:
                 continue
             scan(np.linspace(self.var["q_length"] * (c - 0.5) / (c + 0.5), self.var["q_length"] * (c + 1.5) / (c + 0.5), 51), cycle=c)
-            rchi2 = fit(cycle=c, ax=axes[j+1])
-            if rchi2 > tol:
+            r2 = fit(cycle=c, ax=axes[j+1])
+            if r2 < tol:
                 return False, fig
         return self.var, fig
 

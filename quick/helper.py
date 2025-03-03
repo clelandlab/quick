@@ -269,9 +269,8 @@ def fitT1(T, S):
     popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
     residuals = S - m(T, *popt)
-    ss_res = np.sum(residuals**2) / np.var(S)
+    r2 = 1 - np.sum(residuals**2) / np.sum((S - np.mean(S))**2)
     dof = len(T) - len(popt)
-    rchi2 = ss_res / dof
     fig, ax = plt.subplots()
     ax.scatter(T, S, color='black', s=10, label='Original Data')
     ax.plot(T, m(T, *popt), color='red', label='Fit')
@@ -282,7 +281,7 @@ def fitT1(T, S):
         r"$T_1 = ({:.2f} \pm {:.2f})$ us".format(popt[1], perr[1]) + "\n" +
         r"$C = ({:.2f} \pm {:.2f})$".format(popt[2], perr[2]) + "\n" +
         r"$n = {}$ (DOF)".format(dof) + "\n" +
-        r"$\chi^2/n = {:.2e}$".format(rchi2)
+        r"$R^2 = {:.3f}$%".format(r2*100)
     )
     ax.set_xlabel(r"Pulse Delay $\tau$ (us)")
     ax.set_ylabel("Population")
@@ -291,7 +290,7 @@ def fitT1(T, S):
     ax.legend()
     mid_index = len(T) // 2
     ax.annotate(annotation_text, (T[mid_index], S[mid_index]), fontsize=8, xycoords='data', textcoords='offset points', xytext=(20, 20))
-    return popt, perr, rchi2, fig
+    return popt, perr, r2, fig
 
 # T2 fit and plot
 def fitT2(T, S, omega=2*π):
@@ -309,9 +308,8 @@ def fitT2(T, S, omega=2*π):
     popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
     residuals = S - m(T, *popt)
-    ss_res = np.sum(residuals**2) / np.var(S)
+    r2 = 1 - np.sum(residuals**2) / np.sum((S - np.mean(S))**2)
     dof = len(T) - len(popt)
-    rchi2 = ss_res / dof
     fig, ax = plt.subplots()
     ax.scatter(T, S, color='black', s=10, label='Original Data')
     ax.plot(T, m(T, *popt), color='red', label='Fit')
@@ -322,7 +320,7 @@ def fitT2(T, S, omega=2*π):
         r"$S_0 = ({:.2f} \pm {:.2f})$, $C = ({:.2f} \pm {:.2f})$".format(popt[0], perr[0], popt[3], perr[3]) + "\n" +
         r"$T_2 = ({:.2f} \pm {:.2f})$ us".format(popt[1], perr[1]) + "\n" +
         r"$\omega = ({:.2f} \pm {:.2f})$ rad/us".format(popt[2], perr[2]) + "\n" +
-        r"$n = {}$ (DOF), $\chi^2/n = {:.2e}$".format(dof, rchi2)
+        r"$n = {}$ (DOF), $R^2 = {:.3f}$%".format(dof, r2 * 100)
     )
     ax.set_xlabel(r"Pulse Delay $\tau$ (us)")
     ax.set_ylabel("Population")
@@ -331,7 +329,7 @@ def fitT2(T, S, omega=2*π):
     ax.legend(loc="lower right")
     mid_index = len(T) // 2
     ax.annotate(annotation_text, (T[mid_index], me(T[mid_index], *popt)), fontsize=8, xycoords='data', textcoords='offset points', xytext=(10, 10))
-    return popt, perr, rchi2, fig
+    return popt, perr, r2, fig
 
 def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
     def dB(a):
@@ -400,9 +398,9 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
     S21_fit = S21_th(F, *p)
     residuals = 1/S - 1/S21_fit
     residuals = np.concatenate((np.real(residuals), np.imag(residuals)))
-    ss_res = np.sum(residuals**2) / np.var(np.concatenate((np.real(S_inv), np.imag(S_inv))))
+    flat_S_inv = np.concatenate((np.real(S_inv), np.imag(S_inv)))
+    r2 = 1 - np.sum(residuals**2) / np.sum((flat_S_inv - np.mean(flat_S_inv))**2)
     dof = len(residuals) - len(p)
-    rchi2 = ss_res / dof
     fig = plt.figure(figsize=(12, 6), tight_layout=True)
     axes = [fig.add_subplot(121), fig.add_subplot(222), fig.add_subplot(224)]
     axes[0].scatter((1 / S).real, (1 / S).imag, label="raw", alpha=0.5, linewidths=0.0)
@@ -423,9 +421,9 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
     axes[2].scatter(F, np.unwrap(np.angle(S)), alpha=0.5, linewidths=0.0)
     axes[2].plot(F, np.unwrap(np.angle(S21_fit)) - match * 2 * π, 'r-')
     axes[2].text(0.025, 0.95, r"n = {} (DOF)".format(dof), ha="left", va="top", transform=axes[2].transAxes)
-    axes[2].text(0.025, 0.87, r"$\chi^2/n = {:.1e}$".format(rchi2), ha="left", va="top", transform=axes[2].transAxes)
+    axes[2].text(0.025, 0.87, r"$R^2 = {:.3f}$%".format(r2 * 100), ha="left", va="top", transform=axes[2].transAxes)
     axes[2].set_xlim(F[0], F[-1])
     axes[2].set_xlabel(r"Frequency (MHz)")
     axes[2].set_ylabel(r"$arg~S_{21}$")
     axes[2].grid()
-    return p, perr, rchi2, fig
+    return p, perr, r2, fig

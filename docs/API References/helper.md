@@ -322,7 +322,7 @@ Compute the center for 0-state and 1-state from measured calibartion data. Compu
 ## 🟢fitT1
 
 ```python
-popt, perr, rchi2, fig = quick.fitT1(T, S)
+popt, perr, r2, fig = quick.fitT1(T, S)
 ```
 
 Fit and plot the Qubit T1 from data.
@@ -336,20 +336,20 @@ Fit and plot the Qubit T1 from data.
 
 - `popt` (np.Array(3)) Fitted parameter values. `popt[1]` is the value for T1.
 - `perr` (np.Array(3)) Fitted parameter errors. `perr[1]` is the error for T1.
-- `rchi2` (float) relative chi square of the fitting.
+- `r2` (float) R-squared of the fitting.
 - `fig` (matplotlib.figure) plotted T1 decay.
 
 **Example**:
 
 ```python
 data = quick.load_data("path/to/your/data.csv").T
-popt, perr, rchi2, fig = quick.fitT1(data[0], data[1])
+popt, perr, r2, fig = quick.fitT1(data[0], data[1])
 ```
 
 ## 🟢fitT2
 
 ```python
-popt, perr, rchi2, fig = quick.fitT2(T, S, omega=2*np.pi)
+popt, perr, r2, fig = quick.fitT2(T, S, omega=2*np.pi)
 ```
 
 Fit and plot the Qubit T2 from data.
@@ -364,7 +364,7 @@ Fit and plot the Qubit T2 from data.
 
 - `popt` (np.Array(4)) Fitted parameter values. `popt[1]` is the value for T2.
 - `perr` (np.Array(4)) Fitted parameter errors. `perr[1]` is the error for T2.
-- `rchi2` (float) relative chi square of the fitting.
+- `r2` (float) R-squared of the fitting.
 - `fig` (matplotlib.figure) plotted T2 decay.
 
 **Example**:
@@ -372,13 +372,13 @@ Fit and plot the Qubit T2 from data.
 ```python
 data = quick.load_data("path/to/your/data.csv").T
 omega = quick.estimateOmega(data[0], data[1])
-popt, perr, rchi2, fig = quick.fitT2(data[0], data[1], omega=omega)
+popt, perr, r2, fig = quick.fitT2(data[0], data[1], omega=omega)
 ```
 
 ## 🟢fitResonator
 
 ```python
-p, perr, rchi2, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None])
+p, perr, r2, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None])
 ```
 
 Circle fit of inversed S21 for quality factor of resonator.
@@ -394,13 +394,13 @@ Circle fit of inversed S21 for quality factor of resonator.
 
 - `p` (np.Array(4)) Fitted parameter values in the order of `[Qi, Qc, fr, phi]`
 - `perr` (np.Array(4)) Fitted parameter errors. `perr[1]` is the error for T2.
-- `rchi2` (float) relative chi square of the fitting.
+- `r2` (float) R-squared of the fitting.
 - `fig` (matplotlib.figure) plotted fitting.
 
 **Example**:
 
 ```python
 data = quick.load_data("path/to/your/data1.csv", "path/to/your/data2.csv").T
-p, perr, rchi2, fig = quick.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
+p, perr, r2, fig = quick.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
 ```
 
