@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import minimize, curve_fit, leastsq, least_squares
+from scipy.optimize import minimize, curve_fit, leastsq
 from scipy import interpolate, stats
 import matplotlib.pyplot as plt
 import yaml, json

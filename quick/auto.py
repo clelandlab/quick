@@ -262,37 +262,6 @@ class Relax(BaseAuto):
         self.var["r_relax"] = float(5 * popt[1])
         return self.var, fig
 
-class ResonatorQFactor(BaseAuto):
-    def calibrate(self, powers=[0], time=43200, nop=1000, avg0=10, **kwargs):
-        powers = np.array(powers)
-        # solve for expoential base
-        a = bisect(lambda x: np.sum(avg0 * x ** (-powers)) - time / nop / 250e-6, 1, 10)
-        self.w = 2
-        def scan(w, label=""):
-            avg_num = int(avg0 * a ** (-self.var["r_power"]))
-            print(f"{int(self.var["r_freq"])} power={self.var["r_power"]} {label}: nop={int(nop/2)} avg_num={avg_num}")
-            self.data = experiment.ResonatorSpectroscopy(
-                data_path=self.data_path, title=f'(auto.ResonatorQFactor) {int(self.var["r_freq"])} power={self.var["r_power"]} {label}',
-                r_freq=np.linspace(self.var["r_freq"] - w/2, self.var["r_freq"] + w/2, int(nop/2)),
-                p0_mode="periodic", r0_length=213, hard_avg=avg_num, # VNA style
-                soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs
-            ).run(silent=self.silent).data.T
-        def fit():
-            p, _, r2, _ = helper.fitResonator(self.data[0], self.data[3] + 1j * self.data[4], fit="circle")
-            self.var["r_freq"] = p[2]
-            self.w = p[2] / p[1]
-            print(f"Fit (wide): f = {p[2]} MHz, FWHM = {self.w} MHz, R^2 = {int(r2 * 100000) / 1000}%")
-        if self.data is None:
-            self.var["r_power"] = 0
-            scan(self.w)
-        fit()
-        for power in powers:
-            self.var["r_power"] = power
-            scan(self.w * 5, "wide")
-            fit()
-            scan(self.w, "focus")
-        experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
-
 def run(path, soccfg=None, soc=None, data_path=None):
     config = helper.load_yaml(path)
     qubits = config["qubits"]
