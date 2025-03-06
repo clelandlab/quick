@@ -100,6 +100,7 @@ class Saver:
         self.title = title
         self.path = path
         self.file_name = ''
+        self.has_data = False
         os.path.exists(path)
         try: # check variables
             for value in indep_params:
@@ -117,13 +118,13 @@ class Saver:
             next_number = 0
         # Creating file name + path
         self.file_name = self.path + f"/{next_number:05d} - {self.title}"
-        self.created_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
+        self.created_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.write_yml()
         np.savetxt(self.file_name + '.csv', [], delimiter=',')
     def write_yml(self):
         meta = {
             "created": self.created_time,
-            "completed": datetime.now().strftime("%Y-%m-%d, %H:%M:%S"),
+            "completed": datetime.now().strftime("%Y-%m-%d %H:%M:%S") if self.has_data else "N/A",
             "title": self.title,
             "independent": self.indep_params,
             "dependent": self.dep_params,
@@ -131,6 +132,7 @@ class Saver:
         }
         save_yaml(self.file_name + ".yml", meta)
     def write_data(self, data):
+        self.has_data = True
         with open(self.file_name + '.csv', 'a+') as f:
             np.savetxt(f, data, fmt="%.9e", delimiter=',')
         # self.write_yml() # do not call it every time for efficiency
