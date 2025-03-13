@@ -393,7 +393,7 @@ Circle fit of inversed S21 for quality factor of resonator.
 **Return**:
 
 - `p` (np.Array(4)) Fitted parameter values in the order of `[Qi, Qc, fr, phi]`
-- `perr` (np.Array(4)) Fitted parameter errors. `perr[1]` is the error for T2.
+- `perr` (np.Array(4)) Fitted parameter errors.
 - `r2` (float) R-squared of the fitting.
 - `fig` (matplotlib.figure) plotted fitting.
 
