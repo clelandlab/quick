@@ -8,6 +8,20 @@ QuICK is a useful wrap of [QICK](https://github.com/openquantumhardware/qick).
   <a style="margin: 0.25rem;" href="https://github.com/clelandlab/quick"><img src="https://img.shields.io/github/stars/clelandlab/quick?style=for-the-badge&logo=github"></a>
 </div>
 
+## Installation
+
+Install this package with `pip`:
+
+```
+pip install clelandlab-quick
+```
+
+> It is recommended to use a conda environment.
+
+```python
+import quick
+```
+
 ## Layers
 
 QuICK has several layers of complexity.
