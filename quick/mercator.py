@@ -80,8 +80,8 @@ def parse(soccfg, cfg):
         o["mask"] = cfg.get(f"p{p}_mask", list(range(len(o["freq"]))) if np.iterable(o["freq"]) else None)
         o["phase"] = cfg.get(f"p{p}_phase", list(np.zeros(len(o["freq"]))) if np.iterable(o["freq"]) else 0)
         o["stage"] = cfg.get(f"p{p}_stage", [])
-        o["idata"] = cfg.get(f"p{p}_idata", None) and np.array(cfg[f"p{p}_idata"])
-        o["qdata"] = cfg.get(f"p{p}_qdata", None) and np.array(cfg[f"p{p}_qdata"])
+        o["idata"] = np.array(cfg[f"p{p}_idata"]) if f"p{p}_idata" in cfg else None
+        o["qdata"] = np.array(cfg[f"p{p}_qdata"]) if f"p{p}_qdata" in cfg else None
         if cfg.get(f"p{p}_power", None) is not None:
             o["gain"] = dB2gain(cfg[f"p{p}_power"])
             cfg[f"p{p}_gain"] = o["gain"] # write back computed gain
