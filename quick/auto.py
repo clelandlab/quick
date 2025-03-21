@@ -194,14 +194,14 @@ class PiPulseFreq(BaseAuto):
 class ReadoutFreq(BaseAuto):
     def calibrate(self, **kwargs):
         if self.data is None:
-            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(self.var["r_freq"] - 1, self.var["r_freq"] + 1, 0.02), **kwargs).run(silent=self.silent).data.T
-        F, A0, P0, A1, P1 = self.data[0], self.data[1], self.data[2], self.data[5], self.data[6]
-        dP = np.convolve(np.unwrap(P0 - P1), [0.333, 0.333, 0.333], "same")
-        self.var["r_freq"] = float(F[np.argmax(np.abs(dP))])
+            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(self.var["r_freq"] - 1, self.var["r_freq"] + 1, 0.02), **kwargs).run(silent=self.silent, dB=False).data.T
+        F, A0, P0, I0, Q0, A1, P1, I1, Q1 = self.data
+        dS = np.convolve(np.unwrap(I0 + 1j*Q0 - I1 - 1j*Q1), [0.333, 0.333, 0.333], "same")
+        self.var["r_freq"] = float(F[np.argmax(np.abs(dS))])
         fig, ax = plt.subplots()
         ax.plot(F, A0, label="Amplitude 0", marker="o")
         ax.plot(F, A1, label="Amplitude 1", marker="o")
-        ax.vlines([self.var["r_freq"]], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Phase Diff.")
+        ax.vlines([self.var["r_freq"]], ymin=np.min(A0), ymax=np.max(A0), colors="red", label="Max Separation")
         ax.legend()
         ax.set_xlabel("Readout Frequency (MHz)")
         ax.set_ylabel("Amplitude (dB)")

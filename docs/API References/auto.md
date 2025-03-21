@@ -179,7 +179,7 @@ Run the calibration.
 a = quick.auto.ReadoutFreq(**kwargs)
 ```
 
-Determine the readout frequency from DispersiveSpectroscopy, maximizing the phase difference.
+Determine the readout frequency from DispersiveSpectroscopy, maximizing the S21 separation.
 
 ### - ReadoutFreq.calibrate
 
