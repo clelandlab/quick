@@ -100,7 +100,7 @@ class LoopBack(BaseExperiment):
         self.eval_config(self.var)
         self.m = Mercator(self.soccfg, self.config)
         I, Q = self.m.acquire_decimated(self.soc, progress=not silent)
-        t = self.m.get_time_axis(ro_index=self.var["rr"])
+        t = self.m.get_time_axis(ro_index=0)
         S21 = I[0] + 1j * Q[0]
         self.add_data(np.transpose([t, (20 * np.log10(np.abs(S21) / self.config["p0_gain"]) if dB else np.abs(S21)), np.angle(S21), S21.real, S21.imag]))
         return self.conclude(silent)
