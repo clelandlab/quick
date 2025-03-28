@@ -241,12 +241,12 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     axes[0].grid()
     axes[0].set_xlabel('I (a.u.)')
     axes[0].set_ylabel('Q (a.u.)')
-    amax = max(np.max(np.abs(S0s)), np.max(np.abs(S1s)))
-    axes[0].set_xlim(-1.1 * amax, 1.1 * amax)
-    axes[0].set_ylim(-1.1 * amax, 1.1 * amax)
+    _r = max(max(np.max(np.real(S0s - o)), np.max(np.real(S1s - o))), max(np.max(np.imag(S0s - o)), np.max(np.imag(S1s - o))))
+    axes[0].set_xlim(-1.1 * _r + o.real, 1.1 * _r + o.real)
+    axes[0].set_ylim(-1.1 * _r + o.imag, 1.1 * _r + o.imag)
     # plot the cut
-    _x = np.linspace(-1.1 * amax, 1.1 * amax, 101)
-    axes[0].plot( _x, -(c0.real - c1.real) / (c0.imag - c1.imag) * (_x - (c0.real + c1.real) / 2) + (c0.imag + c1.imag) / 2, 'k--')
+    _x = np.linspace(-1.1 * _r + o.real, 1.1 * _r + o.real, 101)
+    axes[0].plot(_x, -(c0.real - c1.real) / (c0.imag - c1.imag) * (_x - (c0.real + c1.real) / 2) + (c0.imag + c1.imag) / 2, 'k--')
     # add the circle to the IQ scatter plot
     theta = np.linspace(-π, π, 1001)
     I_g_fit_list = np.median(S0s_right.real) + np.cos(theta) * 3 * g_std
