@@ -155,7 +155,7 @@ class PiPulseLength(BaseAuto):
             print("R^2 =", r2)
             return r2
         if self.data is None:
-            scan(np.arange(0.01, q_length_max, 0.01))
+            scan(np.linspace(0.008, q_length_max, 100))
         r2 = fit(cycle=0, ax=(axes[0] if len(cycles) > 0 else axes))
         if r2 < tol:
             return False, fig
@@ -192,9 +192,9 @@ class PiPulseFreq(BaseAuto):
         return self.var, fig
 
 class ReadoutFreq(BaseAuto):
-    def calibrate(self, **kwargs):
+    def calibrate(self, r=1, **kwargs):
         if self.data is None:
-            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.arange(self.var["r_freq"] - 1, self.var["r_freq"] + 1, 0.02), **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.linspace(self.var["r_freq"] - r, self.var["r_freq"] + r, 100), **kwargs).run(silent=self.silent).data.T
         F, A0, P0, I0, Q0, A1, P1, I1, Q1 = self.data
         dS_amp = np.convolve(np.abs(I0 + 1j*Q0 - I1 - 1j*Q1), np.ones(5) / 5, "same")
         self.var["r_freq"] = float(F[np.argmax(dS_amp)])

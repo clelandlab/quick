@@ -218,7 +218,6 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     axes[1].hist(S1p, color='red', alpha=0.5, bins=100, density=True, range=[xp[0], xp[-1]], label=r'$|e\rangle$')
     g_mu, g_std = stats.norm.fit(S0p_right)
     axes[1].plot(xp, stats.norm.pdf(xp, g_mu, g_std), color='blue', linestyle='dotted')
-    print(np.max(stats.norm.pdf(xp, g_mu, g_std)))
     e_mu, e_std = stats.norm.fit(S1p_right)
     axes[1].plot(xp, stats.norm.pdf(xp, e_mu, e_std), color='red', linestyle='dotted')
     axr = axes[1].twinx()

@@ -52,7 +52,7 @@ steps:
   PiPulseLength1:
     argument:
       cycles: [2, 10]
-      tol: 0.85
+      tol: 0.8
     back: fail
     back1: PiPulseFreq0
     class: PiPulseLength
