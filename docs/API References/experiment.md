@@ -390,7 +390,7 @@ Measure the IQ scatter data.
     - `rr_length=None` (us) readout window length. If `None`, `r_length` will be used.
 - `dep_params = [("I 0", ""), ("Q 0", ""), ("I 1", ""), ("Q 1", "")]`
 
-> Can be used to measure IQ trace by setting `rep=0` and `hard_avg=1000`.
+> Can be used to measure IQ trace by setting `rep=0, hard_avg=1000` and setting `rr_length` to the desired ADC window length.
 
 ### - IQScatter.run
 
