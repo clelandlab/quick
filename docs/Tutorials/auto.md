@@ -8,7 +8,7 @@ Here is an example of task config file.
 
 ```yaml
 current: -1
-qubits:
+qubits: # list of qubits
 - argument:
     PiPulseLength0:
       q_length_max: 1
@@ -24,10 +24,9 @@ qubits:
     q: 10
     r: 8
     r_freq: 6000
-    r_length: 4
     r_offset: 0.5
     r_relax: 500
-steps:
+steps: # auto steps
   PiPulseFreq0:
     argument:
       p1_style: flat_top
