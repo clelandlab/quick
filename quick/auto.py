@@ -10,6 +10,7 @@ import time, os
 
 relevant_var = {
     "BaseAuto": [],
+    "ReadoutLength": ["r_length"],
     "Resonator": ["r_freq", "r_power"],
     "QubitFreq": ["q_freq"],
     "PiPulseLength": ["q_length"],
@@ -35,6 +36,36 @@ class BaseAuto:
     def update(self, v):
         for k in relevant_var[self.__class__.__name__]:
             v[k] = self.var[k]
+
+class ReadoutLength(BaseAuto):
+    def calibrate(self, **kwargs):
+        self.var["r_relax"] = 0
+        self.var["r_power"] = 0
+        def scan(label, f, w):
+            self.data = experiment.ResonatorSpectroscopy(
+                data_path=self.data_path, title=f'(auto.ReadoutLength) {int(self.var["r_freq"])} {label}',
+                r_freq=np.linspace(f - w, f + w, 1001),
+                p0_mode="periodic", r0_length=213, hard_avg=10, # VNA style
+                soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs
+            ).run(silent=self.silent).data.T
+        if self.data is None:
+            scan("wide", self.var["r_freq"], 5)
+        data = self.data
+        p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
+        if r2 < 0.5 or perr[1] > 0.2 * p[1]:
+            experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
+            return False, fig
+        f, Qc = p[2], p[1]
+        last_data = self.data
+        scan("focus", f, f / Qc / 2)
+        experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
+        data = np.hstack([last_data, self.data])
+        p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
+        if r2 < 0.5 or perr[1] > 0.2 * p[1]:
+            return False, fig
+        f, Qc = p[2], p[1]
+        self.var["r_length"] = float(min(Qc / f, 10))
+        return self.var, fig
 
 class Resonator(BaseAuto):
     def calibrate(self, **kwargs):

@@ -62,6 +62,29 @@ Update relevant variables in external dictionary.
 
 - `v` (dict) experiment variable to be updated. **Will be modified!**
 
+## 🟢ReadoutLength
+
+> Base *class*: `BaseAuto`
+
+```python
+a = quick.auto.ReadoutLength(**kwargs)
+```
+
+Determine the readout length from coupling quality factor, using high readout power. `r_length` will be set to `min(10, Qc / f)`.
+
+### - ReadoutLength.calibrate
+
+```python
+var, fig = a.calibrate(**kwargs)
+```
+
+Calibrate the experiment variables from data. Use `quick.experiment` to acquire data when data is not available.
+
+**Return**:
+
+- `var` (dict|bool) `self.var` if succeeded. `False` if failed.
+- `fig` generated plot
+
 ## 🟢Resonator
 
 > Base *class*: `BaseAuto`
