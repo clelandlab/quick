@@ -22,9 +22,17 @@ The IP address is labeled as `IP_ADDR` in the following steps.
 
 ### Static IP (optional)
 
-> SSH into the QICK board and run the following commands as root.
->
-> Enter root user by command `sudo -s`.
+SSH into the QICK board (password is `xilinx`)
+
+```
+ssh xilinx@IP_ADDR
+```
+
+Enter root user
+
+```
+sudo -s
+```
 
 To set up a static IP address, edit `/etc/network/interfaces.d/eth0` by the command
 
