@@ -20,31 +20,7 @@ Open the router's configuration page and find the IP address of the QICK board. 
 
 The IP address is labeled as `IP_ADDR` in the following steps.
 
-## Install qick
-
-Download the dependency and installation script from the [DropBox folder](https://www.dropbox.com/scl/fo/q5jk1mnduqls0lip6j0pf/ADj78VmSjqMefo2ei2uqL-Y?rlkey=vuk3ggd9mad78lnavzb1j28m7&st=i6ql1uwu&dl=0). Open a terminal in the folder to execute the following commands.
-
-Transfer dependency and installation script to the QICK board:
-
-```
-scp install.sh dependency.tar.gz xilinx@IP_ADDR:~
-```
-
-Login to the QICK board via ssh:
-
-```
-ssh xilinx@IP_ADDR
-```
-
-On the QICK board, run the installation script:
-
-```
-sudo ./install.sh
-```
-
-Wait until the installation is complete. The script will ask you to set up a host name.
-
-## Static IP (optional)
+### Static IP (optional)
 
 > SSH into the QICK board and run the following commands as root.
 >
@@ -56,9 +32,9 @@ To set up a static IP address, edit `/etc/network/interfaces.d/eth0` by the comm
 nano /etc/network/interfaces.d/eth0
 ```
 
-and overwrite it with the following content
+Overwrite it with the following content
 
-> Here, the desired IP address is `192.168.1.100`, the gateway (IP address of the router) is `192.168.1.1`, and the netmask is `255.255.255.0`.
+> In the example here, the target IP address is `192.168.1.100`, the gateway (IP address of the router) is `192.168.1.1`, and the netmask is `255.255.255.0`.
 >
 > You should change these values into your desired configuration.
 
@@ -73,4 +49,28 @@ gateway 192.168.1.1
 **Triple check before saving the file! You will need to redo everything in this tutorial if you made a typo here.**
 
 Restart the QICK board to let the changes take effect.
+
+## Install qick
+
+Download the dependency and installation script from the [DropBox folder](https://www.dropbox.com/scl/fo/q5jk1mnduqls0lip6j0pf/ADj78VmSjqMefo2ei2uqL-Y?rlkey=vuk3ggd9mad78lnavzb1j28m7&st=i6ql1uwu&dl=0). Open a terminal in the folder to execute the following commands.
+
+Transfer dependency and installation script to the QICK board:
+
+```
+scp install.sh dependency.tar.gz xilinx@IP_ADDR:~
+```
+
+Login to the QICK board via ssh: (password is `xilinx`)
+
+```
+ssh xilinx@IP_ADDR
+```
+
+On the QICK board, run the installation script:
+
+```
+sudo ./install.sh
+```
+
+Wait until the installation is complete. The script will ask you to set up a host name.
 
