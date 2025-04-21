@@ -110,7 +110,7 @@ class ResonatorSpectroscopy(BaseExperiment):
         return super().run(silent, dB)
 
 class QubitSpectroscopy(BaseExperiment):
-    pass
+    pass # The BaseExperiment class is sufficiently powerful to do everything here.
 
 class Rabi(BaseExperiment):
     def __init__(self, **kwargs):
@@ -132,7 +132,6 @@ class IQScatter(BaseExperiment):
         for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
             self.eval_config(v)
             self.var = v
-            c = self.config
             self.config["0_type"] = "pulse" # send pi pulse
             self.config["1_t"] = 0
             self.m = Mercator(self.soccfg, self.config)

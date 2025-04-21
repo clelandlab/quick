@@ -12,6 +12,8 @@ QuICK is a useful wrap of [QICK](https://github.com/openquantumhardware/qick).
 
 ## Installation
 
+> This is the installation on your PC. For QICK Board setup, see [here](./Tutorials/qick).
+
 Install this package with `pip`:
 
 ```
