@@ -77,6 +77,7 @@ ssh xilinx@IP_ADDR
 On the QICK board, run the installation script:
 
 ```
+sudo chmod +x install.sh
 sudo ./install.sh
 ```
 
