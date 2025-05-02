@@ -413,17 +413,13 @@ run the experiment.
 > Base *class*: `BaseExperiment`
 
 ```python
-e = quick.experiment.DispersiveSpectroscopy(r_freq=[], **kwargs)
+e = quick.experiment.DispersiveSpectroscopy(**kwargs)
 ```
 
 Measure the dispersive spectroscopy.
 
 - Arbitrary variable sweeping
 - `dep_params = [("Amplitude 0", "dB"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")]`
-
-**Parameters**:
-
-- `r_freq=[]` (1D ArrayLike) resonator frequency list `("Frequency", "MHz")`.
 
 ### - DispersiveSpectroscopy.run
 

@@ -396,7 +396,7 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
     fun = { "circle": S21_circle_fit_err, "amp": S21_amp_fit_err, "arg": S21_arg_fit_err }
     result, cov, _, _, _ = leastsq(fun[fit], p_b2i(p0), maxfev=50000, xtol=1.e-7, ftol=1.e-7, col_deriv=False, gtol=1.e-7, full_output=True)
     p = p_i2b(result)
-    perr = err_i2b(result, np.sqrt(np.diag(cov)))
+    perr = err_i2b(result, np.sqrt(np.diag(cov*np.var(fun[fit](p)))))
     S21_fit = S21_th(F, *p)
     residuals = 1/S - 1/S21_fit
     residuals = np.concatenate((np.real(residuals), np.imag(residuals)))
