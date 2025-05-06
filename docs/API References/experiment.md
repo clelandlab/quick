@@ -87,6 +87,10 @@ The logic of execution is:
 2. `self.eval_config` will evaluate the Mercator protocol by inserting some variables (eg. `self.var`) with (g) into (a), forming `self.config`. Then (f) will overwrite `self.config`.
 3. During most runs, `self.sweep` will be performed by `quick.Sweep`. In each loop, a set of variable will be generated from `self.var`, and `self.eval_config` is called to generate the Mercator protocol config for that specific loop run.
 
+The whole process is illustrated in the diagram below:
+
+![](../Images/BaseExperiment.png)
+
 ### - BaseExperiment.key
 
 ```python
