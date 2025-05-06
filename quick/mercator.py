@@ -109,13 +109,14 @@ class Mercator(AveragerProgramV2):
         for g, o in c["g"].items(): # Declare Generator Channels
             kwargs = {}
             if self.soccfg["gens"][g]["has_mixer"]:
-                kwargs["mixer_freq"] = o["mixer"] or int(o["freq"] / 100) * 100
                 kwargs["ro_ch"] = o["r"]
                 if np.iterable(o["freq"]): # mux
                     kwargs["mixer_freq"] = o["mixer"] or np.mean(o["freq"])
                     kwargs["mux_freqs"] = o["freq"]
                     kwargs["mux_gains"] = np.array(c["p"][o["p"]]["gain"]) * mux_gain_factor[len(o["freq"])]
                     kwargs["mux_phases"] = c["p"][o["p"]]["phase"]
+                else: # single tone
+                    kwargs["mixer_freq"] = o["mixer"] or int(o["freq"] / 100) * 100
             self.declare_gen(ch=g, nqz=o["nqz"], **kwargs)
         for r, o in c["r"].items(): # Declare Readout Channels
             kwargs = { "phase": o["phase"], "freq": o["freq"] }
@@ -128,7 +129,9 @@ class Mercator(AveragerProgramV2):
             else: # mux readout
                 self.declare_readout(ch=r, length=o["length"], **kwargs)
         for p, o in c["p"].items(): # Setup pulses
-            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"], "phrst": o["phrst"] }
+            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"] }
+            if not np.iterable(o["freq"]): # single tone
+                kwargs["phrst"] = o["phrst"]
             if o["style"] == "const":
                 kwargs["mode"] = o["mode"]
                 if o["mask"] is not None: # mux mask

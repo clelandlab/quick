@@ -102,6 +102,8 @@ p0_length: 2
 p0_mask: [0, 1, 2] # defaulted to all
 ```
 
+> Note: multiplexed readout channel must be set by frequency instead of linking pulse.
+
 **Multiple Stage Pulse**:
 
 ```yaml
