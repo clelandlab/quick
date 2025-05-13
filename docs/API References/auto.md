@@ -207,14 +207,14 @@ Determine the readout frequency from DispersiveSpectroscopy, maximizing the S21 
 ### - ReadoutFreq.calibrate
 
 ```python
-var, fig = a.calibrate(r=1, **kwargs)
+var, fig = a.calibrate(r=2, **kwargs)
 ```
 
 Run the calibration.
 
 **Parameters**:
 
-- `r=1` (float) [MHz] single-side frequency range, centered by current `r_freq`.
+- `r=2` (float) [MHz] single-side frequency range, centered by current `r_freq`.
 
 **Return**:
 

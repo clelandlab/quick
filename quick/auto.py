@@ -52,7 +52,7 @@ class ReadoutLength(BaseAuto):
             scan("wide", self.var["r_freq"], 5)
         data = self.data
         p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
-        if r2 < 0.5 or perr[1] > 0.2 * p[1]:
+        if r2 < 0.5 or perr[1] > 0.5 * p[1]:
             experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
             return False, fig
         f, Qc = p[2], p[1]
@@ -61,7 +61,7 @@ class ReadoutLength(BaseAuto):
         experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
         data = np.hstack([last_data, self.data])
         p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
-        if r2 < 0.5 or perr[1] > 0.2 * p[1]:
+        if r2 < 0.5 or perr[1] > 0.5 * p[1]:
             return False, fig
         f, Qc = p[2], p[1]
         self.var["r_length"] = float(min(Qc / f, 10))
@@ -223,11 +223,11 @@ class PiPulseFreq(BaseAuto):
         return self.var, fig
 
 class ReadoutFreq(BaseAuto):
-    def calibrate(self, r=1, **kwargs):
+    def calibrate(self, r=2, **kwargs):
         if self.data is None:
-            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.linspace(self.var["r_freq"] - r, self.var["r_freq"] + r, 100), **kwargs).run(silent=self.silent).data.T
+            self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.linspace(self.var["r_freq"] - r, self.var["r_freq"] + r, 201), **kwargs).run(silent=self.silent).data.T
         F, A0, P0, I0, Q0, A1, P1, I1, Q1 = self.data
-        dS_amp = np.convolve(np.abs(I0 + 1j*Q0 - I1 - 1j*Q1), np.ones(5) / 5, "same")
+        dS_amp = np.convolve(np.abs(I0 + 1j*Q0 - I1 - 1j*Q1), np.ones(8) / 8, "same")
         self.var["r_freq"] = float(F[np.argmax(dS_amp)])
         fig, ax = plt.subplots()
         ax.plot(F, A0, label="Amplitude 0 (dB)", marker="o")
