@@ -2,7 +2,7 @@
 
 This is a tutorial of `quick.experiment`. For detailed parameters information, see API References.
 
-> Note in the front: `quick.experiment` use a variable dictionary to specify useful parameters for readout/qubit. For customization, see the last section of this document.
+`quick.experiment` use a variable dictionary to specify useful parameters for readout/qubit. The list of variables and there default values is [here](../API References/experiment/#var). For customization, see the last section of this document.
 
 ## Wiring and Pulse
 
@@ -21,7 +21,7 @@ This is a tutorial of `quick.experiment`. For detailed parameters information, s
 |`p0`|Readout pulse|
 |`p1`|Qubit pi pulse|
 |`p2`|Qubit half pi pulse|
-|`p2`|Qubit half pi pulse with phase shift|
+|`p3`|Qubit half pi pulse with phase shift|
 
 ## Preparation
 
@@ -121,7 +121,7 @@ Use your pi pulse to plot the IQ scatter to see the readout visibility and fidel
 
 ```python
 v["r_phase"] = 0
-for _ in range(1): # iterate
+for _ in range(2): # iterate
     data = quick.experiment.IQScatter(var=v).run().data.T
     c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
     phase_delta, v["r_threshold"] = quick.iq_rotation(c0, c1)
@@ -134,7 +134,7 @@ You can also use the `DispersiveSpectroscopy` to find the best value for `v["r_f
 
 ## T1
 
-Measure, fit and plot T1 with your pi pulse and IQ center, update `v["q_T1"]`
+Measure, fit and plot T1 with your pi pulse and IQ center.
 
 ```python
 data = quick.experiment.T1(
