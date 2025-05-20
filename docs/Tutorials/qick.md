@@ -18,14 +18,14 @@ Connect the QICK board to a router via an Ethernet cable. Connect a computer to 
 
 Open the router's configuration page and find the IP address of the QICK board. By default, the QICK board uses DHCP to get an IP address automatically. This IP address can be found on the router configuration page under "Connected Devices", "DHCP Clients" or similar lists.
 
-The IP address is labeled as `IP_ADDR` in the following steps.
+The IP address is labeled as `$IP` in the following steps.
 
 ### Static IP (optional)
 
 SSH into the QICK board (password is `xilinx`)
 
 ```
-ssh xilinx@IP_ADDR
+ssh xilinx@$IP
 ```
 
 Enter root user
@@ -65,13 +65,13 @@ Download the dependency and installation script from the [DropBox folder](https:
 Transfer dependency and installation script to the QICK board:
 
 ```
-scp install.sh dependency.tar.gz xilinx@IP_ADDR:~
+scp install.sh dependency.tar.gz xilinx@$IP:~
 ```
 
 Login to the QICK board via ssh: (password is `xilinx`)
 
 ```
-ssh xilinx@IP_ADDR
+ssh xilinx@$IP
 ```
 
 On the QICK board, run the installation script:
