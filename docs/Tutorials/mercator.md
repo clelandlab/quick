@@ -114,7 +114,7 @@ p0_sigma: 0.01     # [us] the standard deviation for gaussian filter.
 
 > Note: the total length of the pulse will be the sum of stage lengths, plus 8*sigma, and then pad zeros to the end until integer multiples of clock ticks.
 >
-> The amplitude is limited by the total gain of the pulse. Compared to the `const` pulse, the maximum output may be factor of 2 weaker.
+> The amplitude is limited by the total gain of the pulse. Compared to the `const` pulse, the maximum output of any non-const pulse may be factor of 2 weaker.
 
 ## Readout Channel Setup
 
