@@ -29,17 +29,18 @@ p1_gain: 0.5
 r0_p: 0
 r0_length: 2
 # section 4: Execution Steps
-0_type: pulse
-0_p: 1
-0_g: 2
-1_type: delay_auto
-2_type: pulse
-2_p: 0
-2_g: 0
-3_type: trigger
-3_t: 0.5
-4_type: delay_auto
-4_t: 2
+steps: # use syntax sugar here
+- type: pulse
+  p: 1
+  g: 2
+- type: delay_auto
+- type: pulse
+  p: 0
+  g: 0
+- type: trigger
+  t: 0.5
+- type: delay_auto
+  t: 2
 ```
 
 This program gives the following pulse sequence, plotted by `quick.Mercator.light`, showing only the I data waveform and the acquisition window (pink). For details about execution of Mercator protocol, see API References.
@@ -135,7 +136,7 @@ r0_p: 0            # match one pulse for frequency down-conversion
 
 ## Execution Steps
 
-In this section, you can describe a series of steps to be executed during the run time. All properties in this section have prefix `i_` where `i` is the step number starting from `0`. All step numbers MUST be consecutive. The program will stop if the next consecutive number is not found. This document use step `0` as an example.
+In this section, you can describe a series of steps to be executed during the run time. All properties in this section have prefix `i_` where `i` is the step number starting from `0`. All step numbers MUST be consecutive. The program will stop if the next consecutive number is not found. There is a syntax sugar to help you write steps in a more organized way at the end of this section. This document use step `0` as an example.
 
 Each step will be in the following syntax: 
 
@@ -149,7 +150,7 @@ Each step will be in the following syntax:
 The step `type` is required. It takes one of the following values:
 
 - `pulse`: release a pulse `0_p` on generator channel `0_g`. Conditional pulses see below.
-- `trigger`: trigger the readout. `0_ch` should be an array, defaulted to all readout channels.
+- `trigger`: trigger the readout. `0_rs` is the list of readout channels to be triggered, defaulted to all.
 - `wait`: wait until a specific time.
 - `wait_auto`: wait for all channel plus a specific time
 - `delay`: delay the following step
@@ -187,7 +188,7 @@ In this case, step 5 specifies that the pulse `p1` will be released on `g2` only
 
 ### Syntax Sugar
 
-The execution steps can also be writen as an array in Mercator protocol, for example:
+The execution steps can also be written as an array in Mercator protocol, for example:
 
 ```yaml
 steps:
