@@ -349,7 +349,7 @@ popt, perr, r2, fig = quick.fitT1(data[0], data[1])
 ## 🟢fitT2
 
 ```python
-popt, perr, r2, fig = quick.fitT2(T, S, omega=2*np.pi)
+popt, perr, r2, fig = quick.fitT2(T, S, omega=2*np.pi, T2=20.0)
 ```
 
 Fit and plot the Qubit T2 from data.
@@ -359,6 +359,7 @@ Fit and plot the Qubit T2 from data.
 - `T` (1D ArrayLike) a list of pulse delay time.
 - `S` (1D ArrayLike) a list of corresponding qubit population.
 - `omega=2*np.pi` (float) initial value for angular frequency.
+- `T2=20.0` (float) initial value for T2.
 
 **Return**:
 

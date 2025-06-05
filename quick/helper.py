@@ -295,7 +295,7 @@ def fitT1(T, S):
     return popt, perr, r2, fig
 
 # T2 fit and plot
-def fitT2(T, S, omega=2*π):
+def fitT2(T, S, omega=2*π, T2=20.0):
     def m(x, *p):
         return p[0] * np.exp(-x / p[1]) * np.cos(p[2] * x) + p[3]
     def jac(x, *p):
@@ -306,7 +306,7 @@ def fitT2(T, S, omega=2*π):
         return np.transpose([d0, d1, d2, d3])
     def me(x, *p):
         return p[0] * np.exp(-x / p[1]) + p[3]
-    p0 = [0.4, 20.0, omega, 0.5]
+    p0 = [0.4, T2, omega, 0.5]
     popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
     residuals = S - m(T, *popt)
