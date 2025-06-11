@@ -40,16 +40,16 @@ class BaseAuto:
 class ReadoutLength(BaseAuto):
     def calibrate(self, **kwargs):
         self.var["r_relax"] = 0
-        self.var["r_power"] = 0
+        self.var["r_power"] = -40
         def scan(label, f, w):
             self.data = experiment.ResonatorSpectroscopy(
                 data_path=self.data_path, title=f'(auto.ReadoutLength) {int(self.var["r_freq"])} {label}',
                 r_freq=np.linspace(f - w, f + w, 1001),
-                p0_mode="periodic", r0_length=213, hard_avg=10, # VNA style
+                p0_mode="periodic", r0_length=213, hard_avg=100, # VNA style
                 soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs
             ).run(silent=self.silent).data.T
         if self.data is None:
-            scan("wide", self.var["r_freq"], 5)
+            scan("wide", self.var["r_freq"], 2)
         data = self.data
         p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
         if r2 < 0.5 or perr[1] > 0.5 * p[1]:
@@ -228,7 +228,10 @@ class ReadoutFreq(BaseAuto):
             self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.linspace(self.var["r_freq"] - r, self.var["r_freq"] + r, 201), **kwargs).run(silent=self.silent).data.T
         F, A0, P0, I0, Q0, A1, P1, I1, Q1 = self.data
         dS_amp = np.convolve(np.abs(I0 + 1j*Q0 - I1 - 1j*Q1), np.ones(8) / 8, "same")
-        self.var["r_freq"] = float(F[np.argmax(dS_amp)])
+        i0 = np.argmin(np.convolve(A0, np.ones(3) / 3, "same"))
+        i1 = np.argmin(np.convolve(A1, np.ones(3) / 3, "same"))
+        start, end = min(i0, i1), max(i0, i1)
+        self.var["r_freq"] = float(F[np.argmax(dS_amp[start:end]) + start])
         fig, ax = plt.subplots()
         ax.plot(F, A0, label="Amplitude 0 (dB)", marker="o")
         ax.plot(F, A1, label="Amplitude 1 (dB)", marker="o")
