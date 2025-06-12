@@ -199,7 +199,7 @@ Convert power from dB unit to QICK board gain. 0 dB is the maximum gain.
 
 - `gain` (float) value of gain
 
-## 🔵evalStr
+## 🟢evalStr
 
 ```python
 res = quick.evalStr(s, var, _var=None)
@@ -220,8 +220,29 @@ Evaluate a string as f-string with the given local variables.
 **Example**:
 
 ```python
-print(quick.evalStr("{k} + 1 = {k + 1}", { "k": 3 }))
-# This prints: 3 + 1 = 4
+print(quick.evalStr("{k} + 1 = {k + 1}", { "k": 3 })) # This prints: 3 + 1 = 4
+
+# Mercator Protocol for LoopBack
+mercator_protocol = """
+soft_avg: 100
+p0_freq: {r_freq}
+p0_length: {r_length}
+p0_power: {r_power}
+r{rr}_p: 0
+r{rr}_length: {r_length}
+r{rr}_phase: {r_phase}
+steps:
+- type: pulse
+  p: 0
+  g: {r}
+- type: trigger
+  t: {r_offset}
+- type: wait_auto
+- type: delay_auto
+  t: {r_relax}
+"""
+v = dict(quick.experiment.var) # default variables dictionary
+config = yaml.safe_load(quick.evalStr(mercator_protocol, v))
 ```
 
 ## 🔵symmetryCenter
