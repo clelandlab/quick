@@ -1,17 +1,18 @@
 # Mercator Protocol
 
-Mercator protocol is a syntax to specify a pulse sequence (QICK program). It is a set of key-value pairs. Conveniently, it can be writen as a Python dictionary or in [YAML format](https://en.wikipedia.org/wiki/YAML). This document will use YAML format for clearance.
+The Mercator protocol defines a pulse sequence (a QICK program) as a set of key-value pairs, typically written in YAML or as a Python dictionary. To execute it, use the `quick.Mercator` class.
 
-Mercator protocol includes a lot of default values and syntax sugar to make it simultaneously flexible and easy to use. In this document, **default values will be used. Properties without default value will be marked as required.**
+> Note: Avoid using `{}` in YAML, as it can conflict with `quick.evalStr`.
 
-Mercator protocol is generally consisted of 4 sections:
+The protocol uses defaults and syntax sugar for flexibility and ease of use. This document lists default values, and **REQUIRED** properties are marked.
 
-- Meta information
-- Pulse setup
-- Readout setup
-- Execution steps
+The protocol has four main sections:
+- Meta Information
+- Pulse Setup
+- Readout Setup
+- Execution Steps
 
-For example, the following program is for QubitSpectroscopy (TwoTone) with very short relax time:
+For example, this program defines a QubitSpectroscopy (Two-Tone) experiment with a short relaxation time:
 
 ```yaml
 # section 1: Meta Information
@@ -29,7 +30,7 @@ p1_gain: 0.5
 r0_p: 0
 r0_length: 2
 # section 4: Execution Steps
-steps: # use syntax sugar here
+steps: # using syntax sugar here
 - type: pulse
   p: 1
   g: 2
@@ -43,152 +44,146 @@ steps: # use syntax sugar here
   t: 2
 ```
 
-This program gives the following pulse sequence, plotted by `quick.Mercator.light`, showing only the I data waveform and the acquisition window (pink). For details about execution of Mercator protocol, see API References.
+This program generates the following pulse sequence, plotted by `quick.Mercator.light`:
 
 ![](../Images/mercator_light.png)
 
-> More examples of Mercator protocol can be found in [default experiment programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml). Note they are up to variable insertion by `quick.evalStr`.
+> More examples, often using variable insertion via `quick.evalStr`, are available in the [default experiment programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml).
 
 ## Meta Information
 
-This section often describes the program repetition and average times. You can also include your own key-value pairs, as long as they are not conflicting with other keys.
+Defines program repetitions and averaging. Custom key-value pairs are allowed if they don't conflict with existing keys.
 
 ```yaml
-hard_avg: 1        # on-board average times
-soft_avg: 1        # average times in Python
-rep: 0             # repetition without average (return all data)
-                   # by dummy sweep
+hard_avg: 1        # On-board (FPGA) averages.
+soft_avg: 1        # Software (Python) averages.
+rep: 0             # Repetitions without averaging (returns all data).
 ```
 
 ## Pulse Setup
 
-In this section, you can prepare your pulses. All properties in this section have prefix `px_`, where `x` represents the pulse index. This document use `p0_` as an example.
+Define pulses. Properties are prefixed with `px_`, where `x` is the pulse index (e.g., `p0_`).
 
 ```yaml
-p0_freq: 5000      # (REQUIRED) [MHz] frequency
-p0_gain: 0         # [-1, 1] gain
-p0_nqz: 2          # [1, 2]nyquist zone
-p0_mode: oneshot   # [oneshot|periodic]
-p0_style: const    # [const|gaussian|DRAG|flat_top|stage|arb] pulse style
-p0_phase: 0        # [deg] phase
-p0_length: 2       # [us] length
-p0_delta: -200     # [MHz] anharmonicity used in DRAG pulse
-p0_mixer: None     # [MHz] mixer frequency
-p0_mask: None      # [list] mask used in multiplexed pulse (mux)
-p0_stage: []       # [list] list of stages [amplitude, time]
-p0_idata: None     # [-1, 1] used in arb pulse, in DAC sample rates
-p0_qdata: None     # [-1, 1] used in arb pulse, in DAC sample rates
+p0_freq: 5000      # (REQUIRED) Frequency (MHz).
+p0_gain: 0         # Gain [-1, 1].
+p0_nqz: 2          # Nyquist zone [1|2]. Use 1 for DC/low frequencies.
+p0_mode: oneshot   # Pulse mode: `oneshot` or `periodic`.
+p0_style: const    # Pulse style: `const`, `gaussian`, `DRAG`, `flat_top`, `stage`, `arb`.
+p0_phase: 0        # Phase (degrees).
+p0_length: 2       # Length (µs).
+p0_delta: -200     # Anharmonicity (MHz) for DRAG pulse.
+p0_mixer: None     # Mixer frequency (MHz) for up/down conversion.
+p0_mask: None      # Channel mask [list] for multiplexed (mux) pulse.
+p0_stage: []       # Stages `[amplitude, time]` for `stage` style pulse.
+p0_idata: None     # I data for `arb` pulse (DAC samples, [-1, 1]).
+p0_qdata: None     # Q data for `arb` pulse (DAC samples, [-1, 1]).
 ```
 
-**Syntax Sugar**: (optional)
+**Syntax Sugar** (optional):
 
 ```yaml
-p0_sigma: 0.05     # [us] gaussian std in flat_top/gaussian/DRAG pulse.
-                   # Its default value is 1/5 of p0_length
-p0_phrst: 0        # [0|1] phase coherent reset
+p0_sigma: 0.05     # Gaussian std (µs) for `gaussian`/`DRAG`/`flat_top`. Defaults to p0_length/5.
+p0_phrst: 0        # Phase coherent reset [0|1].
 ```
 
-**Multiplexed Pulse (mux)**:
+**Multiplexed (mux) Pulse**:
 
-Passing lists to `freq`, `gain`, and `phase`. The list lengths must match with each other. Multiplexed pulse is configurated on generator level. Therefore all pulses on the mux generator must share the same mux settings (specified by the last-played pulse). You can change `length` and `mask` for individual pulses.
+Use lists of matching lengths for `freq`, `gain`, and `phase`. Mux generator is configured by the last-played pulse on that generator. `length` and `mask` can be set individually.
 
-The gain value range shrinks with more tones (due to energy conservation). It takes `[-1, 1]` for 1 tone, `[-0.5, 0.5]` for 2 tones, `[-0.25, 0.25]` for 3 or 4 tones, and `[-0.125, 0.125]` for 5 to 8 tones.
+Gain range scales with the number of tones: `[-1, 1]` for 1 tone; `[-0.5, 0.5]` for 2; `[-0.25, 0.25]` for 3-4; `[-0.125, 0.125]` for 5-8.
 
 ```yaml
-p0_style: const    # only support const
+p0_style: const    # Only `const` style is supported.
 p0_freq: [5500, 6000, 6500]
 p0_gain: [0.25, 0.25, 0.25]
 p0_phase: [0, 0, 0]
 p0_length: 2
-p0_mask: [0, 1, 2] # defaulted to all
+p0_mask: [0, 1, 2] # Defaults to all channels.
 ```
 
-> Note: multiplexed readout channel must be set by frequency instead of linking pulse.
+> Note: A multiplexed readout must be set by frequency besides linking to a pulse.
 
 **Multiple Stage Pulse**:
 
 ```yaml
 p0_style: stage
-p0_stage: [[1, 0.1], [0.3, 1], [-1, 0.1], [0.1, 0.1]] # a list of [amplitude, time]
-p0_sigma: 0.01     # [us] the standard deviation for gaussian filter.
+p0_stage: [[1, 0.1], [0.3, 1], [-1, 0.1], [0.1, 0.1]] # List of [amplitude, time].
+p0_sigma: 0.01     # Standard deviation (µs) for Gaussian filter.
 ```
+> Note: `Total length = (sum of stage times) + 8*sigma`, padded to the next clock tick.
+> The maximum amplitude of non-`const` pulses can be up to 2x weaker than a `const` pulse of the same gain.
 
-> Note: the total length of the pulse will be the sum of stage lengths, plus 8*sigma, and then pad zeros to the end until integer multiples of clock ticks.
->
-> The amplitude is limited by the total gain of the pulse. Compared to the `const` pulse, the maximum output of any non-const pulse may be factor of 2 weaker.
+## Readout Setup
 
-## Readout Channel Setup
-
-In this section, you can prepare your readout (ADC) channels. All properties in this section have prefix `rx_`, where `x` represents the readout channel number. This document use `r0_` as an example.
+Configure readout (ADC) channels. Properties are prefixed with `rx_`, where `x` is the channel number (e.g., `r0_`).
 
 ```yaml
-r0_freq: 0         # [MHz] readout frequency
-r0_length: 2       # [us] readout length
-r0_phase: 0        # [deg] readout phase
+r0_freq: 0         # Readout frequency (MHz).
+r0_length: 2       # Readout length (µs).
+r0_phase: 0        # Readout phase (degrees).
 ```
 
-**Syntax Sugar**: (important)
+**Syntax Sugar** (important):
 
 ```yaml
-r0_p: 0            # match one pulse for frequency down-conversion
-                   # r0_freq is not required then.
+r0_p: 0            # Link to a pulse for down-conversion frequency.
+                   # If used, `r0_freq` is not required (except for mux readout).
 ```
 
 ## Execution Steps
 
-In this section, you can describe a series of steps to be executed during the run time. All properties in this section have prefix `i_` where `i` is the step number starting from `0`. All step numbers MUST be consecutive. The program will stop if the next consecutive number is not found. There is a syntax sugar to help you write steps in a more organized way at the end of this section. This document use step `0` as an example.
-
-Each step will be in the following syntax: 
+Defines the sequence of operations. Steps are specified with a flat `i_` prefix (e.g., `0_type`), where the index `i` must be consecutive starting from 0. Execution stops at the first missing index. A more convenient list format is also available (see Syntax Sugar below).
 
 ```yaml
-0_type: pulse      # (REQUIRED) [pulse|trigger|wait|wait_auto|delay|delay_auto|goto]
-0_p: 0             # (for pulse) pulse index
-0_g: 0             # (for pulse) generator channel
-0_t: 0             # [us] time offset from last delay
+0_type: pulse      # (REQUIRED) Step type [options see below].
+0_p: 0             # (for `pulse` type) Pulse index.
+0_g: 0             # (for `pulse` type) Generator channel.
+0_t: 0             # Time offset (µs) from last delay.
 ```
 
-The step `type` is required. It takes one of the following values:
-
-- `pulse`: release a pulse `0_p` on generator channel `0_g`. Conditional pulses see below.
-- `trigger`: trigger the readout. `0_rs` is the list of readout channels to be triggered, defaulted to all.
-- `wait`: wait until a specific time.
-- `wait_auto`: wait for all channel plus a specific time
-- `delay`: delay the following step
-- `delay_auto`: delay the following step after all channels
-- `goto`: (discussed below)
+**Step Types**:
+- `pulse`: Play pulse `p` on generator `g`.
+- `trigger`: Trigger readout on channels `rs` (defaults to all).
+- `wait`: Wait until absolute time `t`.
+- `wait_auto`: Wait for all channels and readouts to finish, plus offset `t`.
+- `delay`: Delay for duration `t`.
+- `delay_auto`: Delay for duration `t` after all channels and readouts finish.
+- `goto`: Jump to another step.
 
 ### goto
 
-`goto` step can jump to another step. It takes the following syntax:
+The `goto` step jumps to another step to repeat a block of operations.
 
 ```yaml
 0_type: goto
-0_i: 0             # (REQUIRED) target step number
-0_rep: 0           # repetition times of this goto
+0_i: 0             # (REQUIRED) Target step index.
+0_rep: 0           # Repetition count for this jump.
 ```
 
-> Note: The `goto` function will NOT create actual jump in the assembly code. Instead, it will expand the jump in Python and generate a program without jumps/loops.
+> Note: `goto` is not a real-time jump. It unrolls the loop during Python compilation, generating a linear sequence.
 
 ### Conditional Pulse
 
-Mercator protocol supports conditional pulses, especially for qubit active reset. The releasing of the pulse will be determined by the I data acquired in the last acquisition window on the fly. For example:
+The protocol supports conditional pulses (e.g., for active reset) that execute based on the measured I-quadrature data from the last readout.
 
 ```yaml
-3_type: trigger    # trigger acquisition
-4_type: wait_auto
-4_time: 2          # MUST wait for data
-5_type: pulse      # conditional pulse
-5_p: 1             # release pulse p1
-5_g: 2             # on generator channel g2
-5_threshold: 0     # threshold condition on I data
-5_r: 0             # which readout channel, default to be 0
+3_type: trigger    # Trigger acquisition.
+4_type: wait_auto  # MUST wait for data to be available.
+4_t: 0.1
+5_type: delay_auto # Delay until previous steps finish.
+6_type: pulse      # Conditional pulse.
+6_p: 1             # Play pulse p1...
+6_g: 2             # ...on generator g2 if condition is met.
+6_threshold: 0     # I-data threshold.
+6_r: 0             # Readout channel to check (default 0).
 ```
 
-In this case, step 5 specifies that the pulse `p1` will be released on `g2` only if the I data acquired in step 3 is above the value in `5_threshold`. The corresponding readout channel is provided to obtain acquisition length.
+In this example, the pulse `p1` at step 6 is played only if the I-data from readout channel `r: 0` (triggered at step 3) is above the `threshold`.
 
 ### Syntax Sugar
 
-The execution steps can also be written as an array in Mercator protocol, for example:
+The `steps` list is a convenient alternative to the flat `i_` format. The `Mercator` class first flattens this list into the `i_` format. Any explicit `i_` properties will override values from the flattened list, allowing for a hybrid approach.
 
 ```yaml
 steps:
@@ -201,5 +196,3 @@ steps:
 - type: delay_auto
   t: 1
 ```
-
-The Mercator *class* accepts any **combination** of the array format and the flat key-value format as previously discussed. But it will first **flatten** the `steps` array into the flat key-value format. **The flat key-value format has higher priority during this flattening process.**
