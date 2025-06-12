@@ -205,7 +205,7 @@ Convert power from dB unit to QICK board gain. 0 dB is the maximum gain.
 res = quick.evalStr(s, var, _var=None)
 ```
 
-Evaluate a string as f-string with the given local variables.
+Evaluate a string as f-string with the given local variables. **The string cannot include any other bracket than those that need to be parsed as Python expressions.**
 
 **Parameters**:
 
