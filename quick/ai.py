@@ -34,7 +34,7 @@ leading_prompt = f"""Use the following documentation to complete the task by gen
 - `ip=""`: QICK IP address. Use `soccfg, soc = quick.connect(ip)` to connect to the QICK board.
 - `data_path=""`: the path to the directory to save data.
 - `title=""`: the filename of the data
-- `var={{}}`: a python dictionary that input relevant paramemters for the task.
+- `var={{}}`: a python dictionary that input relevant paramemters for the task. Do NOT modify var.
 
 Only generate code for the `run` function. Assume the following imports are available:
 ```python{imports}```

@@ -44,7 +44,7 @@ Acquire data. Data in each readout acquisition window are averaged into one data
 
 **Return**:
 
-- `I` (np.ndarray) I data, shape depends on `rep` and triggering.
+- `I` (np.ndarray) I data, at least has 2 dimensions. Axis 0 matches the defined readout channels. Axis 1 matches the index of triggering. If `rep` is not 0, axis 2 will be the repetition index.
 - `Q` (np.ndarray) Q data, same shape as `I`.
 
 ### 🔵Mercator.acquire_decimated
@@ -53,7 +53,7 @@ Acquire data. Data in each readout acquisition window are averaged into one data
 I, Q = m.acquire_decimated(soc, progress=False)
 ```
 
-Acquire time-series data.
+Acquire time-series data. Use `m.get_time_axis(ro_index)` to get the time data in us.
 
 **Parameters**:
 
@@ -62,7 +62,7 @@ Acquire time-series data.
 
 **Return**:
 
-- `I` (np.ndarray) I data, including time-series dimension.
+- `I` (np.ndarray) I data, same shape as returned by `acquire`, plus an extra time-series dimension.
 - `Q` (np.ndarray) Q data, same shape as `I`.
 
 ### 🔵Mercator.light
