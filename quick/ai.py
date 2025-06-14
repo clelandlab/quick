@@ -39,7 +39,7 @@ leading_prompt = f"""Use the following documentation to complete the task by gen
 Only generate code for the `run` function. Assume the following imports are available:
 ```python{imports}```
 
-Always write a Mercator Protocol in YAML string (avoid using {{}}), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary. When the task needs sweeping variables, use `for _var in quick.Sweep(var, sweep_config)`. If the task requires saving data, use `quick.Saver`. Refer to documentation for details and examples.
+Always write a Mercator Protocol in YAML string (avoid using {{}}), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary. When the task needs sweeping variables, use `for _var in quick.Sweep(var, sweep_config)`. If the task requires saving data, use `quick.Saver` (save Mercator Protocol, var and quick.__version__ in params). Refer to documentation for details and examples.
 """
 
 class AI:

@@ -83,6 +83,7 @@ p0_qdata: None     # Q data for `arb` pulse (DAC samples, [-1, 1]).
 **Syntax Sugar** (optional):
 
 ```yaml
+p0_power: -30      # internally use quick.dB2gain, will overwrite `p0_gain`.
 p0_sigma: 0.05     # Gaussian std (µs) for `gaussian`/`DRAG`/`flat_top`. Defaults to p0_length/5.
 p0_phrst: 0        # Phase coherent reset [0|1].
 ```
