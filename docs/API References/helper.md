@@ -142,7 +142,7 @@ The *class* to construct a data saver. The meta information will be saved in a y
 - `path` (str) path to the directory to save the data.
 - `indep_params=[]` (list) a list of 2-tuples, specifying meta information for independent variables, in the format of `("Name", "Unit")`
 - `dep_params=[]` (list) a list of 2-tuples, specifying meta information for dependent variables, in the format of `("Name", "Unit")`
-- `params={}` (dict) a dictionary of other parameters, will be saved as meta information.
+- `params={}` (dict) a dictionary of meta information and other parameters.
 
 > Most variables and methods are for internal use and therefore not documented here. To save data, use the `write_data` method below.
 

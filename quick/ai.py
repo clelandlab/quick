@@ -30,7 +30,7 @@ def get_tag():
 
 tag = ""
 
-leading_prompt = f"""Use the following documentation to complete the task by generating a Python function `run`. Write concise code. Do not include any comments in the code. Directly and ONLY generate the function code. Do NOT output in Markdown. The generated function should take the following keyword arguments:
+leading_prompt = f"""Use the following documentation to complete the task by generating a Python function `run`. Write concise code. Do not include any comments in the code. Directly and ONLY generate the function code. The generated code must start with `def run(ip="", data_path="", title="", var={{}})`. The keyword arguments are:
 - `ip=""`: QICK IP address. Use `soccfg, soc = quick.connect(ip)` to connect to the QICK board.
 - `data_path=""`: the path to the directory to save data.
 - `title=""`: the filename of the data
@@ -39,7 +39,14 @@ leading_prompt = f"""Use the following documentation to complete the task by gen
 Only generate code for the `run` function. Assume the following imports are available:
 ```python{imports}```
 
-Always write a Mercator Protocol in YAML string (avoid using {{}}), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary. When the task needs sweeping variables, use `for _var in quick.Sweep(var, sweep_config)`. If the task requires saving data, use `quick.Saver` (save Mercator Protocol, `var` and `quick.__version__` in params). Refer to documentation for details and examples.
+Always write a Mercator Protocol in YAML string (avoid using {{}}), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary. When the task needs sweeping variables, use `for _var in quick.Sweep(var, sweep_config)`.
+
+If the task requires saving data, use `quick.Saver` with `title` and `data_path`, save the following information in `params`:
+- `mercator`: the Mercator protocol YAML string
+- `var`: the input `var` (Python dictionary)
+- `quick_version`: `quick.__version__`
+
+Refer to documentation for details and examples.
 """
 
 class AI:
