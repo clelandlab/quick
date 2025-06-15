@@ -48,9 +48,9 @@ var: # default variables
     r_power: -30      # [dB] readout pulse power
     r_length: 2       # [us] readout pulse length
     r_phase: 0        # [deg] readout pulse phase
-    r_offset: 0       # [us] readout window offset
+    r_offset: 0       # [us] readout window offset. Unless specified by the user, you should always offset the trigger step by r_offset to compensate for ADC signal processing time.
     r_threshold: 0    # threshold, above which is 1-state
-    r_reset: 0        # [us] wait time for qubit reset (active reset).
+    r_reset: 0        # [us] wait time for qubit reset (active reset)
     r_relax: 1        # [us] readout relax time
     q_freq: 5000      # [MHz] qubit pulse frequency
     q_length: 2       # [us] qubit pulse length
@@ -113,5 +113,8 @@ class AI:
             print(f"Input: {res['usageMetadata']['promptTokenCount']}\nOutput: {res['usageMetadata']['totalTokenCount'] - res['usageMetadata']['promptTokenCount']}")
         return self
     def run(self, **kwargs):
+        template_var = dict(quick.experiment.var)
+        template_var.update(kwargs.get("var", {}))
+        kwargs["var"] = template_var
         exec(imports + "\n" + self.code, globals())
         return run(**kwargs)
