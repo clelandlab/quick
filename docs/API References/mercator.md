@@ -36,7 +36,7 @@ Acquire data. Data in each readout acquisition window are averaged into one data
 
 **Return**:
 
-- `I` (np.ndarray) I data, at least has 2 dimensions. Axis 0 matches the defined readout channels. Axis 1 matches the index of triggering. If `rep` is not 0, axis 2 will be the repetition index.
+- `I` (np.ndarray) I data, at least has 2 dimensions. Axis 0 matches the index (**NOT channel number**) of defined readout channels. Axis 1 matches the index of triggering. If `rep` is not 0, axis 2 will be the repetition index.
 - `Q` (np.ndarray) Q data, same shape as `I`.
 
 ### 🔵Mercator.acquire_decimated

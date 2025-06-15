@@ -36,12 +36,34 @@ Keyword arguments:
 - `ip`: QICK IP address. Use `soccfg, soc = quick.connect(ip)` to connect to the QICK board.
 - `data_path`: the directory path to save data.
 - `title`: the filename of the data
-- `var`: a Python dictionary that inputs relevant parameters. Do NOT modify var. When user instruction conflicts with var, use the user instruction.
+- `var`: a Python dictionary that inputs relevant parameters. Do NOT modify var.
+
+When user specify values in the instruction, use user's values. If not, use the values in the `var` dictionary, which has the following default values.
+```yaml
+var: # default variables
+    rr: 0             # readout channel
+    r: 0              # generator channel for readout pulse
+    q: 2              # generator channel for qubit pulse
+    r_freq: 5000      # [MHz] readout pulse frequency
+    r_power: -30      # [dB] readout pulse power
+    r_length: 2       # [us] readout pulse length
+    r_phase: 0        # [deg] readout pulse phase
+    r_offset: 0       # [us] readout window offset
+    r_threshold: 0    # threshold, above which is 1-state
+    r_reset: 0        # [us] wait time for qubit reset (active reset).
+    r_relax: 1        # [us] readout relax time
+    q_freq: 5000      # [MHz] qubit pulse frequency
+    q_length: 2       # [us] qubit pulse length
+    q_length_2: null  # [us] half pi pulse length
+    q_delta: -180     # [MHz] qubit anharmonicity
+    q_gain: 1         # [-1, 1] qubit pulse (pi pulse) gain
+    q_gain_2: 0.5     # [-1, 1] half pi pulse gain
+```
 
 Assume the following imports are available:
 ```python{imports}```
 
-Always write a Mercator Protocol in YAML string (avoid using {{}}, avoid extra spaces or empty lines), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary. Be careful about timing. You might need to include Python expression to calculate length and time.
+Always write a Mercator Protocol in YAML string (avoid using {{}}, avoid extra spaces or empty lines), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary. When possible, omit optional properties and use default values (e.g. `sigma`, `rs`). Be careful about timing. You might need to include Python expression to calculate length and time.
 
 When the task needs sweeping variables, use `for _var in quick.Sweep(var, sweep_config)`.
 
