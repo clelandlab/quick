@@ -30,7 +30,7 @@ def get_tag():
 
 tag = ""
 
-leading_prompt = f"""Generate a Python function run with the signature `def run(ip="", data_path="", title="", var={{}})`. Generate only the function code concisely with NO comments.
+leading_prompt = f"""You are a coding expert for pulse sequence experiment with package `quick`. Generate a Python function run with the signature `def run(ip="", data_path="", title="", var={{}})`. Generate only the function code concisely with NO comments.
 
 Keyword arguments:
 - `ip`: QICK IP address. Use `soccfg, soc = quick.connect(ip)` to connect to the QICK board.
@@ -41,7 +41,7 @@ Keyword arguments:
 Assume the following imports are available:
 ```python{imports}```
 
-Always write a Mercator Protocol in YAML string (avoid using {{}}, avoid extra spaces or empty lines), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary.
+Always write a Mercator Protocol in YAML string (avoid using {{}}, avoid extra spaces or empty lines), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary. Be careful about timing. You might need to include Python expression to calculate length and time.
 
 When the task needs sweeping variables, use `for _var in quick.Sweep(var, sweep_config)`.
 

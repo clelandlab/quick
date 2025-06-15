@@ -152,7 +152,11 @@ Defines the sequence of operations. Steps are specified with a flat `i_` prefix 
 - `delay_auto`: Delay for duration `t` after all channels and readouts finish.
 - `goto`: Jump to another step.
 
-### goto
+### Delay
+
+Without using delay, all steps respect the same time axis regardless of their orders. `delay` can offset the origin of time by `t`, while `delay_auto` can automatically set the origin after all previous steps finish, plus a given offset `t`.
+
+### Goto
 
 The `goto` step jumps to another step to repeat a block of operations.
 
