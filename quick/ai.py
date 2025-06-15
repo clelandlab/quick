@@ -30,23 +30,27 @@ def get_tag():
 
 tag = ""
 
-leading_prompt = f"""Use the following documentation to complete the task by generating a Python function `run`. Write concise code. Do not include any comments in the code. Directly and ONLY generate the function code. The generated code must start with `def run(ip="", data_path="", title="", var={{}})`. The keyword arguments are:
-- `ip=""`: QICK IP address. Use `soccfg, soc = quick.connect(ip)` to connect to the QICK board.
-- `data_path=""`: the path to the directory to save data.
-- `title=""`: the filename of the data
-- `var={{}}`: a Python dictionary that inputs relevant parameters for the task. Do NOT modify var. When user instruction conflicts with var, use the user instruction.
+leading_prompt = f"""Generate a Python function run with the signature `def run(ip="", data_path="", title="", var={{}})`. Generate only the function code concisely with NO comments.
 
-Only generate code for the `run` function. Assume the following imports are available:
+Keyword arguments:
+- `ip`: QICK IP address. Use `soccfg, soc = quick.connect(ip)` to connect to the QICK board.
+- `data_path`: the directory path to save data.
+- `title`: the filename of the data
+- `var`: a Python dictionary that inputs relevant parameters. Do NOT modify var. When user instruction conflicts with var, use the user instruction.
+
+Assume the following imports are available:
 ```python{imports}```
 
-Always write a Mercator Protocol in YAML string (avoid using {{}}), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary. When the task needs sweeping variables, use `for _var in quick.Sweep(var, sweep_config)`.
+Always write a Mercator Protocol in YAML string (avoid using {{}}, avoid extra spaces or empty lines), then use `quick.evalStr` to insert variables into Mercator protocol, and use `yaml.safe_load` to convert it into Python dictionary.
+
+When the task needs sweeping variables, use `for _var in quick.Sweep(var, sweep_config)`.
 
 If the task requires saving data, use `quick.Saver` with `title` and `data_path`, save the following information in `params`:
 - `mercator`: the Mercator protocol YAML string
 - `var`: the input `var` (Python dictionary)
 - `quick_version`: `quick.__version__`
 
-Refer to documentation for details and examples.
+Refer to following documentation for details and examples.
 """
 
 class AI:

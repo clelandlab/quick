@@ -222,15 +222,14 @@ Evaluate a string as f-string with the given local variables. **The string canno
 ```python
 print(quick.evalStr("{k} + 1 = {k + 1}", { "k": 3 })) # This prints: 3 + 1 = 4
 
-# Mercator Protocol for LoopBack
 mercator_protocol = """
 soft_avg: 100
 p0_freq: {r_freq}
 p0_length: {r_length}
 p0_power: {r_power}
 r{rr}_p: 0
-r{rr}_length: {r_length}
-r{rr}_phase: {r_phase}
+r{rr}_length: {r_length / 2} # support any expression
+r{rr}_phase: {r_phase + 180}
 steps:
 - type: pulse
   p: 0
