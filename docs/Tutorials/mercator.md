@@ -120,7 +120,7 @@ p0_sigma: 0.01     # Standard deviation (µs) for Gaussian filter.
 Configure readout (ADC) channels. Properties are prefixed with `rx_`, where `x` is the channel number (e.g., `r0_`).
 
 ```yaml
-r0_freq: 0         # Readout frequency (MHz).
+r0_freq: 0         # (REQUIRED) Readout frequency (MHz).
 r0_length: 2       # Readout length (µs).
 r0_phase: 0        # Readout phase (degrees).
 ```
