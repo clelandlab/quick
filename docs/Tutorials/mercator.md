@@ -154,7 +154,7 @@ Defines the sequence of operations. Steps are specified with a flat `i_` prefix 
 
 ### Trigger
 
-Trigger ADC readout. Note that the ADC has a time delay compared to the pulse, so you might always need an offset `t` to get the correct readout window for a readout pulse. A program MUST have at least one trigger step, no matter whether you care about the data or not.
+Trigger ADC readout. Note that the ADC has a time delay compared to the pulse, so you might always need an offset `t` to match the readout window for the correct readout pulse. A program MUST have at least one trigger step, no matter whether you care about the data or not.
 
 ### Delay
 
