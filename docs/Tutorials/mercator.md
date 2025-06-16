@@ -68,7 +68,7 @@ Define pulses. Properties are prefixed with `px_`, where `x` is the pulse index 
 p0_freq: 5000      # (REQUIRED) Frequency (MHz).
 p0_gain: 0         # Gain [-1, 1].
 p0_nqz: 2          # Nyquist zone [1|2]. Use 1 for DC/low frequencies.
-p0_mode: oneshot   # Pulse mode: `oneshot` or `periodic`.
+p0_mode: oneshot   # Pulse mode: `oneshot` or `periodic`(continue to run even after the program ends).
 p0_style: const    # Pulse style: `const`, `gaussian`, `DRAG`, `flat_top`, `stage`, `arb`.
 p0_phase: 0        # Phase (degrees).
 p0_length: 2       # Length (µs).
@@ -151,6 +151,10 @@ Defines the sequence of operations. Steps are specified with a flat `i_` prefix 
 - `delay`: Delay for duration `t`.
 - `delay_auto`: Delay for duration `t` after all channels and readouts finish.
 - `goto`: Jump to another step.
+
+### Trigger
+
+Trigger ADC readout. Note that the ADC has a time delay compared to the pulse, so you might always need an offset `t` to get the correct readout window for a readout pulse. A program MUST have at least one trigger step, no matter whether you care about the data or not.
 
 ### Delay
 

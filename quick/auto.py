@@ -37,36 +37,6 @@ class BaseAuto:
         for k in relevant_var[self.__class__.__name__]:
             v[k] = self.var[k]
 
-class ReadoutLength(BaseAuto):
-    def calibrate(self, **kwargs):
-        self.var["r_relax"] = 0
-        self.var["r_power"] = -40
-        def scan(label, f, w):
-            self.data = experiment.ResonatorSpectroscopy(
-                data_path=self.data_path, title=f'(auto.ReadoutLength) {int(self.var["r_freq"])} {label}',
-                r_freq=np.linspace(f - w, f + w, 1001),
-                p0_mode="periodic", r0_length=213, hard_avg=100, # VNA style
-                soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs
-            ).run(silent=self.silent).data.T
-        if self.data is None:
-            scan("wide", self.var["r_freq"], 2)
-        data = self.data
-        p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
-        if r2 < 0.5 or perr[1] > 0.5 * p[1]:
-            experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
-            return False, fig
-        f, Qc = p[2], p[1]
-        last_data = self.data
-        scan("focus", f, f / Qc / 2)
-        experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
-        data = np.hstack([last_data, self.data])
-        p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
-        if r2 < 0.5 or perr[1] > 0.5 * p[1]:
-            return False, fig
-        f, Qc = p[2], p[1]
-        self.var["r_length"] = float(min(Qc / f, 10))
-        return self.var, fig
-
 class Resonator(BaseAuto):
     def calibrate(self, **kwargs):
         self.var["r_relax"] = 0
@@ -108,6 +78,35 @@ class Resonator(BaseAuto):
         axes[1].vlines(P[pi], ymin=np.min(s), ymax=np.max(s), color="red")
         self.var["r_freq"] = float(F[fi])
         self.var["r_power"] = float(P[pi])
+        return self.var, fig
+
+class ReadoutLength(BaseAuto):
+    def calibrate(self, **kwargs):
+        self.var["r_relax"] = 0.5
+        def scan(label, f, w):
+            self.data = experiment.ResonatorSpectroscopy(
+                data_path=self.data_path, title=f'(auto.ReadoutLength) {int(self.var["r_freq"])} {label}',
+                r_freq=np.linspace(f - w, f + w, 1001),
+                p0_mode="periodic", r0_length=213, hard_avg=100, # VNA style
+                soccfg=self.soccfg, soc=self.soc, var=self.var, **kwargs
+            ).run(silent=self.silent).data.T
+        if self.data is None:
+            scan("wide", self.var["r_freq"], 2)
+        data = self.data
+        p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
+        if r2 < 0.5 or perr[1] > 0.5 * p[1]:
+            experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
+            return False, fig
+        f, Qc = p[2], p[1]
+        last_data = self.data
+        scan("focus", f, f / Qc / 2)
+        experiment.LoopBack(soccfg=self.soccfg, soc=self.soc, var=self.var).run(silent=True)
+        data = np.hstack([last_data, self.data])
+        p, perr, r2, fig = helper.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
+        if r2 < 0.5 or perr[1] > 0.5 * p[1]:
+            return False, fig
+        f, Qc = p[2], p[1]
+        self.var["r_length"] = float(min(Qc / f, 10))
         return self.var, fig
 
 class QubitFreq(BaseAuto):
@@ -228,8 +227,8 @@ class ReadoutFreq(BaseAuto):
             self.data = experiment.DispersiveSpectroscopy(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.ReadoutFreq) {int(self.var['r_freq'])}", r_freq=np.linspace(self.var["r_freq"] - r, self.var["r_freq"] + r, 201), **kwargs).run(silent=self.silent).data.T
         F, A0, P0, I0, Q0, A1, P1, I1, Q1 = self.data
         dS_amp = np.convolve(np.abs(I0 + 1j*Q0 - I1 - 1j*Q1), np.ones(8) / 8, "same")
-        i0 = np.argmin(np.convolve(A0, np.ones(3) / 3, "same"))
-        i1 = np.argmin(np.convolve(A1, np.ones(3) / 3, "same"))
+        i0 = np.argmin(A0)
+        i1 = np.argmin(A1)
         start, end = min(i0, i1), max(i0, i1)
         self.var["r_freq"] = float(F[np.argmax(dS_amp[start:end]) + start])
         fig, ax = plt.subplots()
