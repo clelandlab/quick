@@ -19,8 +19,6 @@ The Mercator class to run Mercator protocol.
 - `soccfg` QICK board socket config object.
 - `cfg` (dict) Mercator protocol in a Python dictionary. **Mercator will modify this dictionary, including flattening steps and evaluating gains.**
 
-> Properties and methods including `Mercator.c`, `Mercator.initialize` and `Mercator.body` should never be used manually and therefore not documented.
-
 ### 🔵Mercator.acquire
 
 ```python
