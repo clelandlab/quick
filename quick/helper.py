@@ -184,7 +184,7 @@ def iq_rotation(c0, c1):
     return float(-np.angle(c1 - c0, deg=True)), float(np.real((c1 + c0) / 2 * np.exp(-1j *  np.angle(c1 - c0))))
 
 # return c0, c1, visibility, Fg, Fe, fig
-def iq_scatter(S0s, S1s, c0=None, c1=None):
+def iq_scatter(S0s, S1s, c0=None, c1=None, plot=True):
     if c0 is None:
         c0 = np.median(S0s.real) + 1j * np.median(S0s.imag)
     if c1 is None:
@@ -200,7 +200,6 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     res = minimize(negative_visibility, [c1.real, c1.imag], method='Nelder-Mead') # optimize c1
     visibility = -1 * negative_visibility(res.x)
     c1 = res.x[0] + 1j * res.x[1]
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5.44)) # plot the histogram
     o = (c0 + c1) / 2.0 # origin
     g = c0 - o # project on g
     S0p = np.real((S0s - o) * np.conj(g)) / np.abs(g)
@@ -209,6 +208,9 @@ def iq_scatter(S0s, S1s, c0=None, c1=None):
     S0s_right, S0s_wrong = S0s[S0p > 0], S0s[S0p <= 0]
     S1s_right, S1s_wrong = S1s[S1p < 0], S1s[S1p >= 0]
     Fg, Fe = len(S0p_right) / len(S0p), len(S1p_right) / len(S1p)
+    if not plot:
+        return c0, c1, visibility, Fg, Fe, None
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5.44)) # plot the histogram
     xp = np.linspace(np.min(S1p), np.max(S0p), 2001) # axis of projection
     g_hist, _ = np.histogram(S0p, bins=100, density=True, range=[xp[0], xp[-1]])
     e_hist, _ = np.histogram(S1p, bins=100, density=True, range=[xp[0], xp[-1]])

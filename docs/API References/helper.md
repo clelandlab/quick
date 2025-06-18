@@ -318,7 +318,7 @@ Compute the phase change in the readout pulse and the real threshold, in order t
 ## 🟢iq_scatter
 
 ```python
-c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(S0s, S1s, c0=None, c1=None)
+c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(S0s, S1s, c0=None, c1=None, plot=True)
 ```
 
 Compute the center for 0-state and 1-state from measured calibartion data. Compute the visibility and readout fidelity. Plot the IQ scatter and histogram.
@@ -329,6 +329,7 @@ Compute the center for 0-state and 1-state from measured calibartion data. Compu
 - `S1s` (1D ArrayLike[complex]) a list of IQ values in IQ complex plane, as the Qubit is in 1 state.
 - `c0=None` (complex) 0-state center in IQ complex plane. Can be determined if not provided.
 - `c1=None` (complex) 1-state center in IQ complex plane. Can be determined if not provided.
+- `plot=True` (bool) whether to plot the IQ scatter and histogram.
 
 **Return**:
 
@@ -337,7 +338,7 @@ Compute the center for 0-state and 1-state from measured calibartion data. Compu
 - `visibility` (float) computed readout visibility
 - `Fg` (float) computed readout fidelity for ground state (0-state)
 - `Fe` (float) computed readout fidelity for excited state (1-state)
-- `fig` (matplotlib.figure) plotted IQ scatter and histogram.
+- `fig` (matplotlib.figure) plotted IQ scatter and histogram. `None` if `plot=False`.
 
 ## 🟢fitT1
 
