@@ -179,7 +179,7 @@ Determine the qubit pulse frequency from Rabi, sweeping pi pulse frequency and f
 ### - PiPulseFreq.calibrate
 
 ```python
-var, fig = a.calibrate(cycles=[], r=10, **kwargs)
+var, fig = a.calibrate(cycles=[], **kwargs)
 ```
 
 Run the calibration.
@@ -187,7 +187,6 @@ Run the calibration.
 **Parameters**:
 
 - `cycles=[]` (list) extra cycles in Rabi. Cycle 0 (one pi pulse) will always be included.
-- `r=10` (float) [MHz] single-side frequency range, centered by current `q_freq`.
 
 **Return**:
 

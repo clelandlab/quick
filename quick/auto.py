@@ -200,8 +200,9 @@ class PiPulseLength(BaseAuto):
         return self.var, fig
 
 class PiPulseFreq(BaseAuto):
-    def calibrate(self, cycles=[], r=10, **kwargs):
+    def calibrate(self, cycles=[], **kwargs):
         fig, axes = plt.subplots(len(cycles) + 1, 1)
+        r = 1 / self.var["q_length"]
         def scan(cycle=0):
             self.data = experiment.Rabi(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.PiPulseFreq) {int(self.var['r_freq'])} cycle={cycle}", q_freq=np.linspace(self.var["q_freq"]-r,self.var["q_freq"]+r,101), cycle=cycle, rep=2000, **kwargs).run(silent=self.silent).data.T
         def fit(ax=axes):
