@@ -66,7 +66,7 @@ steps: # auto steps
     class: ReadoutFreq
     next: ReadoutState2
   ReadoutLength:
-    next: Resonator
+    next: QubitFreq
     back: fail
   ReadoutState1:
     back: fail
@@ -84,9 +84,9 @@ steps: # auto steps
   Resonator:
     back: fail
     back1: Resonator
-    next: QubitFreq
-  start:
     next: ReadoutLength
+  start:
+    next: Resonator
 time: 1
 ```
 
