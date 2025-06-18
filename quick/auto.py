@@ -256,8 +256,9 @@ class ReadoutState(BaseAuto):
         return self.var, fig 
 
 class Ramsey(BaseAuto):
-    def calibrate(self, fringe_freq=10, max_time=1, **kwargs):
+    def calibrate(self, fringe_freq=100, **kwargs):
         self.var["fringe_freq"] = fringe_freq
+        max_time = 10 / fringe_freq
         if self.data is None:
             self.data = experiment.T2Ramsey(soccfg=self.soccfg, soc=self.soc, var=self.var, data_path=self.data_path, title=f"(auto.Ramsey) {int(self.var['r_freq'])}", time=np.linspace(0, max_time, 101), **kwargs).run(silent=self.silent).data.T
         L, A = self.data[0], self.data[1]

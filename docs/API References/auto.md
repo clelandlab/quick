@@ -261,15 +261,14 @@ Fine tune the qubit frequency by T2Ramsey.
 ### - Ramsey.calibrate
 
 ```python
-var, fig = a.calibrate(fringe_freq=10, max_time=1, **kwargs)
+var, fig = a.calibrate(fringe_freq=10, **kwargs)
 ```
 
 Run the calibration.
 
 **Parameters**:
 
-- `fringe_freq=10` (float) [MHz] fringe frequency used in T2Ramsey
-- `max_time=1` (float) [us] T2Ramsey maximum delay time.
+- `fringe_freq=100` (float) [MHz] fringe frequency used in T2Ramsey
 
 **Return**:
 
