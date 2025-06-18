@@ -28,16 +28,11 @@ qubits: # list of qubits
     r_relax: 500
 steps: # auto steps
   PiPulseFreq0:
-    argument:
-      p1_style: flat_top
-      q_length: 2
-      r: 20
     class: PiPulseFreq
     next: PiPulseLength0
   PiPulseFreq1:
     argument:
       cycles: [2]
-      r: 10
     class: PiPulseFreq
     next: PiPulseLength1
   PiPulseLength0:
