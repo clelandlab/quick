@@ -297,31 +297,13 @@ Get the qubit excitation probability (population) from a list of IQ values.
 
 - `p` (float) 1-state probability.
 
-## 🟢iq_rotation
-
-```python
-phase_change, r_threshold = quick.iq_rotation(c0, c1)
-```
-
-Compute the phase change in the readout pulse and the real threshold, in order to distinguish the 0-state and 1-state.
-
-**Parameters**:
-
-- `c0` (complex) 0-state center in IQ complex plane.
-- `c1` (complex) 1-state center in IQ complex plane.
-
-**Return**:
-
-- `phase_change` (float) [deg] phase change to be added on readout pulse.
-- `r_threshold` (float) real threshold in I, above which is excited state.
-
 ## 🟢iq_scatter
 
 ```python
-c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(S0s, S1s, c0=None, c1=None, plot=True)
+phase, threshold, visibility, Fg, Fe, c0, c1, fig = quick.iq_scatter(S0s, S1s, c0=None, c1=None, plot=True)
 ```
 
-Compute the center for 0-state and 1-state from measured calibartion data. Compute the visibility and readout fidelity. Plot the IQ scatter and histogram.
+Compute the center for 0-state and 1-state from measured data. Compute the visibility and readout fidelity. Plot the IQ scatter and histogram.
 
 **Parameters**:
 
@@ -333,11 +315,13 @@ Compute the center for 0-state and 1-state from measured calibartion data. Compu
 
 **Return**:
 
-- `c0` (complex) 0-state center in IQ complex plane.
-- `c1` (complex) 1-state center in IQ complex plane.
+- `phase` (float) [deg] phase change to be added on readout pulse to get horizontal state-distinguish
+- `threshold` (float) threshold in I, above which is excited state
 - `visibility` (float) computed readout visibility
 - `Fg` (float) computed readout fidelity for ground state (0-state)
 - `Fe` (float) computed readout fidelity for excited state (1-state)
+- `c0` (complex) 0-state center in IQ complex plane.
+- `c1` (complex) 1-state center in IQ complex plane.
 - `fig` (matplotlib.figure) plotted IQ scatter and histogram. `None` if `plot=False`.
 
 ## 🟢fitT1

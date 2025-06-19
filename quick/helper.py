@@ -168,7 +168,6 @@ def estimateOmega(x, y):
     freq = np.fft.rfftfreq(len(y))
     return len(y) * freq[np.argmax(np.abs(rfft))] * 2 * π / (x[len(x) - 1] - x[0])
 
-# IQ scatter and centering
 def iq2prob(Ss, c0, c1):
     """convert IQ raw data to probability, according to the |0> center and |1> center."""
     center0, center1 = [np.real(c0), np.imag(c0)], [np.real(c1), np.imag(c1)]
@@ -179,11 +178,6 @@ def iq2prob(Ss, c0, c1):
     I_rot = np.dot(rot_mat, np.vstack([Is_shift, Qs_shift]))[0]
     return float(I_rot[I_rot < 0].size) / I_rot.size
 
-# rotation angle and real threshold after rotation.
-def iq_rotation(c0, c1):
-    return float(-np.angle(c1 - c0, deg=True)), float(np.real((c1 + c0) / 2 * np.exp(-1j *  np.angle(c1 - c0))))
-
-# return c0, c1, visibility, Fg, Fe, fig
 def iq_scatter(S0s, S1s, c0=None, c1=None, plot=True):
     if c0 is None:
         c0 = np.median(S0s.real) + 1j * np.median(S0s.imag)
@@ -201,17 +195,18 @@ def iq_scatter(S0s, S1s, c0=None, c1=None, plot=True):
     visibility = -1 * negative_visibility(res.x)
     c1 = res.x[0] + 1j * res.x[1]
     o = (c0 + c1) / 2.0 # origin
-    g = c0 - o # project on g
+    g = o - c0 # project on opposite of g
     S0p = np.real((S0s - o) * np.conj(g)) / np.abs(g)
     S1p = np.real((S1s - o) * np.conj(g)) / np.abs(g)
-    S0p_right, S1p_right = S0p[S0p > 0], S1p[S1p < 0]
-    S0s_right, S0s_wrong = S0s[S0p > 0], S0s[S0p <= 0]
-    S1s_right, S1s_wrong = S1s[S1p < 0], S1s[S1p >= 0]
+    S0p_right, S1p_right = S0p[S0p < 0], S1p[S1p > 0]
+    S0s_right, S0s_wrong = S0s[S0p < 0], S0s[S0p >= 0]
+    S1s_right, S1s_wrong = S1s[S1p > 0], S1s[S1p <= 0]
     Fg, Fe = len(S0p_right) / len(S0p), len(S1p_right) / len(S1p)
+    phase, threshold = float(-np.angle(c1 - c0, deg=True)), float(np.real((c1 + c0) / 2 * np.exp(-1j *  np.angle(c1 - c0))))
     if not plot:
-        return c0, c1, visibility, Fg, Fe, None
+        return phase, threshold, visibility, Fg, Fe, c0, c1, None
     fig, axes = plt.subplots(1, 2, figsize=(12, 5.44)) # plot the histogram
-    xp = np.linspace(np.min(S1p), np.max(S0p), 2001) # axis of projection
+    xp = np.linspace(np.min(S0p), np.max(S1p), 2001) # axis of projection
     g_hist, _ = np.histogram(S0p, bins=100, density=True, range=[xp[0], xp[-1]])
     e_hist, _ = np.histogram(S1p, bins=100, density=True, range=[xp[0], xp[-1]])
     g_cdf = np.cumsum(g_hist) * (xp[-1] - xp[0]) / 100
@@ -227,7 +222,7 @@ def iq_scatter(S0s, S1s, c0=None, c1=None, plot=True):
     axr.set_ylabel("Cumulative Probability")
     axr.plot(np.linspace(xp[0], xp[-1], 100), g_cdf, color='blue', linewidth=2)
     axr.plot(np.linspace(xp[0], xp[-1], 100), e_cdf, color='red', linewidth=2)
-    axr.plot(np.linspace(xp[0], xp[-1], 100), e_cdf - g_cdf, color='green', linewidth=2)
+    axr.plot(np.linspace(xp[0], xp[-1], 100), g_cdf - e_cdf, color='green', linewidth=2)
     axes[1].set_xlabel('Projected IQ Amplitude (a.u.)')
     axes[1].set_ylabel('Probability Density')
     axes[1].legend(shadow=False, loc=1, frameon=True)
@@ -258,7 +253,7 @@ def iq_scatter(S0s, S1s, c0=None, c1=None, plot=True):
     axes[0].plot(I_g_fit_list, Q_g_fit_list, color='darkblue', linestyle='--', label=r'$|g\rangle$, $3\sigma$')
     axes[0].plot(I_e_fit_list, Q_e_fit_list, color='darkred', linestyle='--', label=r'$|e\rangle$, $3\sigma$')
     axes[0].legend(shadow=False, loc=1, frameon=True)
-    return c0, c1, visibility, Fg, Fe, fig
+    return phase, threshold, visibility, Fg, Fe, c0, c1, fig
 
 # T1 fit and plot
 def fitT1(T, S):

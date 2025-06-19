@@ -250,10 +250,9 @@ class ReadoutState(BaseAuto):
         self.var["r_phase"] = 0
         if self.data is None:
             self.data = experiment.IQScatter(var=self.var, soccfg=self.soccfg, soc=self.soc, data_path=self.data_path, title=f"(auto.ReadoutState)", **kwargs).run(silent=self.silent).data.T
-        c0, c1, visibility, Fg, Fe, fig = helper.iq_scatter(self.data[0] + 1j * self.data[1], self.data[2] + 1j * self.data[3])
+        self.var["r_phase"], self.var["r_threshold"], visibility, Fg, Fe, c0, c1, fig = helper.iq_scatter(self.data[0] + 1j * self.data[1], self.data[2] + 1j * self.data[3])
         if visibility < tol:
             return False, fig
-        self.var["r_phase"], self.var["r_threshold"] = helper.iq_rotation(c0, c1)
         return self.var, fig 
 
 class Ramsey(BaseAuto):
@@ -279,10 +278,9 @@ class Readout(BaseAuto):
         def negative_score(x):
             self.var["r_power"], self.var["r_length"] = float(x[0]), float(x[1])
             data = experiment.IQScatter(var=self.var, soccfg=self.soccfg, soc=self.soc).run(silent=True).data.T
-            c0, c1, visibility, Fg, Fe, fig = helper.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
+            phase, threshold, visibility, Fg, Fe, c0, c1, fig = helper.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3], plot=False)
             c1m = np.median(data[2]) + 1j * np.median(data[3])
             c1_shift = np.abs(c1 - c1m) / np.abs(c1m - c0)
-            plt.close()
             score = visibility - abs(Fg - Fe) - 10 * c1_shift ** 2
             print(x, score)
             return -score

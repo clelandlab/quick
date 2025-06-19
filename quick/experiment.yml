@@ -150,7 +150,7 @@ IQScatter: |
   3_type: trigger
   3_t: {r_offset}
   4_type: {"wait_auto" if r_reset else "goto"}
-  4_i: 8
+  4_i: 7
   4_t: {r_reset}
   5_type: delay_auto
   5_t: {r_reset}
@@ -211,7 +211,7 @@ T1: |
   3_type: trigger
   3_t: {r_offset}
   4_type: {"wait_auto" if r_reset else "goto"}
-  4_i: 8
+  4_i: 7
   4_t: {r_reset}
   5_type: delay_auto
   5_t: {r_reset}
@@ -261,7 +261,7 @@ T2Ramsey: |
   - type: trigger
     t: {r_offset}
   - type: {"wait_auto" if r_reset else "goto"}
-    i: 10
+    i: 9
     t: {r_reset}
   - type: delay_auto
     t: {r_reset}
@@ -320,7 +320,7 @@ T2Echo: |
   - type: trigger
     t: {r_offset}
   - type: {"wait_auto" if r_reset else "goto"}
-    i: 13
+    i: 12
     t: {r_reset}
   - type: delay_auto
     t: {r_reset}

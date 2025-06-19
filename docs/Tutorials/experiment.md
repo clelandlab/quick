@@ -123,9 +123,8 @@ Use your pi pulse to plot the IQ scatter to see the readout visibility and fidel
 v["r_phase"] = 0
 for _ in range(2): # iterate
     data = quick.experiment.IQScatter(var=v).run().data.T
-    c0, c1, visibility, Fg, Fe, fig = quick.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
-    phase_delta, v["r_threshold"] = quick.iq_rotation(c0, c1)
-    v["r_phase"] += phase_delta
+    phase, v["r_threshold"], visibility, Fg, Fe, c0, c1, fig = quick.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
+    v["r_phase"] += phase
     v["r_phase"] %= 360
     plt.show()
 ```
