@@ -179,8 +179,9 @@ The protocol supports conditional pulses (e.g., for active reset) that execute b
 ```yaml
 3_type: trigger    # Trigger acquisition.
 4_type: wait_auto  # MUST wait for data to be available.
-4_t: 0.1
-5_type: delay_auto # Delay until previous steps finish.
+4_t: 0.1           # extra time to wait for the result computation.
+5_type: delay_auto # Delay the time axis to align with the wait
+5_t: 0.1           # must be the same value as in the wait_auto step.
 6_type: pulse      # Conditional pulse.
 6_p: 1             # Play pulse p1...
 6_g: 2             # ...on generator g2 if condition is met.

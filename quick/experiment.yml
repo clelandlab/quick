@@ -149,19 +149,19 @@ IQScatter: |
   2_g: {r}
   3_type: trigger
   3_t: {r_offset}
-  4_type: {"delay_auto" if r_reset else "goto"}
+  4_type: {"wait_auto" if r_reset else "goto"}
   4_i: 8
-  5_type: wait_auto
+  4_t: {r_reset}
+  5_type: delay_auto
   5_t: {r_reset}
-  6_type: delay_auto
-  7_type: pulse          # reset pulse
-  7_p: 1
-  7_g: {q}
-  7_threshold: {r_threshold}
-  7_r: {rr}
-  8_type: wait_auto
-  9_type: delay_auto
-  9_t: {r_relax}
+  6_type: pulse          # reset pulse
+  6_p: 1
+  6_g: {q}
+  6_threshold: {r_threshold}
+  6_r: {rr}
+  7_type: wait_auto
+  8_type: delay_auto
+  8_t: {r_relax}
 
 DispersiveSpectroscopy: |
   hard_avg: 1000
@@ -210,19 +210,19 @@ T1: |
   2_g: {r}
   3_type: trigger
   3_t: {r_offset}
-  4_type: {"delay_auto" if r_reset else "goto"}
+  4_type: {"wait_auto" if r_reset else "goto"}
   4_i: 8
-  5_type: wait_auto
+  4_t: {r_reset}
+  5_type: delay_auto
   5_t: {r_reset}
-  6_type: delay_auto
-  7_type: pulse          # reset pulse
-  7_p: 1
-  7_g: {q}
-  7_threshold: {r_threshold}
-  7_r: {rr}
-  8_type: wait_auto
-  9_type: delay_auto
-  9_t: {r_relax}
+  6_type: pulse          # reset pulse
+  6_p: 1
+  6_g: {q}
+  6_threshold: {r_threshold}
+  6_r: {rr}
+  7_type: wait_auto
+  8_type: delay_auto
+  8_t: {r_relax}
 
 T2Ramsey: |
   rep: 10000
@@ -260,11 +260,11 @@ T2Ramsey: |
     g: {r}
   - type: trigger
     t: {r_offset}
-  - type: {"delay_auto" if r_reset else "goto"}
+  - type: {"wait_auto" if r_reset else "goto"}
     i: 10
-  - type: wait_auto
     t: {r_reset}
   - type: delay_auto
+    t: {r_reset}
   - type: pulse
     p: 1
     g: {q}
@@ -319,11 +319,11 @@ T2Echo: |
     g: {r}
   - type: trigger
     t: {r_offset}
-  - type: {"delay_auto" if r_reset else "goto"}
+  - type: {"wait_auto" if r_reset else "goto"}
     i: 13
-  - type: wait_auto
     t: {r_reset}
   - type: delay_auto
+    t: {r_reset}
   - type: pulse
     p: 1
     g: {q}
