@@ -316,7 +316,7 @@ Compute the center for 0-state and 1-state from measured data. Compute the visib
 **Return**:
 
 - `phase` (float) [deg] phase change to be added on readout pulse to get horizontal state-distinguish
-- `threshold` (float) threshold in I, above which is excited state
+- `threshold` (float) threshold in I (after the phase change), above which is excited state
 - `visibility` (float) computed readout visibility
 - `Fg` (float) computed readout fidelity for ground state (0-state)
 - `Fe` (float) computed readout fidelity for excited state (1-state)
