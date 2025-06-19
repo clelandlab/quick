@@ -33,7 +33,7 @@ s = ai.system_instruction()
 ### 🔵AI.generate
 
 ```python
-ai = ai.generate(api_key, model="gemini-2.5-pro-preview-06-05", silent=False)
+ai = ai.generate(api_key, model="gemini-2.5-pro", silent=False)
 ```
 
 Generate code using the AI model.
@@ -41,7 +41,7 @@ Generate code using the AI model.
 **Parameters**:
 
 - `api_key` (str) API key for the AI model.
-- `model="gemini-2.5-pro-preview-06-05"` (str) AI model to use.
+- `model="gemini-2.5-pro"` (str) AI model to use.
 - `silent=False` (bool) whether to avoid printing the generated code. By default, it will print the generated code and the token usage.
 
 **Returns**:

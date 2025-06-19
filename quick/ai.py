@@ -89,7 +89,7 @@ class AI:
         self.code = ""
     def system_instruction(self):
         return leading_prompt + "\n\n\n" + "\n\n\n".join(self.docs)
-    def generate(self, api_key, model="gemini-2.5-pro-preview-06-05", silent=False):
+    def generate(self, api_key, model="gemini-2.5-pro", silent=False):
         if not silent:
             print("quick.AI Generating...")
         res = post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}", {
