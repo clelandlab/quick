@@ -120,12 +120,10 @@ You can also sweep `q_gain`(amplitude Rabi), `q_freq`(frequency Rabi), and even 
 Use your pi pulse to plot the IQ scatter to see the readout visibility and fidelity. Update `v["r_phase"]` and `v["r_threshold"]` for qubit state.
 
 ```python
-v["r_phase"] = 0
 for _ in range(2): # iterate
     data = quick.experiment.IQScatter(var=v).run().data.T
     phase, v["r_threshold"], visibility, Fg, Fe, c0, c1, fig = quick.iq_scatter(data[0] + 1j * data[1], data[2] + 1j * data[3])
-    v["r_phase"] += phase
-    v["r_phase"] %= 360
+    v["r_phase"] = (v["r_phase"] + phase) % 360
     plt.show()
 ```
 
