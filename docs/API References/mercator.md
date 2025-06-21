@@ -2,7 +2,7 @@
 
 A Python interface to run Mercator protocol. See Tutorials for details of Mercator protocol.
 
-> Only Mercator *(class)* is exposed as `quick.Mercator`.
+> Only Mercator *(class)* is exported as `quick.Mercator`.
 
 ## 🔵Mercator
 

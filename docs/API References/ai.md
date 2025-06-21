@@ -4,7 +4,7 @@ Artificial Intelligence for quick.
 
 **This functionality requires Internet connection. Currently it has zero knowledge about `quick.experiment` or `quick.auto`.**
 
-> Only AI *(class)* is exposed as `quick.AI`.
+> Only AI *(class)* is exported as `quick.AI`.
 
 ## 🔵AI
 

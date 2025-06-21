@@ -2,7 +2,7 @@
 
 Automatic scripts for qubit measurements.
 
-> Everything exposed to `quick.auto`.
+> Everything exported to `quick.auto`.
 
 ## 🔵BaseAuto
 

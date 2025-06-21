@@ -2,7 +2,7 @@
 
 Helper functions and classes, including data-saving, connection, fitting, etc.
 
-> Everything directly exposed to `quick`.
+> Everything directly exported to `quick`.
 
 ## 🟢connect
 

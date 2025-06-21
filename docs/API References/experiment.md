@@ -2,7 +2,7 @@
 
 Useful experiments for qubit measurements.
 
-> Everything exposed to `quick.experiment`.
+> Everything exported to `quick.experiment`.
 
 ## 🟢var
 
