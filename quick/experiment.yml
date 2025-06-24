@@ -333,32 +333,6 @@ T2Echo: |
   - type: delay_auto
     t: {r_relax}
 
-Random: |
-  rep: 100
-  p0_freq: {r_freq}
-  p0_length: {r_length}
-  p0_power: {r_power}
-  p2_style: gaussian
-  p2_freq: {q_freq}
-  p2_length: {q_length_2 or q_length}
-  p2_gain: {q_gain_2}
-  r{rr}_p: 0
-  r{rr}_length: {r_length}
-  r{rr}_phase: {r_phase}
-  steps:
-  - type: pulse
-    p: 2
-    g: {q}
-  - type: delay_auto
-  - type: pulse
-    p: 0
-    g: {r}
-  - type: trigger
-    t: {r_offset}
-  - type: wait_auto
-  - type: delay_auto
-    t: {r_relax}
-
 QND: |
   rep: 100
   p0_freq: {r_freq}
