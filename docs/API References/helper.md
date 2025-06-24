@@ -250,7 +250,7 @@ cfg = yaml.safe_load(quick.evalStr(mercator_protocol, v))
 xc = quick.symmetryCenter(x, y, it=3)
 ```
 
-Very fancy technique to evaluate the most probable symmmetry center for a signal.
+Very fancy technique to evaluate the most probable symmetry center for a signal.
 
 **Parameters**:
 
@@ -279,24 +279,6 @@ Rough estimate the angular frequency using FFT. Useful for initial parameters in
 
 - `omega` (float) estimated angular frequency.
 
-## 🟢iq2prob
-
-```python
-p = quick.iq2prob(Ss, c0, c1)
-```
-
-Get the qubit excitation probability (population) from a list of IQ values.
-
-**Parameters**:
-
-- `Ss` (1D ArrayLike[complex]) a list of IQ values in IQ complex plane.
-- `c0` (complex) 0-state center in IQ complex plane.
-- `c1` (complex) 1-state center in IQ complex plane.
-
-**Return**:
-
-- `p` (float) 1-state probability.
-
 ## 🟢iq_scatter
 
 ```python
@@ -315,7 +297,7 @@ Compute the center for 0-state and 1-state from measured data. Compute the visib
 
 **Return**:
 
-- `phase` (float) [deg] phase change to be added on readout pulse to get horizontal state-distinguish
+- `phase` (float) [deg] phase change to be added on ADC to get horizontal state-distinguish
 - `threshold` (float) threshold in I (after the phase change), above which is excited state
 - `visibility` (float) computed readout visibility
 - `Fg` (float) computed readout fidelity for ground state (0-state)
@@ -387,7 +369,7 @@ popt, perr, r2, fig = quick.fitT2(data[0], data[1], omega=omega)
 p, perr, r2, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None])
 ```
 
-Circle fit of inversed S21 for quality factor of resonator.
+Circle fit of inverse S21 for quality factor of resonator.
 
 **Parameters**:
 
@@ -406,7 +388,7 @@ Circle fit of inversed S21 for quality factor of resonator.
 **Example**:
 
 ```python
-data = quick.load_data("path/to/your/data1.csv", "path/to/your/data2.csv").T
+data = quick.load_data("path/to/data1.csv", "path/to/data2.csv").T
 p, perr, r2, fig = quick.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
 ```
 

@@ -31,7 +31,8 @@ Connect to the QICK board, prepare the `data_path` and experiment variable
 import quick, yaml
 import numpy as np
 DATA_PATH = "path/to/data/directory/"
-soccfg, soc = quick.connect("QICK board IP address")
+QICK_IP = "QICK board IP address"
+soccfg, soc = quick.connect(QICK_IP)
 v = dict(quick.experiment.var) # make a copy of variables
 ```
 

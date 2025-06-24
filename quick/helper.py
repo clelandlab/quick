@@ -168,16 +168,6 @@ def estimateOmega(x, y):
     freq = np.fft.rfftfreq(len(y))
     return len(y) * freq[np.argmax(np.abs(rfft))] * 2 * π / (x[len(x) - 1] - x[0])
 
-def iq2prob(Ss, c0, c1):
-    """convert IQ raw data to probability, according to the |0> center and |1> center."""
-    center0, center1 = [np.real(c0), np.imag(c0)], [np.real(c1), np.imag(c1)]
-    Is_shift = np.real(Ss) - (center0[0] + center1[0]) / 2.0
-    Qs_shift = np.imag(Ss) - (center0[1] + center1[1]) / 2.0
-    angle = np.angle(-1j * center1[1] - center1[0] + 1j * center0[1] + center0[0])
-    rot_mat = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
-    I_rot = np.dot(rot_mat, np.vstack([Is_shift, Qs_shift]))[0]
-    return float(I_rot[I_rot < 0].size) / I_rot.size
-
 def iq_scatter(S0s, S1s, c0=None, c1=None, plot=True):
     if c0 is None:
         c0 = np.median(S0s.real) + 1j * np.median(S0s.imag)
