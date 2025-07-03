@@ -180,11 +180,11 @@ class Mercator(AveragerProgramV2):
         super().__init__(soccfg, reps=cfg.get("hard_avg", 1), final_delay=None, final_wait=None, cfg=cfg)
 
     def acquire(self, soc, progress=False, **kwargs):
-        res = super().acquire(soc, progress=progress, soft_avgs=self.cfg.get("soft_avg", 1), **kwargs)
+        res = super().acquire(soc, progress=progress, rounds=self.cfg.get("soft_avg", 1), **kwargs)
         return np.moveaxis(res, -1, 0)
 
     def acquire_decimated(self, soc, progress=False, **kwargs):
-        res = super().acquire_decimated(soc, progress=progress, soft_avgs=self.cfg.get("soft_avg", 1), **kwargs)
+        res = super().acquire_decimated(soc, progress=progress, rounds=self.cfg.get("soft_avg", 1), **kwargs)
         return np.moveaxis(res, -1, 0)
 
     def light(self):
