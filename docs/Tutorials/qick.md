@@ -2,7 +2,7 @@
 
 This is a tutorial for setting up a new QICK board that is compatible for this package.
 
-**This tutorial is only for ZCU208 and ZCU216 hardware!**
+**This tutorial is only for ZCU216 hardware!**
 
 ## Hardware and Operating System
 
@@ -10,7 +10,6 @@ Assemble the hardware. Note that all the mode switches should be left, except th
 
 Use the [Win32 Disk Imager](https://sourceforge.net/projects/win32diskimager/) to write the PYNQ operating system into the SD card. The system image can be downloaded from the following link:
 
-- [PYNQ 3.0.1 for ZCU208](https://www.xilinx.com/bin/public/openDownload?filename=zcu208_v3.0.1.zip).
 - [PYNQ 2.7.0 for ZCU216](https://drive.google.com/file/d/10kDKrEqA4l0_S3ysTlWbbOHgTsV0Zpyq/view?usp=sharing), as provided by this [Github issue](https://github.com/sarafs1926/ZCU216-PYNQ/issues/1).
 
 Plug in the SD card and power on the board.
