@@ -309,7 +309,7 @@ Compute the center for 0-state and 1-state from measured data. Compute the visib
 ## 🟢fitT1
 
 ```python
-popt, perr, r2, fig = quick.fitT1(T, S)
+p, perr, r2, fig = quick.fitT1(T, S)
 ```
 
 Fit and plot the Qubit T1 from data.
@@ -321,7 +321,7 @@ Fit and plot the Qubit T1 from data.
 
 **Return**:
 
-- `popt` (np.Array(3)) Fitted parameter values. `popt[1]` is the value for T1.
+- `p` (np.Array(3)) Fitted parameter values. `p[1]` is the value for T1.
 - `perr` (np.Array(3)) Fitted parameter errors. `perr[1]` is the error for T1.
 - `r2` (float) R-squared of the fitting.
 - `fig` (matplotlib.figure) plotted T1 decay.
@@ -330,13 +330,13 @@ Fit and plot the Qubit T1 from data.
 
 ```python
 data = quick.load_data("path/to/your/data.csv").T
-popt, perr, r2, fig = quick.fitT1(data[0], data[1])
+p, perr, r2, fig = quick.fitT1(data[0], data[1])
 ```
 
 ## 🟢fitT2
 
 ```python
-popt, perr, r2, fig = quick.fitT2(T, S, omega=2*np.pi, T2=20.0)
+p, perr, r2, fig = quick.fitT2(T, S, omega=2*np.pi, T2=20.0)
 ```
 
 Fit and plot the Qubit T2 from data.
@@ -350,7 +350,7 @@ Fit and plot the Qubit T2 from data.
 
 **Return**:
 
-- `popt` (np.Array(4)) Fitted parameter values. `popt[1]` is the value for T2.
+- `p` (np.Array(4)) Fitted parameter values. `p[1]` is the value for T2.
 - `perr` (np.Array(4)) Fitted parameter errors. `perr[1]` is the error for T2.
 - `r2` (float) R-squared of the fitting.
 - `fig` (matplotlib.figure) plotted T2 decay.
@@ -360,7 +360,7 @@ Fit and plot the Qubit T2 from data.
 ```python
 data = quick.load_data("path/to/your/data.csv").T
 omega = quick.estimateOmega(data[0], data[1])
-popt, perr, r2, fig = quick.fitT2(data[0], data[1], omega=omega)
+p, perr, r2, fig = quick.fitT2(data[0], data[1], omega=omega)
 ```
 
 ## 🟢fitResonator

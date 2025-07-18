@@ -255,20 +255,20 @@ def fitT1(T, S):
         d2 = np.ones(len(x))
         return np.transpose([d0, d1, d2])
     p0 = [1.0, 1.0, 1.0]
-    popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
+    p, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
-    residuals = S - m(T, *popt)
+    residuals = S - m(T, *p)
     r2 = 1 - np.sum(residuals**2) / np.sum((S - np.mean(S))**2)
-    dof = len(T) - len(popt)
+    dof = len(T) - len(p)
     fig, ax = plt.subplots()
     ax.scatter(T, S, color='black', s=10, label='Original Data')
-    ax.plot(T, m(T, *popt), color='red', label='Fit')
+    ax.plot(T, m(T, *p), color='red', label='Fit')
     annotation_text = (
         r"$S = S_0e^{-\tau/T_1} + C$" + "\n" +
         "Fitting Result:\n" +
-        r"$S_0 = ({:.2f} \pm {:.2f})$".format(popt[0], perr[0]) + "\n" +
-        r"$T_1 = ({:.2f} \pm {:.2f})$ us".format(popt[1], perr[1]) + "\n" +
-        r"$C = ({:.2f} \pm {:.2f})$".format(popt[2], perr[2]) + "\n" +
+        r"$S_0 = ({:.2f} \pm {:.2f})$".format(p[0], perr[0]) + "\n" +
+        r"$T_1 = ({:.2f} \pm {:.2f})$ us".format(p[1], perr[1]) + "\n" +
+        r"$C = ({:.2f} \pm {:.2f})$".format(p[2], perr[2]) + "\n" +
         r"$n = {}$ (DOF)".format(dof) + "\n" +
         r"$R^2 = {:.3f}$%".format(r2*100)
     )
@@ -279,7 +279,7 @@ def fitT1(T, S):
     ax.legend()
     mid_index = len(T) // 2
     ax.annotate(annotation_text, (T[mid_index], S[mid_index]), fontsize=8, xycoords='data', textcoords='offset points', xytext=(20, 20))
-    return popt, perr, r2, fig
+    return p, perr, r2, fig
 
 # T2 fit and plot
 def fitT2(T, S, omega=2*π, T2=20.0):
@@ -294,21 +294,21 @@ def fitT2(T, S, omega=2*π, T2=20.0):
     def me(x, *p):
         return p[0] * np.exp(-x / p[1]) + p[3]
     p0 = [0.4, T2, omega, 0.5]
-    popt, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
+    p, pcov = curve_fit(m, T, S, p0=p0, jac=jac)
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
-    residuals = S - m(T, *popt)
+    residuals = S - m(T, *p)
     r2 = 1 - np.sum(residuals**2) / np.sum((S - np.mean(S))**2)
-    dof = len(T) - len(popt)
+    dof = len(T) - len(p)
     fig, ax = plt.subplots()
     ax.scatter(T, S, color='black', s=10, label='Original Data')
-    ax.plot(T, m(T, *popt), color='red', label='Fit')
-    ax.plot(T, me(T, *popt), color='blue', label='Fit Exponential')
+    ax.plot(T, m(T, *p), color='red', label='Fit')
+    ax.plot(T, me(T, *p), color='blue', label='Fit Exponential')
     annotation_text = (
         r"$S = S_0e^{-\tau/T_2}\cos(\omega\tau) + C$" + "\n" +
         "Fitting Result:\n" +
-        r"$S_0 = ({:.2f} \pm {:.2f})$, $C = ({:.2f} \pm {:.2f})$".format(popt[0], perr[0], popt[3], perr[3]) + "\n" +
-        r"$T_2 = ({:.2f} \pm {:.2f})$ us".format(popt[1], perr[1]) + "\n" +
-        r"$\omega = ({:.2f} \pm {:.2f})$ rad/us".format(popt[2], perr[2]) + "\n" +
+        r"$S_0 = ({:.2f} \pm {:.2f})$, $C = ({:.2f} \pm {:.2f})$".format(p[0], perr[0], p[3], perr[3]) + "\n" +
+        r"$T_2 = ({:.2f} \pm {:.2f})$ us".format(p[1], perr[1]) + "\n" +
+        r"$\omega = ({:.2f} \pm {:.2f})$ rad/us".format(p[2], perr[2]) + "\n" +
         r"$n = {}$ (DOF), $R^2 = {:.3f}$%".format(dof, r2 * 100)
     )
     ax.set_xlabel(r"Pulse Delay $\tau$ (us)")
@@ -317,8 +317,8 @@ def fitT2(T, S, omega=2*π, T2=20.0):
     ax.grid()
     ax.legend(loc="lower right")
     mid_index = len(T) // 2
-    ax.annotate(annotation_text, (T[mid_index], me(T[mid_index], *popt)), fontsize=8, xycoords='data', textcoords='offset points', xytext=(10, 10))
-    return popt, perr, r2, fig
+    ax.annotate(annotation_text, (T[mid_index], me(T[mid_index], *p)), fontsize=8, xycoords='data', textcoords='offset points', xytext=(10, 10))
+    return p, perr, r2, fig
 
 def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
     def dB(a):

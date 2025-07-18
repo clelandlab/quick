@@ -172,13 +172,13 @@ class PiPulseLength(BaseAuto):
             L, A = self.data[0], self.data[2]
             def m(x, p1, p2, p3):
                 return p1 * np.sin(x * p2) ** 2 + p3
-            popt, pcov = curve_fit(m, L, A, p0=[np.max(A) - np.min(A), helper.estimateOmega(L, A) / 2, np.min(A)], bounds=([0.1, 0.1, 0.1], [np.inf, np.inf, np.inf]))
-            T = np.pi / popt[1]
-            residuals = A - m(L, *popt)
-            dof = len(L) - len(popt)
+            p, pcov = curve_fit(m, L, A, p0=[np.max(A) - np.min(A), helper.estimateOmega(L, A) / 2, np.min(A)], bounds=([0.1, 0.1, 0.1], [np.inf, np.inf, np.inf]))
+            T = np.pi / p[1]
+            residuals = A - m(L, *p)
+            dof = len(L) - len(p)
             r2 = 1 - np.sum((residuals - np.mean(residuals))**2) / np.sum((A - np.mean(A))**2)
             ax.scatter(L, A, color="black", s=20)
-            ax.plot(L, m(L, *popt), color="blue")
+            ax.plot(L, m(L, *p), color="blue")
             ax.set_xlabel("Pi Pulse Length (us)")
             self.var["q_length"] = float(T * (cycle / 2 + 0.5))
             ax.vlines([self.var["q_length"]], ymin=np.min(A), ymax=np.max(A), color="red")
@@ -264,12 +264,12 @@ class Ramsey(BaseAuto):
         L, A = self.data[0], self.data[1]
         def m(x, p1, p2, p3):
             return p1 * np.cos(p2 * x) + p3
-        popt, pcov = curve_fit(m, L, A, p0=[(np.max(A) - np.min(A)) / 2, helper.estimateOmega(L, A), 0.5])
+        p, pcov = curve_fit(m, L, A, p0=[(np.max(A) - np.min(A)) / 2, helper.estimateOmega(L, A), 0.5])
         fig, ax = plt.subplots()
         ax.scatter(L, A, s=10, color="black")
-        ax.plot(np.arange(L[0], L[-1], 0.001), m(np.arange(L[0], L[-1], 0.001), *popt), color="red")
+        ax.plot(np.arange(L[0], L[-1], 0.001), m(np.arange(L[0], L[-1], 0.001), *p), color="red")
         ax.set_title(f"Ramsey (fringe_freq = {self.var['fringe_freq']})")
-        self.var["q_freq"] = float(self.var["q_freq"] + popt[1] / 2 / np.pi - self.var["fringe_freq"])
+        self.var["q_freq"] = float(self.var["q_freq"] + p[1] / 2 / np.pi - self.var["fringe_freq"])
         return self.var, fig
 
 class Readout(BaseAuto):
@@ -293,9 +293,9 @@ class Relax(BaseAuto):
     def calibrate(self, **kwargs):
         if self.data is None:
             self.data = experiment.T1(var=self.var, data_path=self.data_path, soccfg=self.soccfg, soc=self.soc, title=f"(auto.Relax) {int(self.var['r_freq'])}", time=np.linspace(0, self.var["r_relax"] * 0.8, 61), **kwargs).run(silent=self.silent).data.T
-        popt, _, _, fig = helper.fitT1(self.data[0], self.data[1])
-        print("T1 =", popt[1])
-        self.var["r_relax"] = float(5 * popt[1])
+        p, _, _, fig = helper.fitT1(self.data[0], self.data[1])
+        print("T1 =", p[1])
+        self.var["r_relax"] = float(5 * p[1])
         return self.var, fig
 
 def run(path, soccfg=None, soc=None, data_path=None):
