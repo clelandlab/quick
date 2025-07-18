@@ -325,7 +325,7 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
         return 20. * np.log10(np.abs(a))
     def S21_th(f, *p):
         Qi, Qc, fr, phi = p
-        return 1 / (1 + Qi / Qc * np.exp(1j * phi) / (1 + 2j * Qi * (f - fr) / f))
+        return 1 / (1 + Qi / Qc * np.exp(1j * phi) / (1 + 2j * Qi * (f - fr) / fr))
     def normalize(F, S):
         s = F.argsort()
         F, S = F[s], S[s]
