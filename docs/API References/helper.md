@@ -309,7 +309,7 @@ Compute the center for 0-state and 1-state from measured data. Compute the visib
 ## 🟢fitT1
 
 ```python
-p, perr, r2, fig = quick.fitT1(T, S)
+p, perr, r2, fig = quick.fitT1(T, S, plot=True)
 ```
 
 Fit and plot the Qubit T1 from data.
@@ -318,25 +318,19 @@ Fit and plot the Qubit T1 from data.
 
 - `T` (1D ArrayLike) a list of pulse delay time.
 - `S` (1D ArrayLike) a list of corresponding qubit population.
+- `plot=True` (bool) whether to plot the fitting.
 
 **Return**:
 
 - `p` (np.Array(3)) Fitted parameter values. `p[1]` is the value for T1.
 - `perr` (np.Array(3)) Fitted parameter errors. `perr[1]` is the error for T1.
 - `r2` (float) R-squared of the fitting.
-- `fig` (matplotlib.figure) plotted T1 decay.
-
-**Example**:
-
-```python
-data = quick.load_data("path/to/your/data.csv").T
-p, perr, r2, fig = quick.fitT1(data[0], data[1])
-```
+- `fig` (matplotlib.figure) fitting plot. `None` if `plot=False`.
 
 ## 🟢fitT2
 
 ```python
-p, perr, r2, fig = quick.fitT2(T, S, omega=2*np.pi, T2=20.0)
+p, perr, r2, fig = quick.fitT2(T, S, omega=2*np.pi, T2=20.0, plot=True)
 ```
 
 Fit and plot the Qubit T2 from data.
@@ -346,14 +340,15 @@ Fit and plot the Qubit T2 from data.
 - `T` (1D ArrayLike) a list of pulse delay time.
 - `S` (1D ArrayLike) a list of corresponding qubit population.
 - `omega=2*np.pi` (float) initial value for angular frequency.
-- `T2=20.0` (float) initial value for T2.
+- `T2=20.0` (float) initial guess value for T2.
+- `plot=True` (bool) whether to plot the fitting.
 
 **Return**:
 
 - `p` (np.Array(4)) Fitted parameter values. `p[1]` is the value for T2.
 - `perr` (np.Array(4)) Fitted parameter errors. `perr[1]` is the error for T2.
 - `r2` (float) R-squared of the fitting.
-- `fig` (matplotlib.figure) plotted T2 decay.
+- `fig` (matplotlib.figure) fitting plot. `None` if `plot=False`.
 
 **Example**:
 
@@ -366,7 +361,7 @@ p, perr, r2, fig = quick.fitT2(data[0], data[1], omega=omega)
 ## 🟢fitResonator
 
 ```python
-p, perr, r2, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None])
+p, perr, r2, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True)
 ```
 
 Circle fit of inverse S21 for quality factor of resonator.
@@ -375,20 +370,21 @@ Circle fit of inverse S21 for quality factor of resonator.
 
 - `F` (1D ArrayLike) a list of frequency
 - `S` (1D ArrayLike complex) a list of corresponding complex S21.
-- `fit="circle` (str) "circle", "amp" or "arg". the target of the fitting.
-- `p0=[None, None, None, None]` (1D ArrayLike) initial value of the fitting parameters. If None, then default value will be used. 
+- `fit="circle"` (str) "circle", "amp" or "arg". the target of the fitting.
+- `p0=[None, None, None, None]` (1D ArrayLike) initial value of the fitting parameters in the order of `[Qi, Qc, fr, phi]`. If `None`, then default value will be used. 
+- `plot=True` (bool) whether to plot the fitting.
 
 **Return**:
 
 - `p` (np.Array(4)) Fitted parameter values in the order of `[Qi, Qc, fr, phi]`
 - `perr` (np.Array(4)) Fitted parameter errors.
 - `r2` (float) R-squared of the fitting.
-- `fig` (matplotlib.figure) plotted fitting.
+- `fig` (matplotlib.figure) fitting plot. `None` if `plot=False`.
 
 **Example**:
 
 ```python
-data = quick.load_data("path/to/data1.csv", "path/to/data2.csv").T
-p, perr, r2, fig = quick.fitResonator(data[0], data[3] + 1j * data[4], fit="circle")
+data = quick.load_data("path/to/data1.csv", "path/to/data2.csv").T # combine two scan
+p, perr, r2, fig = quick.fitResonator(data[0], data[3] + 1j * data[4])
 ```
 

@@ -246,7 +246,7 @@ def iq_scatter(S0s, S1s, c0=None, c1=None, plot=True):
     return phase, threshold, visibility, Fg, Fe, c0, c1, fig
 
 # T1 fit and plot
-def fitT1(T, S):
+def fitT1(T, S, plot=True):
     def m(x, *p):
         return p[0] * np.exp(-x / p[1]) + p[2]
     def jac(x, *p):
@@ -259,6 +259,8 @@ def fitT1(T, S):
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
     residuals = S - m(T, *p)
     r2 = 1 - np.sum(residuals**2) / np.sum((S - np.mean(S))**2)
+    if not plot:
+        return p, perr, r2, None
     dof = len(T) - len(p)
     fig, ax = plt.subplots()
     ax.scatter(T, S, color='black', s=10, label='Original Data')
@@ -282,7 +284,7 @@ def fitT1(T, S):
     return p, perr, r2, fig
 
 # T2 fit and plot
-def fitT2(T, S, omega=2*π, T2=20.0):
+def fitT2(T, S, omega=2*π, T2=20.0, plot=True):
     def m(x, *p):
         return p[0] * np.exp(-x / p[1]) * np.cos(p[2] * x) + p[3]
     def jac(x, *p):
@@ -298,6 +300,8 @@ def fitT2(T, S, omega=2*π, T2=20.0):
     perr = np.sqrt(np.diag(pcov))  # Standard deviation of parameters
     residuals = S - m(T, *p)
     r2 = 1 - np.sum(residuals**2) / np.sum((S - np.mean(S))**2)
+    if not plot:
+        return p, perr, r2, None
     dof = len(T) - len(p)
     fig, ax = plt.subplots()
     ax.scatter(T, S, color='black', s=10, label='Original Data')
@@ -320,7 +324,7 @@ def fitT2(T, S, omega=2*π, T2=20.0):
     ax.annotate(annotation_text, (T[mid_index], me(T[mid_index], *p)), fontsize=8, xycoords='data', textcoords='offset points', xytext=(10, 10))
     return p, perr, r2, fig
 
-def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
+def fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True):
     def dB(a):
         return 20. * np.log10(np.abs(a))
     def S21_th(f, *p):
@@ -389,6 +393,8 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None]):
     residuals = np.concatenate((np.real(residuals), np.imag(residuals)))
     flat_S_inv = np.concatenate((np.real(S_inv), np.imag(S_inv)))
     r2 = 1 - np.sum(residuals**2) / np.sum((flat_S_inv - np.mean(flat_S_inv))**2)
+    if not plot:
+        return p, perr, r2, None
     dof = len(residuals) - len(p)
     fig = plt.figure(figsize=(12, 6), tight_layout=True)
     axes = [fig.add_subplot(121), fig.add_subplot(222), fig.add_subplot(224)]
