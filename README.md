@@ -18,7 +18,7 @@ Install this package with `pip`:
 pip install clelandlab-quick
 ```
 
-> It is recommended to use a conda environment.
+Then you can import it in your Python code:
 
 ```python
 import quick
