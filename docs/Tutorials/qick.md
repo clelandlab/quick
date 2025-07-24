@@ -57,7 +57,7 @@ gateway 192.168.1.1
 
 **Triple check before saving the file! You will need to redo everything in this tutorial if you made a typo here.**
 
-Restart the QICK board to let the changes take effect.
+Restart the QICK board (by command `reboot`) to let the changes take effect.
 
 ## Install qick
 
@@ -82,4 +82,20 @@ sudo chmod +x install.sh && sudo ./install.sh
 ```
 
 Wait until the installation is complete. The script will ask you to set up a host name.
+
+## Soft Reboot
+
+Sometimes the QICK programs freeze when you run an experiment. This is typically caused by shutting down the board by turning off the power supply. To fix this, restart the board using soft reboot:
+
+Login to the QICK board via ssh: (password is `xilinx`)
+
+```
+ssh xilinx@$IP
+```
+
+Restart the board from the operating system:
+
+```
+sudo reboot
+```
 
