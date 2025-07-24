@@ -78,8 +78,7 @@ ssh xilinx@$IP
 On the QICK board, run the installation script:
 
 ```
-sudo chmod +x install.sh
-sudo ./install.sh
+sudo chmod +x install.sh && sudo ./install.sh
 ```
 
 Wait until the installation is complete. The script will ask you to set up a host name.
