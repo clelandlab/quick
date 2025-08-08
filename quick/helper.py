@@ -136,6 +136,13 @@ class Saver:
         with open(self.file_name + '.csv', 'a+') as f:
             np.savetxt(f, data, fmt="%.9e", delimiter=',')
         # self.write_yml() # do not call it every time for efficiency
+    def overwrite_data(self, data): #for use with VNA for averaging
+        self.has_data = True
+        with open(self.file_name + '.csv', 'w+') as f:
+            np.savetxt(f, data, fmt="%.9e", delimiter=',')
+    def update_params(self, params):
+        self.params.update(params)
+        self.write_yml()
 
 def dB2gain(dB):
     return 10 ** (dB / 20)
