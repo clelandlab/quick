@@ -33,7 +33,7 @@ setup(
     packages=find_packages(where="."),
     python_requires=">=3.6, <4",
     install_requires=[
-        "qick==0.2.348",
+        "qick==0.2.357",
         "numpy",
         "scipy",
         "pyyaml",
