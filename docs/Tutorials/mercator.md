@@ -144,6 +144,7 @@ Defines the sequence of operations. Steps are specified with a flat `i_` prefix 
 ```
 
 **Step Types**:
+
 - `pulse`: Play pulse `p` on generator `g`.
 - `trigger`: Trigger readout on channels `rs` (defaults to all).
 - `wait`: Wait until absolute time `t`.
@@ -170,7 +171,7 @@ The `goto` step jumps to another step to repeat a block of operations.
 0_rep: 0           # Repetition count for this jump.
 ```
 
-> Note: `goto` is not a real-time jump. It unrolls the loop during Python compilation, generating a linear sequence.
+> Note: `goto` is not a runtime jump. It unrolls the loop during Python compilation, generating a linear sequence.
 
 ### Conditional Pulse
 
@@ -191,7 +192,7 @@ The protocol supports conditional pulses (e.g., for active reset) that execute b
 
 In this example, the pulse `p1` at step 6 is played only if the I-data from readout channel `r: 0` (triggered at step 3) is above the `threshold`.
 
-### Syntax Sugar
+### Syntax Sugar (Recommended)
 
 The `steps` list is a convenient alternative to the flat `i_` format. The `Mercator` class first flattens this list into the `i_` format. Any explicit `i_` properties will override values from the flattened list, allowing for a hybrid approach.
 
