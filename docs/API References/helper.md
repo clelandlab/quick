@@ -169,16 +169,15 @@ Write data to a data saver. The data will be **immediately appended** to the dat
 **Example**:
 
 ```python
-path = "path/to/directory/"
-indep_params = [("Frequency", "MHz")]               # a list of ("Name", "Unit")
-dep_params = [("Amplitude", "dB"), ("Data", "")]    # a list of ("Name", "Unit")
-params = { "res_ch": 6, "ro_chs": [0], "reps": 1 }  # any dictionary
-s = quick.Saver("Test Saving", path, indep_params, dep_params, params)
-data = [ # data to save is a 2D array
+s = quick.Saver("Test Saving", "path/to/directry",
+                indep_params=[("Frequency", "MHz")],             # a list of ("Name", "Unit")
+                dep_params=[("Amplitude", "dB"), ("Data", "")],  # a list of ("Name", "Unit")
+                params={"quick.__version__": quick.__version__}  # any meta information
+                )
+s.write_data([ # data to save is a 2D array: a list of rows
     [1, 100, 200],  # match "Frequency", "Amplitude", "Data" in order
     [1.5, 101, 201] # defined in indep_params and dep_params
-]
-s.write_data(data)
+])
 # OPTIONAL: after complete, call s.write_yml()
 s.write_yml() # this will update the completed time.
 ```
