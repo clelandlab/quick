@@ -180,6 +180,7 @@ s.write_data([ # data to save is a 2D array: a list of rows
 ])
 # OPTIONAL: after complete, call s.write_yml()
 s.write_yml() # this will update the completed time.
+print(s.file_name + ".csv") # the full path of data file.
 ```
 
 ## 🔵dB2gain
