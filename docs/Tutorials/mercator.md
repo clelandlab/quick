@@ -60,6 +60,8 @@ soft_avg: 1        # Software (Python) averages.
 rep: 0             # Repetitions without averaging (returns all data).
 ```
 
+> `hard_avg` and `rep` are incompatible with time-series acquisition `acquire_decimated`.
+
 ## Pulse Setup
 
 Define pulses. Properties are prefixed with `px_`, where `x` is the pulse index (e.g., `p0_`).
