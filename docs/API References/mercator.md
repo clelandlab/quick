@@ -52,7 +52,7 @@ Acquire time-series data. Use `m.get_time_axis(ro_index)` to get the time data i
 
 **Return**:
 
-- `I` (np.ndarray) I data, same shape as returned by `acquire`, plus an extra time-series dimension.
+- `I` (np.ndarray) I data, at least 2 dimensions. Axis 0 matches the index (**NOT channel number**) of defined readout channels. If `rep` is not 0, the next axis will be the repetition index. If triggering more than once, the next axis matches the index of triggering. The last axis is the time-series dimension.
 - `Q` (np.ndarray) Q data, same shape as `I`.
 
 ### 🔵Mercator.light
