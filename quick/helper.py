@@ -137,8 +137,11 @@ class Saver:
             np.savetxt(f, data, fmt="%.9e", delimiter=',')
         # self.write_yml() # do not call it every time for efficiency
 
-def dB2gain(dB):
-    return 10 ** (dB / 20)
+def dB2gain(dB, ref_gain=1, ref_dB=None):
+    return ref_gain * 10 ** (dB / 20) if ref_dB is None else 10 ** ((dB + ref_dB) / 20)
+
+def gain2dB(gain, ref_gain=1, ref_dB=None):
+    return 20 * np.log10(gain / ref_gain) if ref_dB is None else 20 * np.log10(gain) - ref_dB
 
 def evalStr(s, var, _var=None):
     return eval(f"f'''{s}'''", _var, var)

@@ -28,7 +28,7 @@ class BaseExperiment:
         for k, v in kwargs.items():
             if k in self.var:
                 self.var[k] = v
-                if np.iterable(v):
+                if np.iterable(v) and not isinstance(v, str):
                     self.sweep[k] = v
                     self.var[k] = v[0]
             else:

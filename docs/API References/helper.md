@@ -186,18 +186,38 @@ print(s.file_name + ".csv") # the full path of data file.
 ## 🔵dB2gain
 
 ```python
-gain = quick.dB2gain(dB)
+gain = quick.dB2gain(dB, ref_gain=1, ref_dB=None)
 ```
 
-Convert power from dB unit to QICK board gain. 0 dB is the maximum gain.
+Convert power from dB unit to gain value. By default, 0 dB corresponds to gain of 1.
 
 **Parameters**:
 
 - `dB` (float) power value in dB unit.
+- `ref_gain=1` (float) reference gain value.
+- `ref_dB=None` (float) reference power value in dB unit. If provided, `ref_gain` will be ignored.
 
 **Returns**:
 
 - `gain` (float) value of gain
+
+## 🔵gain2dB
+
+```python
+power_dB = quick.gain2dB(gain, ref_gain=1, ref_dB=None)
+```
+
+Convert power from gain value to dB unit. By default, gain of 1 corresponds to 0 dB.
+
+**Parameters**:
+
+- `gain` (float) gain value.
+- `ref_gain=1` (float) reference gain value.
+- `ref_dB=None` (float) reference power value in dB unit. If provided, `ref_gain` will be ignored.
+
+**Returns**:
+
+- `power_dB` (float) power value in dB unit
 
 ## 🟢evalStr
 
