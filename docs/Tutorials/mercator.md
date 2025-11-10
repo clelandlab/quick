@@ -70,7 +70,7 @@ Define pulses. Properties are prefixed with `px_`, where `x` is the pulse index 
 p0_freq: 5000      # (REQUIRED) Frequency (MHz).
 p0_gain: 0         # Gain [-1, 1].
 p0_nqz: 2          # Nyquist zone [1|2]. Use 1 for DC/low frequencies.
-p0_mode: oneshot   # Pulse mode: `oneshot` or `periodic`(continue to run even after the program ends).
+p0_mode: oneshot   # Pulse mode: `oneshot` or `periodic`
 p0_style: const    # Pulse style: `const`, `gaussian`, `DRAG`, `flat_top`, `stage`, `arb`.
 p0_phase: 0        # Phase (degrees).
 p0_length: 2       # Length (µs).
@@ -89,6 +89,10 @@ p0_power: -30      # internally use quick.dB2gain, will overwrite `p0_gain`.
 p0_sigma: 0.05     # Gaussian std (µs) for `gaussian`/`DRAG`/`flat_top`. Defaults to p0_length/5.
 p0_phrst: 0        # Phase coherent reset [0|1].
 ```
+
+**Periodic Pulse**:
+
+When `p0_mode` is set to `periodic`, the pulse repeats continuously even after the end of the pulse sequence. It will indefinitely run until a `oneshot` pulse is emitted from the same generator to overwrite it. To stop it, you can manually call `soc.reset_gens()` in Python to stop all generators.
 
 **Multiplexed (mux) Pulse**:
 
