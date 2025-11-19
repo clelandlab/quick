@@ -264,6 +264,32 @@ v = dict(quick.experiment.var) # default variables dictionary
 cfg = yaml.safe_load(quick.evalStr(mercator_protocol, v))
 ```
 
+## 🔵safe_wrap
+
+```python
+@quick.safe_wrap(retry=3, timeout=300)
+```
+
+Decorator generator to wrap a function with retry and timeout mechanism. If failed, it will raise the last exception.
+
+**Parameters**:
+
+- `retry=3` (int) number of retries if exception occurs.
+- `timeout=300` (int) timeout in seconds for each function call.
+
+**Return**:
+
+Decorator function to wrap the target function.
+
+**Example**:
+
+```python
+@quick.safe_wrap(retry=3, timeout=300)
+def critical_addition(a, b):
+    # do something critical that may fail
+    return a + b
+```
+
 ## 🔵symmetryCenter
 
 ```python

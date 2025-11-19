@@ -146,7 +146,7 @@ def gain2dB(gain, ref_gain=1, ref_dB=None):
 def evalStr(s, var, _var=None):
     return eval(f"f'''{s}'''", _var, var)
 
-def safe(retry, timeout):
+def safe_wrap(retry=3, timeout=300):
     def decorator(f):
         def _run(q, *a, **kw):
             try:
