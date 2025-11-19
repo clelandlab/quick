@@ -1,4 +1,5 @@
 import numpy as np
+from multiprocessing import Process, Queue
 from scipy.optimize import minimize, curve_fit, leastsq
 from scipy import interpolate, stats
 import matplotlib.pyplot as plt

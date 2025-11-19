@@ -1,5 +1,4 @@
 from qick.asm_v2 import AveragerProgramV2, QickSweep1D, AsmV2
-from multiprocessing import Process, Queue
 from .helper import dB2gain
 import numpy as np
 import matplotlib.pyplot as plt
