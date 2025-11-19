@@ -146,6 +146,31 @@ def gain2dB(gain, ref_gain=1, ref_dB=None):
 def evalStr(s, var, _var=None):
     return eval(f"f'''{s}'''", _var, var)
 
+def safe(retry, timeout):
+    def decorator(f):
+        def _run(q, *a, **kw):
+            try:
+                q.put(('R', f(*a, **kw)))
+            except Exception as e:
+                q.put(('E', e))
+        def wrap(*a, **kw):
+            last_error = TimeoutError("All retries and timeouts exceeded")
+            for _ in range(retry + 1):
+                q = Queue()
+                p = Process(target=_run, args=(q,) + a, kwargs=kw)
+                p.start()
+                p.join(timeout)
+                if p.is_alive():
+                    p.terminate()
+                    last_error = TimeoutError("Function timeout")
+                elif not q.empty():
+                    s, res = q.get()
+                    if s == 'R': return res
+                    last_error = res
+            raise last_error
+        return wrap
+    return decorator
+
 def symmetryCenter(x, y, it=3):
     L = len(y)
     R = int(L / 2)
