@@ -102,31 +102,6 @@ def parse(soccfg, cfg):
     cfg["rep"] = cfg.get("rep", 0)
     return c
 
-def try_retry(retry, timeout):
-    def decorator(f):
-        def _run(q, *a, **kw):
-            try:
-                q.put(('R', f(*a, **kw)))
-            except Exception as e:
-                q.put(('E', e))
-        def wrap(*a, **kw):
-            last_error = TimeoutError("All retries and timeouts exceeded")
-            for _ in range(retry + 1):
-                q = Queue()
-                p = Process(target=_run, args=(q,) + a, kwargs=kw)
-                p.start()
-                p.join(timeout)
-                if p.is_alive():
-                    p.terminate()
-                    last_error = TimeoutError("Function timeout")
-                elif not q.empty():
-                    s, res = q.get()
-                    if s == 'R': return res
-                    last_error = res
-            raise last_error
-        return wrap
-    return decorator
-
 class Mercator(AveragerProgramV2):
     """General class for preparing and sending a pulse sequence."""
     def _initialize(self, cfg):
