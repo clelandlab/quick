@@ -288,6 +288,8 @@ Decorator function to wrap the target function.
 def critical_addition(a, b):
     # do something critical that may fail
     return a + b
+
+critical_addition(1, 2) # will retry up to 3 times with timeout of 300s each time
 ```
 
 ## 🔵symmetryCenter
