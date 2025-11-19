@@ -275,7 +275,7 @@ Decorator generator to wrap a function with retry and timeout mechanism. If fail
 **Parameters**:
 
 - `retry=3` (int) number of retries if exception occurs.
-- `timeout=300` (int) timeout in seconds for each function call.
+- `timeout=300` (float) timeout in seconds for each function call.
 
 **Return**:
 
@@ -284,7 +284,7 @@ Decorator function to wrap the target function.
 **Example**:
 
 ```python
-@quick.safe_wrap(retry=3, timeout=300)
+@quick.safe_wrap()
 def critical_addition(a, b):
     # do something critical that may fail
     return a + b
