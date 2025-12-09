@@ -59,6 +59,7 @@ LoopBack: |
 ResonatorSpectroscopy: |
   hard_avg: 300
   p0_freq: {r_freq}
+  p0_mixer: {int(r_freq/1000)*1000+500}
   p0_length: {r_length}
   p0_power: {r_power}
   r{rr}_p: 0
@@ -166,6 +167,7 @@ IQScatter: |
 DispersiveSpectroscopy: |
   hard_avg: 1000
   p0_freq: {r_freq}
+  p0_mixer: {int(r_freq/1000)*1000+500}
   p0_length: {r_length}
   p0_power: {r_power}
   p1_style: gaussian

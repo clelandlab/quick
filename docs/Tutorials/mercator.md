@@ -94,6 +94,10 @@ p0_sigma: 0.05     # Gaussian std (µs) for `gaussian`/`DRAG`/`flat_top`. Defaul
 p0_phrst: 0        # Phase coherent reset [0|1].
 ```
 
+**Mixer Frequency on Interpolated Channels**:
+
+To achieve phase coherence during readout pulse frequency sweeping on interpolated channels, set `p0_mixer` to a fixed value (in the middle of the sweeping range). If your sweeping range is wider than 1000 MHz, consider set `p0_mixer` to `int(p0_freq/1000)*1000 + 500`. You don't need to fix `mixer` for non-readout pulses or non-interpolated channels.
+
 **Periodic and Last Pulse**:
 
 When `p0_mode` is set to `periodic`, the pulse repeats continuously even after the end of the pulse sequence. When `p0_mode` is set to `last`, the last pulse sample will continue after the pulse ended. In both cases, it will indefinitely run until another pulse is emitted from the same generator to overwrite it. To stop it, you can manually call `soc.reset_gens()` in Python to stop all generators.
