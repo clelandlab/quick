@@ -28,6 +28,10 @@ def generate_waveform(o, soccfg):
     if o["style"] == "DRAG":
         δ = -o["delta"] / (samps_per_clk * f_fabric)
         o["qdata"] = 0.5 * (x - μ) / (2 * σ ** 2) * o["idata"] / δ
+    if o.get("idata") is not None:
+        o["idata"] = np.array(o["idata"]) * (1 - o["ibias"]) + o["ibias"]
+    if o.get("qdata") is not None:
+        o["qdata"] = np.array(o["qdata"]) * (1 - o["qbias"]) + o["qbias"]
 
 def parse(soccfg, cfg):
     """
@@ -72,6 +76,7 @@ def parse(soccfg, cfg):
         c["g"][o["g"]]["mixer"] = c["g"][o["g"]].get("mixer", cfg.get(f"p{p}_mixer", None))
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
         o["phrst"] = cfg.get(f"p{p}_phrst", 0)
+        o["stdysel"] = cfg.get(f"p{p}_stdysel", "zero")
         o["style"] = cfg.get(f"p{p}_style", "const")
         o["length"] = cfg.get(f"p{p}_length", 2)
         o["sigma"] = cfg.get(f"p{p}_sigma", o["length"] / 5)
@@ -82,9 +87,14 @@ def parse(soccfg, cfg):
         o["stage"] = cfg.get(f"p{p}_stage", [])
         o["idata"] = np.array(cfg[f"p{p}_idata"]) if cfg.get(f"p{p}_idata") is not None else None
         o["qdata"] = np.array(cfg[f"p{p}_qdata"]) if cfg.get(f"p{p}_qdata") is not None else None
+        o["ibias"] = cfg.get(f"p{p}_ibias", 0)
+        o["qbias"] = cfg.get(f"p{p}_qbias", 0)
         if cfg.get(f"p{p}_power", None) is not None:
             o["gain"] = dB2gain(cfg[f"p{p}_power"])
             cfg[f"p{p}_gain"] = o["gain"] # write back computed gain
+        if o["style"] == "flat_top": # not supporting mode/stdysel
+            o["mode"] = "oneshot"
+            o["stdysel"] = "zero"
         generate_waveform(o, soccfg)
     for r in range(10): # find all readout channels
         if f"r{r}_p" in cfg or f"r{r}_freq" in cfg:
@@ -129,21 +139,21 @@ class Mercator(AveragerProgramV2):
             else: # mux readout
                 self.declare_readout(ch=r, length=o["length"], **kwargs)
         for p, o in c["p"].items(): # Setup pulses
-            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"] }
+            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"], "mode": o["mode"], "stdysel": o["stdysel"] }
             if not np.iterable(o["freq"]): # single tone
                 kwargs["phrst"] = o["phrst"]
-            if o["style"] == "const":
-                kwargs["mode"] = o["mode"]
-                if o["mask"] is not None: # mux mask
-                    kwargs["mask"] = o["mask"]
-                    for k in ["freq", "ro_ch", "mode", "phase", "gain"]:
-                        kwargs.pop(k, None)
-            else: # non-const pulse
+            if o["style"] == "const" and o["mask"] is not None: # mux mask
+                kwargs["mask"] = o["mask"]
+                for k in ["freq", "ro_ch", "mode", "phase", "gain"]:
+                    kwargs.pop(k, None)
+            if o["style"] != "const":
                 kwargs["envelope"] = f"e{p}"
                 maxv = self.soccfg.get_maxv(o["g"])
                 idata = None if o["idata"] is None else maxv * np.array(o["idata"])
                 qdata = None if o["qdata"] is None else maxv * np.array(o["qdata"])
                 self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata)
+            if o["style"] == "flat_top":
+                kwargs.pop("mode", None) # no support
             if o["style"] in ["flat_top", "const"]:
                 kwargs["length"] = o["length"]
             else:
@@ -191,33 +201,48 @@ class Mercator(AveragerProgramV2):
         fig, ax = plt.subplots()
         c = self.c
         data = {} # plot data
+        last = {} # last pulse in each generator
         for g in range(15, -1, -1):
             if g in c["g"]:
                 data[g] = [[0, 0]]
-        delays = [0] # all t are absolute
-        delay = pulse_until = 0
-        generator_until = np.zeros(17)
-        periodic = {}
-        r_label = {}
-        def add_pulse(p, g, start, first=True):
-            us = self.cycles2us(1, gen_ch=g) / self.soccfg["gens"][g]["samps_per_clk"]
+                last[g] = { "mode": "oneshot", "stdysel": "zero", "end": 0 }
+        delays = [0] # for plot, all t are absolute
+        r_labeled = {} # for plot
+        delay = 0 # current time reference
+        wait = 0 # wait until time
+        until = 0 # last pulse/readout end time
+        def add_pulse(p, g, start, new_pulse=True): # return end time
+            cycle = self.cycles2us(1, gen_ch=g)
+            us = cycle / self.soccfg["gens"][g]["samps_per_clk"]
+            if new_pulse and last[g]["mode"] == "periodic":
+                while last[g]["end"] < start:
+                    add_pulse(last[g]["p"], g, last[g]["end"] + cycle, new_pulse=False)
+            start = max(start, last[g]["end"])
+            if last[g]["stdysel"] == "last":
+                data[g].append([start, last[g]["value"]])
             o = c["p"][p]
+            last[g] = { "p": p, "mode": o["mode"], "stdysel": o["stdysel"] }
             gain = o["gain"][0] if np.iterable(o["gain"]) else o["gain"]
-            if first:
-                data[g].append([start, 0])
-                ax.annotate(f"p{p}", (start, gain + 0.05))
+            if new_pulse:
+                ax.annotate(f"p{p}", (start, gain + 0.05 if gain >= 0 else gain - 0.1))
             if o["idata"] is not None:
                 l = o["length"] if o["style"] == "flat_top" else 0
                 end = start + l + len(o["idata"]) * us
                 h = len(o["idata"]) // 2
                 data[g].extend(list(zip(np.arange(h)*us + start, gain * np.array(o["idata"])[:h])))
                 data[g].extend(list(zip(np.arange(h)*us + start + l + h*us, gain * np.array(o["idata"])[h:])))
+                if o["stdysel"] == "last":
+                    last[g]["value"] = gain * o["idata"][-1]
             else:
                 end = start + o["length"]
+                if new_pulse:
+                    data[g].append([start, 0])
                 data[g].extend([[start, gain], [end, gain]])
-            if o["mode"] != "periodic":
-                data[g].append([end, 0])
-            periodic[g] = (o["mode"] == "periodic" and p)
+                if o["stdysel"] == "last":
+                    last[g]["value"] = gain
+                if o["mode"] != "periodic" and o["stdysel"] != "last":
+                    data[g].append([end, 0])
+            last[g]["end"] = end
             return end
         goto_rep = {}
         i = 0
@@ -226,40 +251,38 @@ class Mercator(AveragerProgramV2):
             start = delay + o["t"]
             end = start
             if o["type"] == "pulse":
-                start = max(start, generator_until[o["g"]])
+                start = max(start, wait, last[o["g"]]["end"])
                 end = add_pulse(o["p"], o["g"], start)
-                generator_until[o["g"]] = max(generator_until[o["g"]], end)
-                pulse_until = max(pulse_until, end)
+                until = max(until, end)
             if o["type"] == "delay":
                 delay = delay + o["t"]
                 delays.append(delay)
             if o["type"] == "delay_auto":
-                delay = max(pulse_until, delay) + o["t"]
+                delay = max(until, delay) + o["t"]
                 delays.append(delay)
             if o["type"] == "wait":
-                for k in range(len(generator_until)):
-                    generator_until[k] = max(generator_until[k], start)
+                wait = wait + o["t"]
             if o["type"] == "wait_auto":
-                end = start = pulse_until + o["t"]
-                for k in range(len(generator_until)):
-                    generator_until[k] = max(generator_until[k], start)
+                wait = max(until, delay) + o["t"]
             if o["type"] == "trigger":
                 for r in (o["rs"] or c["r"]):
                     end = start + c["r"][r]["length"]
-                    pulse_until = max(end, pulse_until)
-                    ax.axvspan(xmin=start, xmax=end, color=('r' if r == 0 else 'b'), alpha=0.1, label=(None if r_label.get(r) else f"r{r}"))
-                    r_label[r] = True
+                    until = max(end, until)
+                    ax.axvspan(xmin=start, xmax=end, color=('r' if r == 0 else 'b'), alpha=0.1, label=(None if r_labeled.get(r) else f"r{r}"))
+                    r_labeled[r] = True
             if o["type"] == "goto":
                 goto_rep[i] = goto_rep.get(i, o["rep"]) - 1
                 i = o["i"] if goto_rep[i] >= 0 else i + 1
             else:
                 i = i + 1
-        final = max(pulse_until, delay)
+        final = max(until, delay)
         for g in data:
-            if periodic.get(g) is not False:
-                end = data[g][-1][0]
-                while end < final:
-                    end = add_pulse(periodic[g], g, end + 1, False)
+            cycle = self.cycles2us(1, gen_ch=g)
+            if last[g]["mode"] == "periodic":
+                while last[g]["end"] < final:
+                    add_pulse(last[g]["p"], g, last[g]["end"] + cycle, new_pulse=False)
+            elif last[g]["stdysel"] == "last":
+                data[g].append([final, last[g]["value"]])
             else:
                 data[g].append([final, 0])
             xy = np.transpose(data[g])
