@@ -76,7 +76,6 @@ def parse(soccfg, cfg):
         c["g"][o["g"]]["mixer"] = c["g"][o["g"]].get("mixer", cfg.get(f"p{p}_mixer", None))
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
         o["phrst"] = cfg.get(f"p{p}_phrst", 0)
-        o["stdysel"] = cfg.get(f"p{p}_stdysel", "zero")
         o["style"] = cfg.get(f"p{p}_style", "const")
         o["length"] = cfg.get(f"p{p}_length", 2)
         o["sigma"] = cfg.get(f"p{p}_sigma", o["length"] / 5)
@@ -92,9 +91,8 @@ def parse(soccfg, cfg):
         if cfg.get(f"p{p}_power", None) is not None:
             o["gain"] = dB2gain(cfg[f"p{p}_power"])
             cfg[f"p{p}_gain"] = o["gain"] # write back computed gain
-        if o["style"] == "flat_top": # not supporting mode/stdysel
+        if o["style"] == "flat_top": # not supporting mode
             o["mode"] = "oneshot"
-            o["stdysel"] = "zero"
         generate_waveform(o, soccfg)
     for r in range(10): # find all readout channels
         if f"r{r}_p" in cfg or f"r{r}_freq" in cfg:
@@ -126,7 +124,7 @@ class Mercator(AveragerProgramV2):
                     kwargs["mux_gains"] = np.array(c["p"][o["p"]]["gain"]) * mux_gain_factor[len(o["freq"])]
                     kwargs["mux_phases"] = c["p"][o["p"]]["phase"]
                 else: # single tone
-                    kwargs["mixer_freq"] = o["mixer"] or int(o["freq"] / 100) * 100
+                    kwargs["mixer_freq"] = o["mixer"] or o["freq"]
             self.declare_gen(ch=g, nqz=o["nqz"], **kwargs)
         for r, o in c["r"].items(): # Declare Readout Channels
             kwargs = { "phase": o["phase"], "freq": o["freq"] }
@@ -139,7 +137,12 @@ class Mercator(AveragerProgramV2):
             else: # mux readout
                 self.declare_readout(ch=r, length=o["length"], **kwargs)
         for p, o in c["p"].items(): # Setup pulses
-            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"], "mode": o["mode"], "stdysel": o["stdysel"] }
+            kwargs = { "style": o["style"], "ro_ch": o["r"], "freq": o["freq"], "phase": o["phase"], "gain": o["gain"] }
+            if o["mode"] == "last":
+                kwargs["stdysel"] = "last"
+                kwargs["mode"] = "oneshot"
+            else:
+                kwargs["mode"] = o["mode"]
             if not np.iterable(o["freq"]): # single tone
                 kwargs["phrst"] = o["phrst"]
             if o["style"] == "const" and o["mask"] is not None: # mux mask
@@ -205,7 +208,7 @@ class Mercator(AveragerProgramV2):
         for g in range(15, -1, -1):
             if g in c["g"]:
                 data[g] = [[0, 0]]
-                last[g] = { "mode": "oneshot", "stdysel": "zero", "end": 0 }
+                last[g] = { "mode": "oneshot", "end": 0 }
         delays = [0] # for plot, all t are absolute
         r_labeled = {} # for plot
         delay = 0 # current time reference
@@ -218,10 +221,10 @@ class Mercator(AveragerProgramV2):
                 while last[g]["end"] < start:
                     add_pulse(last[g]["p"], g, last[g]["end"] + cycle, new_pulse=False)
             start = max(start, last[g]["end"])
-            if last[g]["stdysel"] == "last":
+            if last[g]["mode"] == "last":
                 data[g].append([start, last[g]["value"]])
             o = c["p"][p]
-            last[g] = { "p": p, "mode": o["mode"], "stdysel": o["stdysel"] }
+            last[g] = { "p": p, "mode": o["mode"] }
             gain = o["gain"][0] if np.iterable(o["gain"]) else o["gain"]
             if new_pulse:
                 ax.annotate(f"p{p}", (start, gain + 0.05 if gain >= 0 else gain - 0.1))
@@ -231,16 +234,15 @@ class Mercator(AveragerProgramV2):
                 h = len(o["idata"]) // 2
                 data[g].extend(list(zip(np.arange(h)*us + start, gain * np.array(o["idata"])[:h])))
                 data[g].extend(list(zip(np.arange(h)*us + start + l + h*us, gain * np.array(o["idata"])[h:])))
-                if o["stdysel"] == "last":
+                if o["mode"] == "last":
                     last[g]["value"] = gain * o["idata"][-1]
             else:
                 end = start + o["length"]
                 if new_pulse:
                     data[g].append([start, 0])
                 data[g].extend([[start, gain], [end, gain]])
-                if o["stdysel"] == "last":
+                if o["mode"] == "last":
                     last[g]["value"] = gain
-                if o["mode"] != "periodic" and o["stdysel"] != "last":
                     data[g].append([end, 0])
             last[g]["end"] = end
             return end
@@ -281,7 +283,7 @@ class Mercator(AveragerProgramV2):
             if last[g]["mode"] == "periodic":
                 while last[g]["end"] < final:
                     add_pulse(last[g]["p"], g, last[g]["end"] + cycle, new_pulse=False)
-            elif last[g]["stdysel"] == "last":
+            elif last[g]["mode"] == "last":
                 data[g].append([final, last[g]["value"]])
             else:
                 data[g].append([final, 0])

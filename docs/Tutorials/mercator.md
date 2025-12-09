@@ -70,8 +70,7 @@ Define pulses. Properties are prefixed with `px_`, where `x` is the pulse index 
 p0_freq: 5000      # (REQUIRED) Frequency (MHz).
 p0_gain: 0         # Gain [-1, 1].
 p0_nqz: 2          # Nyquist zone [1|2]. Use 1 for DC/low frequencies.
-p0_mode: oneshot   # Pulse mode: `oneshot` or `periodic`
-p0_stdysel: zero   # End behavior: `zero` (default) or `last` (keep outputting the last value)
+p0_mode: oneshot   # Pulse mode: `oneshot` or `periodic` or `last`
 p0_style: const    # Pulse style: `const`, `gaussian`, `DRAG`, `flat_top`, `stage`, `arb`.
 p0_phase: 0        # Phase (degrees).
 p0_length: 2       # Length (µs).
@@ -85,7 +84,7 @@ p0_ibias: 0        # I bias value (DAC samples, [-1, 1]).
 p0_qbias: 0        # Q bias value (DAC samples, [-1, 1]).
 ```
 
-> Note: `mode` and `stdysel` are not applicable for flat_top pulses. `ibias` and `qbias` are not applicable for `const` pulses.
+> Note: `mode` is not applicable for flat_top pulses. `ibias` and `qbias` are not applicable for `const` pulses.
 
 **Syntax Sugar** (optional):
 
@@ -95,9 +94,9 @@ p0_sigma: 0.05     # Gaussian std (µs) for `gaussian`/`DRAG`/`flat_top`. Defaul
 p0_phrst: 0        # Phase coherent reset [0|1].
 ```
 
-**Periodic Pulse**:
+**Periodic and Last Pulse**:
 
-When `p0_mode` is set to `periodic`, the pulse repeats continuously even after the end of the pulse sequence. It will indefinitely run until another pulse is emitted from the same generator to overwrite it. To stop it, you can manually call `soc.reset_gens()` in Python to stop all generators.
+When `p0_mode` is set to `periodic`, the pulse repeats continuously even after the end of the pulse sequence. When `p0_mode` is set to `last`, the last pulse sample will continue after the pulse ended. In both cases, it will indefinitely run until another pulse is emitted from the same generator to overwrite it. To stop it, you can manually call `soc.reset_gens()` in Python to stop all generators.
 
 **Multiplexed (mux) Pulse**:
 
