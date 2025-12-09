@@ -243,8 +243,8 @@ class Mercator(AveragerProgramV2):
                 data[g].extend([[start, gain], [end, gain]])
                 if o["mode"] == "last":
                     last[g]["value"] = gain
-                if o["mode"] not in ["last", "periodic"]:
-                    data[g].append([end, 0])
+            if o["mode"] not in ["last", "periodic"]:
+                data[g].append([end, 0])
             last[g]["end"] = end
             return end
         goto_rep = {}
