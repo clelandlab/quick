@@ -82,9 +82,9 @@ quick.experiment.ResonatorSpectroscopy(
   title=f"VNA-like {int(v['r_freq'])}",
   r_freq=np.arange(v["r_freq"] - 2, v["r_freq"] + 2, 0.05),
   # use continuous pulse and long readout window (213.33 us is the longest readout)
-  p0_mode="periodic", r0_length=213, hard_avg=10
+  p0_stdysel="last", r0_length=213, hard_avg=10
 ).run()
-quick.experiment.LoopBack(var=v).run(silent=True) # stop the continuous pulse
+soc.reset_gens() # stop continuous pulse
 ```
 
 ## Qubit Spectroscopy
