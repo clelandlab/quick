@@ -1,6 +1,6 @@
 # QuICK
 
-QuICK is a useful wrap of [QICK](https://github.com/openquantumhardware/qick).
+QuICK is a universal wrap of [QICK](https://github.com/openquantumhardware/qick).
 
 <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center;">
   <a style="margin: 0.25rem; display: block;" href="https://clelandlab-quick.readthedocs.io/en/latest/"><img src="https://img.shields.io/readthedocs/clelandlab-quick?style=for-the-badge&logo=readthedocs&logoColor=white"></a>
