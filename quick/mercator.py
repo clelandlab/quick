@@ -187,6 +187,7 @@ class Mercator(AveragerProgramV2):
                 i = o["i"] if goto_rep[i] >= 0 else i + 1
             else:
                 i = i + 1
+        self.wait_auto(0) # always wait until the end of the cycle
 
     def __init__(self, soccfg, cfg):
         self.c = parse(soccfg, cfg)
