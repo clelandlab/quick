@@ -16,7 +16,8 @@ def generate_waveform(o, soccfg):
     if o["style"] in ["gaussian", "flat_top", "DRAG"]:
         x = np.arange(0, l)
         μ = l/2 - 0.5
-        o["idata"] = np.exp(-(x - μ) ** 2 / σ ** 2)
+        y = np.exp(-(x - μ) ** 2 / σ ** 2)
+        o["idata"] = (y - y[0]) / (1 - y[0])
     if o["style"] == "stage":
         o["idata"] = np.zeros(int(σ * 4))
         for s in o["stage"]:
@@ -298,4 +299,4 @@ class Mercator(AveragerProgramV2):
         ax.set_ylabel("Gain")
         ax.set_ylim([-1.05, 1.2])
         ax.grid()
-        return fig
+        return fig, data
