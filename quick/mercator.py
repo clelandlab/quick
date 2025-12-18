@@ -299,4 +299,4 @@ class Mercator(AveragerProgramV2):
         ax.set_ylabel("Gain")
         ax.set_ylim([-1.05, 1.2])
         ax.grid()
-        return fig, data
+        return fig
