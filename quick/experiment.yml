@@ -52,7 +52,6 @@ LoopBack: |
     g: {r}
   - type: trigger
     t: {r_offset}
-  - type: wait_auto
   - type: delay_auto
     t: {r_relax}
 
@@ -70,9 +69,8 @@ ResonatorSpectroscopy: |
   0_g: {r}
   1_type: trigger
   1_t: {r_offset}
-  2_type: wait_auto
-  3_type: delay_auto
-  3_t: {r_relax}
+  2_type: delay_auto
+  2_t: {r_relax}
 
 QubitSpectroscopy: |
   hard_avg: 1000
@@ -96,9 +94,8 @@ QubitSpectroscopy: |
   2_g: {r}
   3_type: trigger
   3_t: {r_offset}
-  4_type: wait_auto
-  5_type: delay_auto
-  5_t: {r_relax}
+  4_type: delay_auto
+  4_t: {r_relax}
 
 Rabi: |
   rep: 1000
@@ -125,9 +122,8 @@ Rabi: |
   3_g: {r}
   4_type: trigger
   4_t: {r_offset}
-  5_type: wait_auto
-  6_type: delay_auto
-  6_t: {r_relax}
+  5_type: delay_auto
+  5_t: {r_relax}
 
 IQScatter: |
   rep: 10000
@@ -160,9 +156,8 @@ IQScatter: |
   6_g: {q}
   6_threshold: {r_threshold}
   6_r: {rr}
-  7_type: wait_auto
-  8_type: delay_auto
-  8_t: {r_relax}
+  7_type: delay_auto
+  7_t: {r_relax}
 
 DispersiveSpectroscopy: |
   hard_avg: 1000
@@ -186,9 +181,8 @@ DispersiveSpectroscopy: |
   2_g: {r}
   3_type: trigger
   3_t: {r_offset}
-  4_type: wait_auto
-  5_type: delay_auto
-  5_t: {r_relax}
+  4_type: delay_auto
+  4_t: {r_relax}
 
 T1: |
   rep: 10000
@@ -222,9 +216,8 @@ T1: |
   6_g: {q}
   6_threshold: {r_threshold}
   6_r: {rr}
-  7_type: wait_auto
-  8_type: delay_auto
-  8_t: {r_relax}
+  7_type: delay_auto
+  7_t: {r_relax}
 
 T2Ramsey: |
   rep: 10000
@@ -272,7 +265,6 @@ T2Ramsey: |
     g: {q}
     threshold: {r_threshold}
     r: {rr}
-  - type: wait_auto
   - type: delay_auto
     t: {r_relax}
 
@@ -331,7 +323,6 @@ T2Echo: |
     g: {q}
     threshold: {r_threshold}
     r: {rr}
-  - type: wait_auto
   - type: delay_auto
     t: {r_relax}
 
@@ -356,7 +347,6 @@ QND: |
   - type: delay_auto
     t: {r_reset}
   {get_steps(seq, v=locals())}
-  - type: wait_auto
   - type: delay_auto
     t: {r_relax}
 

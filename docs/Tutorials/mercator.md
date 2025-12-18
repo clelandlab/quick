@@ -217,7 +217,6 @@ steps:
   g: 0
 - type: trigger
   t: 0.5
-- type: wait_auto
 - type: delay_auto
   t: 1
 ```
