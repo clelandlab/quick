@@ -46,7 +46,7 @@ steps: # using syntax sugar here
 
 This program generates the following pulse sequence, plotted by `quick.Mercator.light`:
 
-![](../Images/mercator_light.png)
+![](../Images/mercator_light.svg)
 
 > More examples, often using variable insertion via `quick.evalStr`, are available in the [default experiment programs](https://github.com/clelandlab/quick/blob/main/quick/constants/experiment.yml).
 
