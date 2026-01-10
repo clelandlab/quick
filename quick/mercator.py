@@ -120,12 +120,12 @@ class Mercator(AveragerProgramV2):
             if self.soccfg["gens"][g]["has_mixer"]:
                 kwargs["ro_ch"] = o["r"]
                 if np.iterable(o["freq"]): # mux
-                    kwargs["mixer_freq"] = o["mixer"] or np.mean(o["freq"])
+                    kwargs["mixer_freq"] = np.mean(o["freq"]) if o["mixer"] is None else o["mixer"]
                     kwargs["mux_freqs"] = o["freq"]
                     kwargs["mux_gains"] = np.array(c["p"][o["p"]]["gain"]) * mux_gain_factor[len(o["freq"])]
                     kwargs["mux_phases"] = c["p"][o["p"]]["phase"]
                 else: # single tone
-                    kwargs["mixer_freq"] = o["mixer"] or o["freq"]
+                    kwargs["mixer_freq"] = o["freq"] if o["mixer"] is None else o["mixer"]
             self.declare_gen(ch=g, nqz=o["nqz"], **kwargs)
         for r, o in c["r"].items(): # Declare Readout Channels
             kwargs = { "phase": o["phase"], "freq": o["freq"] }
