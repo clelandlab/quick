@@ -428,7 +428,7 @@ Measure the dispersive spectroscopy.
 ### - DispersiveSpectroscopy.run
 
 ```python
-e.run(silent=False)
+e.run(silent=False, dB=True)
 ```
 
 run the experiment.
@@ -436,6 +436,7 @@ run the experiment.
 **Parameters**:
 
 - `silent=False` (bool) Whether to avoid any printing.
+- `dB=True` (bool) whether to measure amplitude in log scale (dB with normalization).
 
 **Return**:
 

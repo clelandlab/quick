@@ -149,10 +149,10 @@ class IQScatter(BaseExperiment):
         return self.conclude(silent)
 
 class DispersiveSpectroscopy(BaseExperiment):
-    def run(self, silent=False):
+    def run(self, silent=False, dB=True):
         if not silent:
             print(f"quick.experiment({self.key}) Starting")
-        self.prepare(dep_params=[("Amplitude 0", "dB"), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB"), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")])
+        self.prepare(dep_params=[("Amplitude 0", "dB" if dB else ""), ("Phase 0", "rad"), ("I 0", ""), ("Q 0", ""), ("Amplitude 1", "dB" if dB else ""), ("Phase 1", "rad"), ("I 1", ""), ("Q 1", "")])
         for v in helper.Sweep(self.var, self.sweep, progressBar=(not silent)):
             self.eval_config(v)
             indep = []
@@ -170,7 +170,7 @@ class DispersiveSpectroscopy(BaseExperiment):
             self.m = Mercator(self.soccfg, c)
             I0, Q0 = self.m.acquire(self.soc)
             S0 = I0[0][0] + 1j * Q0[0][0]
-            self.add_data([[*indep, 20 * np.log10(np.abs(S0) / c["p0_gain"]), np.angle(S0), np.real(S0), np.imag(S0), 20 * np.log10(np.abs(S1) / c["p0_gain"]), np.angle(S1), np.real(S1), np.imag(S1) ]])
+            self.add_data([[*indep, 20 * np.log10(np.abs(S0) / c["p0_gain"]) if dB else np.abs(S0), np.angle(S0), np.real(S0), np.imag(S0), 20 * np.log10(np.abs(S1) / c["p0_gain"]) if dB else np.abs(S1), np.angle(S1), np.real(S1), np.imag(S1) ]])
         return self.conclude(silent)
 
 class T1(BaseExperiment):
