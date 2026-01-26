@@ -1,11 +1,10 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
 from scipy.optimize import minimize, curve_fit, leastsq
 from scipy import interpolate, stats
-import matplotlib.pyplot as plt
-import yaml, json
+import yaml, json, os, re, ast
 from tqdm.notebook import tqdm
-import os, re, ast
 from datetime import datetime
 import Pyro4
 from qick import QickConfig
@@ -51,46 +50,62 @@ def load_data(*paths):
         data_list.append(d)
     return np.concatenate(data_list)
 
+def feistel_network(i, N, seed): # generate pseudo-random permutation
+    half_bits = (N - 1).bit_length() // 2 + (N - 1).bit_length() % 2
+    limit = 1 << half_bits
+    mask = limit - 1
+    def round_function(val, round_idx): # a variation of a 32-bit MurmurHash-style mixer.
+        x = (val ^ seed ^ round_idx) * 0x45d9f3b
+        x = ((x >> 16) ^ x) * 0x45d9f3b
+        x = (x >> 16) ^ x
+        return x & mask
+    def permute(val):
+        left = val >> half_bits
+        right = val & mask
+        for r in range(5):
+            left, right = right, left ^ round_function(right, r)
+        return (left << half_bits) | right
+    curr = permute(i % N)
+    while curr >= N:
+        curr = permute(curr)
+    return curr
+
 class Sweep:
-    def __init__(self, config, sweepConfig, progressBar=True):
+    def __init__(self, config, sweepConfig, random=False, progressBar=True):
         self.config = dict(config) # Copy config, avoid changing the original
-        self.sweep = [] # [{ 'key': 'key', 'list': [value list], 'index': 0 }]
-        self.done = False
+        self.sweep = [] # [{ "key", "list", "len" }]
         self.progressBar = progressBar
+        self.random = random
         self.total = 1
+        self.index = 0 # iteration index, increase in order
+        self.seed = np.random.randint(2147483647)
         try:
             for k, v in sweepConfig.items():
                 l = list(v)
                 self.total = self.total * len(l)
-                self.sweep.append({ 'key': k, 'list': l, 'index': 0 })
-            self.sweep.reverse() # Match Labrad sweeping sequence
+                self.sweep.append({ "key": k, "list": l, "len": len(l) })
+            self.sweep.reverse()
+            if len(self.sweep) == 0:
+                self.total = 0
         except:
-            print("Invalid Sweep Iterator. \n ")
+            raise("Invalid Sweep Iterator")
     def __iter__(self): # initialze all iterator
-        self.done = False
-        self.start = False
         if self.progressBar:
             self.progress = tqdm(total=self.total, desc='quick.Sweep')
-        for s in self.sweep:
-            s['index'] = 0
+        self.index = 0
         return self
     def __next__(self):
-        if self.progressBar and self.start:
-            self.progress.update()
-        if self.done:
+        if self.index == self.total:
             if self.progressBar:
                 self.progress.close()
             raise StopIteration
-        for s in self.sweep: # Always assemble config first!
-            self.config[s['key']] = s['list'][s['index']]
-        self.done = True
+        if self.progressBar:
+            self.progress.update()
+        i = feistel_network(self.index, self.total, self.seed) if self.random else self.index
         for s in self.sweep:
-            if s['index'] < len(s['list']) - 1:
-                s['index'] += 1
-                self.done = False
-                break
-            s['index'] = 0
-        self.start = True
+            self.config[s["key"]] = s["list"][i % s["len"]]
+            i = i // s["len"]
+        self.index += 1
         return self.config
 
 class Saver:

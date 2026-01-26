@@ -100,7 +100,7 @@ Load arbitrary number of data files (.csv).
 ## 🟢Sweep
 
 ```python
-s = quick.Sweep(config, sweepConfig, progressBar=True)
+s = quick.Sweep(config, sweepConfig, random=False, progressBar=True)
 ```
 
 The *class* to construct an iterable. In each iteration, new dictionary will be generated according to the template dictionary `config` and sweeping list set in `sweepConfig`.
@@ -109,6 +109,7 @@ The *class* to construct an iterable. In each iteration, new dictionary will be 
 
 - `config` (dict) The template dictionary. It will NOT be modified.
 - `sweepConfig` (dict) The sweeping list. See the following example.
+- `random=False` (bool) Whether to randomize the sweeping order.
 - `progressBar=True` (bool) Whether to show progress bar.
 
 **Example**:
@@ -127,6 +128,10 @@ sweepConfig = {
 for cfg in quick.Sweep(config, sweepConfig):
 	print(cfg) # dictionary with values of "a" and "b" modified.
 ```
+
+**Details**:
+
+Randomization uses Feistel network to generate pseudo-random permutation during runtime. It does not cache the permutation. For each instance of `Sweep`, the random order is fixed by using the same seed generated at construction.
 
 ## 🟢Saver
 
