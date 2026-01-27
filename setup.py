@@ -8,7 +8,7 @@ def get_version(rel_path):
 setup(
     name="clelandlab-quick",
     version=get_version("quick/VERSION"),
-    description="QuICK is a useful wrap of QICK.",
+    description="QuICK is a universal wrap of QICK.",
     long_description=(here / "README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     url="https://github.com/clelandlab/quick",
@@ -20,8 +20,6 @@ setup(
         "Topic :: Software Development :: Build Tools",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
@@ -31,7 +29,7 @@ setup(
     ],
     keywords="QICK,quantum,experiment,measurement,qubit,control,readout,fpga",
     packages=find_packages(where="."),
-    python_requires=">=3.6, <4",
+    python_requires=">=3.8, <4",
     install_requires=[
         "qick==0.2.366",
         "numpy",
