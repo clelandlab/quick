@@ -375,16 +375,17 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True):
         Qi, Qc, fr, phi = p
         return 1 / (1 + Qi / Qc * np.exp(1j * phi) / (1 + 2j * Qi * (f - fr) / fr))
     def normalize(F, S):
+        n = 4
         s = F.argsort()
         F, S = F[s], S[s]
-        raw_logmag = 20 * np.log10(np.abs(S))
-        magoffset = np.mean(np.concatenate((raw_logmag[:4],raw_logmag[-4:])))
+        raw_logmag = dB(S)
+        magoffset = np.mean(np.concatenate((raw_logmag[:n],raw_logmag[-n:])))
         logmag = raw_logmag - magoffset
-        fit_logmag_background = np.polyfit(np.concatenate((F[:4], F[-4:])), np.concatenate((logmag[:4], logmag[-4:])), 1)
+        fit_logmag_background = np.polyfit(np.concatenate((F[:n], F[-n:])), np.concatenate((logmag[:n], logmag[-n:])), 1)
         logmag_background_line = np.poly1d(fit_logmag_background)
         logmag = logmag - logmag_background_line(F)
         raw_phase = np.unwrap(np.angle(S))
-        fitphase = np.polyfit(np.concatenate((F[:4], F[-4:])), np.concatenate((raw_phase[:4], raw_phase[-4:])), 1)
+        fitphase = np.polyfit(np.concatenate((F[:n], F[-n:])), np.concatenate((raw_phase[:n], raw_phase[-n:])), 1)
         phaseline = np.poly1d(fitphase)
         phase = raw_phase - phaseline(F)
         S = 10**(logmag/20.)*np.exp(1j*phase)
