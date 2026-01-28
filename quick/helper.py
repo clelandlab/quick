@@ -397,22 +397,28 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True):
     for i in range(len(p0)):
         if p0[i] is None:
             p0[i] = _p0[i]
-    bounds = ([0, 0, 0, -2*π], [np.inf, np.inf, np.inf, 2*π])
+    bounds = ([-np.inf, -np.inf, 0, -2*π], [np.inf, np.inf, np.inf, 2*π])
     def p_b2i(p):
         _p = []
         for i in range(len(p)):
+            if bounds[0][i] == -np.inf:
+                _p.append(p[i])
+                continue
             if bounds[1][i] == np.inf:
                 _p.append(np.sqrt((p[i] - bounds[0][i] + 1) ** 2 - 1))
-            else:
-                _p.append(np.arcsin(2 * (p[i] - bounds[0][i]) / (bounds[1][i] - bounds[0][i]) - 1))
+                continue
+            _p.append(np.arcsin(2 * (p[i] - bounds[0][i]) / (bounds[1][i] - bounds[0][i]) - 1))
         return _p
     def p_i2b(_p):
         p = []
         for i in range(len(_p)):
+            if bounds[0][i] == -np.inf:
+                p.append(_p[i])
+                continue
             if bounds[1][i] == np.inf:
                 p.append(bounds[0][i] - 1 + np.sqrt(_p[i] ** 2 + 1))
-            else:
-                p.append(bounds[0][i] + (np.sin(_p[i]) + 1) * (bounds[1][i] - bounds[0][i]) / 2)
+                continue
+            p.append(bounds[0][i] + (np.sin(_p[i]) + 1) * (bounds[1][i] - bounds[0][i]) / 2)
         return p
     def err_i2b(_p, _perr):
         perr = []
@@ -438,6 +444,7 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True):
     residuals = np.concatenate((np.real(residuals), np.imag(residuals)))
     flat_S_inv = np.concatenate((np.real(S_inv), np.imag(S_inv)))
     r2 = 1 - np.sum(residuals**2) / np.sum((flat_S_inv - np.mean(flat_S_inv))**2)
+    p[0], p[1] = abs(p[0]), abs(p[1])
     if not plot:
         return p, perr, r2, None
     dof = len(residuals) - len(p)
