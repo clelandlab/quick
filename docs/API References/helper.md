@@ -115,17 +115,17 @@ The *class* to construct an iterable. In each iteration, new dictionary will be 
 **Example**:
 
 ```python
-config = {
+v = {
 	"a": 0, "b": 1, "c": 2,
   "nested": { "d": 3, "e": 4 }
 }
 sweepConfig = {
 	"a": np.arange(0, 1, 0.1),
-	"nested": { "d": [1, 8, 9] } # "nested" must exist in config
+	"nested": { "d": [1, 8, 9] } # "nested" must exist in v
 }
 
-for cfg in quick.Sweep(config, sweepConfig):
-	print(cfg) # dictionary with values of "a" and "d" modified.
+for _v in quick.Sweep(v, sweepConfig):
+	print(_v) # dict with values of "a" and "d" modified.
 ```
 
 **Details**:
