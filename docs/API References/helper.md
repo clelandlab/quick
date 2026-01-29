@@ -116,17 +116,16 @@ The *class* to construct an iterable. In each iteration, new dictionary will be 
 
 ```python
 config = {
-	"a": 0,
-	"b": 1,
-	"c": 2
+	"a": 0, "b": 1, "c": 2,
+  "nested": { "d": 3, "e": 4 }
 }
 sweepConfig = {
 	"a": np.arange(0, 1, 0.1),
-	"b": [0, 1, 3, 8, 9]
+	"nested": { "d": [1, 8, 9] } # "nested" must exist in config
 }
 
 for cfg in quick.Sweep(config, sweepConfig):
-	print(cfg) # dictionary with values of "a" and "b" modified.
+	print(cfg) # dictionary with values of "a" and "d" modified.
 ```
 
 **Details**:
@@ -414,7 +413,7 @@ p, perr, r2, fig = quick.fitT2(data[0], data[1], omega=omega)
 ## 🟢fitResonator
 
 ```python
-p, perr, r2, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True)
+p, perr, r2, fig = quick.fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True, normalize_background=True, normalize_phase=True)
 ```
 
 Circle fit of inverse S21 for quality factor of resonator.
@@ -426,6 +425,8 @@ Circle fit of inverse S21 for quality factor of resonator.
 - `fit="circle"` (str) "circle", "amp" or "arg". the target of the fitting.
 - `p0=[None, None, None, None]` (1D ArrayLike) initial value of the fitting parameters in the order of `[Qi, Qc, fr, phi]`. If `None`, then default value will be used. 
 - `plot=True` (bool) whether to plot the fitting.
+- `normalize_background=True` (bool) whether to normalize the background of S21 before fitting.
+- `normalize_phase=True` (bool) whether to normalize the phase of S21 before fitting.
 
 **Return**:
 
@@ -440,4 +441,8 @@ Circle fit of inverse S21 for quality factor of resonator.
 data = quick.load_data("path/to/data1.csv", "path/to/data2.csv").T # combine two scan
 p, perr, r2, fig = quick.fitResonator(data[0], data[3] + 1j * data[4])
 ```
+
+**Details**:
+
+If your fitting phase is opposite to the expected, set initial values of `Qi` and `Qc` with negative values in `p0`. This is caused by unphysical data that encloses the origin in the complex plane, which is typically due to imprecision in calibrating the off-resonant point for near-critically-damped resonators.
 

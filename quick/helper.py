@@ -79,11 +79,15 @@ class Sweep:
         self.total = 1
         self.index = 0 # iteration index, increase in order
         self.seed = np.random.randint(2147483647)
+        def parse_sweep(key, d): # key is a list
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    parse_sweep(key + [k], v)
+                else:
+                    self.sweep.append({ "key": key + [k], "list": list(v), "len": len(v) })
+                    self.total *= len(v)
         try:
-            for k, v in sweepConfig.items():
-                l = list(v)
-                self.total = self.total * len(l)
-                self.sweep.append({ "key": k, "list": l, "len": len(l) })
+            parse_sweep([], sweepConfig)
             self.sweep.reverse()
             if len(self.sweep) == 0:
                 self.total = 0
@@ -103,7 +107,10 @@ class Sweep:
             self.progress.update()
         i = feistel_network(self.index, self.total, self.seed) if self.random else self.index
         for s in self.sweep:
-            self.config[s["key"]] = s["list"][i % s["len"]]
+            c = self.config
+            for k in s["key"][:-1]:
+                c = c[k]
+            c[s["key"][-1]] = s["list"][i % s["len"]]
             i = i // s["len"]
         self.index += 1
         return self.config
@@ -368,7 +375,7 @@ def fitT2(T, S, omega=2*π, T2=20.0, plot=True):
     ax.annotate(annotation_text, (T[mid_index], me(T[mid_index], *p)), fontsize=8, xycoords='data', textcoords='offset points', xytext=(10, 10))
     return p, perr, r2, fig
 
-def fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True):
+def fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True, normalize_background=True, normalize_phase=True):
     def dB(a):
         return 20. * np.log10(np.abs(a))
     def S21_th(f, *p):
@@ -378,16 +385,18 @@ def fitResonator(F, S, fit="circle", p0=[None, None, None, None], plot=True):
         n = 4
         s = F.argsort()
         F, S = F[s], S[s]
-        raw_logmag = dB(S)
-        magoffset = np.mean(np.concatenate((raw_logmag[:n],raw_logmag[-n:])))
-        logmag = raw_logmag - magoffset
-        fit_logmag_background = np.polyfit(np.concatenate((F[:n], F[-n:])), np.concatenate((logmag[:n], logmag[-n:])), 1)
-        logmag_background_line = np.poly1d(fit_logmag_background)
-        logmag = logmag - logmag_background_line(F)
-        raw_phase = np.unwrap(np.angle(S))
-        fitphase = np.polyfit(np.concatenate((F[:n], F[-n:])), np.concatenate((raw_phase[:n], raw_phase[-n:])), 1)
-        phaseline = np.poly1d(fitphase)
-        phase = raw_phase - phaseline(F)
+        logmag = dB(S)
+        if normalize_background:
+            magoffset = np.mean(np.concatenate((logmag[:n], logmag[-n:])))
+            logmag = logmag - magoffset
+            fit_logmag_background = np.polyfit(np.concatenate((F[:n], F[-n:])), np.concatenate((logmag[:n], logmag[-n:])), 1)
+            logmag_background_line = np.poly1d(fit_logmag_background)
+            logmag = logmag - logmag_background_line(F)
+        phase = np.unwrap(np.angle(S))
+        if normalize_phase:
+            fitphase = np.polyfit(np.concatenate((F[:n], F[-n:])), np.concatenate((phase[:n], phase[-n:])), 1)
+            phaseline = np.poly1d(fitphase)
+            phase = phase - phaseline(F)
         S = 10**(logmag/20.)*np.exp(1j*phase)
         return F, S
     F, S = normalize(F, S)
