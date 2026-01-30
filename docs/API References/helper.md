@@ -97,6 +97,41 @@ Load arbitrary number of data files (.csv).
 
 - `data` (2D Array) combined data. Data rows from all files will be concatenated.
 
+## 🟡feistel_network
+
+```python
+n = quick.feistel_network(i, N, seed)
+```
+
+Generate pseudo-random permutation using Feistel network.
+
+**Parameters**:
+
+- `i` (int) position index
+- `N` (int) upper limit of the integer range
+- `seed` (int) seed for the pseudo-random generation
+
+**Return**:
+
+- `n` (int) permuted index
+
+## 🔵nested_get
+
+```python
+res = quick.nested_get(d, key)
+```
+
+Get value from a nested dictionary.
+
+**Parameters**:
+
+- `d` (dict) a nested dictionary
+- `key` (list) a list of keys to access the nested value
+
+**Return**:
+
+- `res` the accessed value
+
 ## 🟢Sweep
 
 ```python
@@ -121,11 +156,12 @@ v = {
 }
 sweepConfig = {
   "a": np.arange(0, 1, 0.1), # empty list raises error
-  "nested": { "d": [1, 8, 9] } # "nested" must exist in v
+  "nested": { "d": [1, 8, 9] }, # "nested" must exist in v
+  "const": 1, # non-iterable values substitutes directly
 }
 
 for _v in quick.Sweep(v, sweepConfig):
-  print(_v) # dict with values of "a" and "d" modified.
+  print(_v) # dict with "a", "d", "const" modified.
 ```
 
 **Details**:

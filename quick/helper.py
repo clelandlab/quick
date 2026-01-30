@@ -70,6 +70,11 @@ def feistel_network(i, N, seed): # generate pseudo-random permutation
         curr = permute(curr)
     return curr
 
+def nested_get(d, key): # key is a list
+    for k in key:
+        d = d[k]
+    return d
+
 class Sweep:
     def __init__(self, config, sweepConfig, random=False, progressBar=True):
         self.config = dict(config) # Copy config, avoid changing the original
@@ -83,9 +88,12 @@ class Sweep:
             for k, v in d.items():
                 if isinstance(v, dict):
                     parse_sweep(key + [k], v)
-                else:
+                    continue
+                if np.iterable(v) and not isinstance(v, str):
                     self.sweep.append({ "key": key + [k], "list": list(v), "len": len(v) })
                     self.total *= len(v)
+                    continue
+                nested_get(self.config, key)[k] = v
         try:
             parse_sweep([], sweepConfig)
             self.sweep.reverse()
@@ -107,10 +115,7 @@ class Sweep:
             self.progress.update()
         i = feistel_network(self.index, self.total, self.seed) if self.random else self.index
         for s in self.sweep:
-            c = self.config
-            for k in s["key"][:-1]:
-                c = c[k]
-            c[s["key"][-1]] = s["list"][i % s["len"]]
+            nested_get(self.config, s["key"][:-1])[s["key"][-1]] = s["list"][i % s["len"]]
             i = i // s["len"]
         self.index += 1
         return self.config
