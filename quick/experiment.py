@@ -23,7 +23,7 @@ class BaseExperiment:
         template_var_label = dict(configs["var_label"])
         template_var_label.update(self.var_label)
         self.var_label = template_var_label
-        self.sweep = {}
+        self.sweep = { "quick_experiment": [self.key] }
         self.config_update = {}
         for k, v in kwargs.items():
             if k in self.var:
