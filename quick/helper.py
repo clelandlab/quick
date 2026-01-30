@@ -89,10 +89,10 @@ class Sweep:
         try:
             parse_sweep([], sweepConfig)
             self.sweep.reverse()
-            if len(self.sweep) == 0:
-                self.total = 0
+            if self.total == 0:
+                raise("Empty Sweep")
         except:
-            raise("Invalid Sweep Iterator")
+            raise("Invalid Sweep Config")
     def __iter__(self): # initialze all iterator
         if self.progressBar:
             self.progress = tqdm(total=self.total, desc='quick.Sweep')

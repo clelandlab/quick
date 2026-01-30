@@ -103,7 +103,7 @@ Load arbitrary number of data files (.csv).
 s = quick.Sweep(config, sweepConfig, random=False, progressBar=True)
 ```
 
-The *class* to construct an iterable. In each iteration, new dictionary will be generated according to the template dictionary `config` and sweeping list set in `sweepConfig`.
+The *class* to construct an iterable. In each iteration, new dictionary will be generated according to the template dictionary `config` and sweeping list set in `sweepConfig`. If there is no sweeping item, the original `config` will be yielded once.
 
 **Parameters**:
 
@@ -120,7 +120,7 @@ v = {
   "nested": { "d": 3, "e": 4 }
 }
 sweepConfig = {
-  "a": np.arange(0, 1, 0.1),
+  "a": np.arange(0, 1, 0.1), # empty list raises error
   "nested": { "d": [1, 8, 9] } # "nested" must exist in v
 }
 
