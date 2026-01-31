@@ -16,7 +16,7 @@ def generate_waveform(o, soccfg):
     if o["style"] in ["gaussian", "flat_top", "DRAG"]:
         x = np.arange(0, l)
         μ = l/2 - 0.5
-        y = np.exp(-(x - μ) ** 2 / σ ** 2)
+        y = np.exp(-((x - μ) / σ) ** 2)
         o["idata"] = (y - y[0]) / (1 - y[0])
     if o["style"] == "stage":
         o["idata"] = np.zeros(int(σ * 4))
@@ -178,7 +178,8 @@ class Mercator(AveragerProgramV2):
                 self.pulse(ch=o["g"], name=f"p{o['p']}", t=o["t"])
                 if o["threshold"] is not None:
                     self.label(f"after_{i}")
-            time_functions = { "delay": self.delay, "delay_auto": self.delay_auto, "wait": self.wait, "wait_auto": self.wait_auto }
+            _wait_auto = lambda t: self.wait_auto(t, gens=True) # redefine to include gens
+            time_functions = { "delay": self.delay, "delay_auto": self.delay_auto, "wait": self.wait, "wait_auto": _wait_auto }
             if o["type"] in time_functions:
                 time_functions[o["type"]](o["t"])
             if o["type"] == "trigger":
@@ -188,11 +189,10 @@ class Mercator(AveragerProgramV2):
                 i = o["i"] if goto_rep[i] >= 0 else i + 1
             else:
                 i = i + 1
-        self.wait_auto(0) # always wait until the end of the cycle
 
     def __init__(self, soccfg, cfg):
         self.c = parse(soccfg, cfg)
-        super().__init__(soccfg, reps=cfg.get("hard_avg", 1), final_delay=None, final_wait=None, cfg=cfg)
+        super().__init__(soccfg, reps=cfg.get("hard_avg", 1), final_delay=1, cfg=cfg)
 
     def acquire(self, soc, progress=False, **kwargs):
         res = super().acquire(soc, progress=progress, rounds=self.cfg.get("soft_avg", 1), **kwargs)
@@ -265,10 +265,10 @@ class Mercator(AveragerProgramV2):
             if o["type"] == "delay_auto":
                 delay = max(until, delay) + o["t"]
                 delays.append(delay)
-            if o["type"] == "wait":
-                wait = wait + o["t"]
-            if o["type"] == "wait_auto":
-                wait = max(until, delay) + o["t"]
+            if o["type"] == "wait": # very confusing, but that's the behavior
+                wait = delay + o["t"]
+            if o["type"] == "wait_auto": # also confusing
+                wait = until + o["t"]
             if o["type"] == "trigger":
                 for r in (o["rs"] or c["r"]):
                     end = start + c["r"][r]["length"]
