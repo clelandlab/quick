@@ -103,7 +103,7 @@ class Sweep:
             raise("Invalid Sweep Config")
     def __iter__(self): # initialze all iterator
         if self.progressBar:
-            self.progress = tqdm(total=self.total, desc='quick.Sweep')
+            self.progress = tqdm(total=self.total, mininterval=0, miniters=1, desc='quick.Sweep')
         self.index = 0
         return self
     def __next__(self):
