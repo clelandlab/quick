@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
 from scipy.optimize import minimize, curve_fit, leastsq
 from scipy import interpolate, stats
-import yaml, json, os, re, ast
+import yaml, json, os, re, copy
 from tqdm.notebook import tqdm
 from datetime import datetime
 import Pyro4
@@ -77,7 +77,7 @@ def nested_get(d, key): # key is a list
 
 class Sweep:
     def __init__(self, config, sweepConfig, random=False, progressBar=True):
-        self.config = dict(config) # Copy config, avoid changing the original
+        self.config = copy.deepcopy(config) # Copy config, avoid changing the original
         self.sweep = [] # [{ "key", "list", "len" }]
         self.progressBar = progressBar
         self.random = random

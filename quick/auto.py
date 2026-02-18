@@ -6,7 +6,7 @@ from scipy.ndimage import convolve1d, median_filter
 from scipy.signal import find_peaks, peak_widths
 from tqdm.notebook import tqdm
 import matplotlib.pyplot as plt
-import time, os
+import time, os, copy
 
 relevant_var = {
     "BaseAuto": [],
@@ -26,7 +26,7 @@ class BaseAuto:
     var = {}
     data = None
     def __init__(self, var, silent=False, data_path=None, soccfg=None, soc=None):
-        self.var = dict(var)
+        self.var = copy.deepcopy(var)
         self.silent = silent
         self.data_path = data_path
         self.soccfg = soccfg

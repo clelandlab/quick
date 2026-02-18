@@ -2,7 +2,7 @@ import numpy as np
 import quick.helper as helper
 from quick import __version__
 from .mercator import Mercator
-import os, yaml
+import os, yaml, copy
 
 # global var & config for quick.experiment
 configs = helper.load_yaml(os.path.join(os.path.abspath(os.path.dirname(__file__)), "experiment.yml"))
@@ -16,11 +16,11 @@ class BaseExperiment:
         self.key = self.__class__.__name__ # get class name as experiment key
         self.data_path = data_path
         self.title = title
-        template_var = dict(configs["var"])
+        template_var = copy.deepcopy(configs["var"])
         template_var.update(self.var)
         self.var = template_var
         self.var.update(var or {})
-        template_var_label = dict(configs["var_label"])
+        template_var_label = copy.deepcopy(configs["var_label"])
         template_var_label.update(self.var_label)
         self.var_label = template_var_label
         self.sweep = {}
