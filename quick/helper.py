@@ -107,12 +107,12 @@ class Sweep:
         self.index = 0
         return self
     def __next__(self):
+        if self.index > 0 and self.progressBar:
+            self.progress.update()
         if self.index == self.total:
             if self.progressBar:
                 self.progress.close()
             raise StopIteration
-        if self.progressBar:
-            self.progress.update()
         i = feistel_network(self.index, self.total, self.seed) if self.random else self.index
         for s in self.sweep:
             nested_get(self.config, s["key"][:-1])[s["key"][-1]] = s["list"][i % s["len"]]

@@ -100,13 +100,17 @@ def parse(soccfg, cfg):
             c["r"][r] = o = { "g": None }
             o["p"] = cfg.get(f"r{r}_p")
             o["freq"] = cfg.get(f"r{r}_freq")
+            o["length"] = cfg.get(f"r{r}_length")
             o["phase"] = cfg.get(f"r{r}_phase", 0)
-            o["length"] = cfg.get(f"r{r}_length", 2)
             if o["p"] is not None: # match corresponding pulse/channels
                 o["g"] = c["p"][o["p"]]["g"]
                 c["g"][o["g"]]["r"] = c["p"][o["p"]]["r"] = r
                 if o["freq"] is None:
                     o["freq"] = c["p"][o["p"]]["freq"]
+                if o["length"] is None:
+                    o["length"] = c["p"][o["p"]].get("length")
+            if o["length"] is None:
+                o["length"] = 2 # default readout length
     cfg["rep"] = cfg.get("rep", 0)
     return c
 

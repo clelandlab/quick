@@ -144,6 +144,7 @@ r0_phase: 0        # Readout phase (degrees).
 ```yaml
 r0_p: 0            # Link to a pulse for down-conversion frequency.
                    # If used, `r0_freq` is not required (except for mux readout).
+                   # `r0_length` defaults to the linked pulse's `length`.
 ```
 
 ## Execution Steps
