@@ -132,7 +132,7 @@ You can also use the `DispersiveSpectroscopy` to find the best value for `v["r_f
 
 ## T1
 
-Measure, fit and plot T1 with your pi pulse and IQ center.
+Measure, fit and plot T1 decay.
 
 ```python
 data = quick.experiment.T1(
@@ -146,7 +146,7 @@ fig.show()
 
 ## T2
 
-Measure, fit and plot T2 with your pi pulse and IQ center.
+Measure, fit and plot T2 decay.
 
 You can use either `T2Ramsey` or `T2Echo`. See API References for details.
 
