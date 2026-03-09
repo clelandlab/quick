@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter
 def generate_waveform(o, soccfg):
     f_fabric = soccfg["gens"][o["g"]]["f_fabric"]
     samps_per_clk = soccfg["gens"][o["g"]]["samps_per_clk"]
-    l = int(o["length"] * f_fabric) * samps_per_clk
+    l = int((0 if o["length"] is None else o["length"]) * f_fabric) * samps_per_clk
     σ = o["sigma"] * samps_per_clk * f_fabric # keep float!
     if o["style"] == "const":
         o["idata"] = None
@@ -33,6 +33,14 @@ def generate_waveform(o, soccfg):
         o["idata"] = np.array(o["idata"]) * (1 - o["ibias"]) + o["ibias"]
     if o.get("qdata") is not None:
         o["qdata"] = np.array(o["qdata"]) * (1 - o["qbias"]) + o["qbias"]
+    if o["style"] in ["stage", "arb"] and o["length"] is not None: # truncate or pad to length
+        l = int(o["length"] * f_fabric) * samps_per_clk # cutoff length
+        if o.get("idata") is not None:
+            o["idata"] = np.append(o["idata"][:l], np.zeros(max(0, l - len(o["idata"]))))
+        if o.get("qdata") is not None:
+            o["qdata"] = np.append(o["qdata"][:l], np.zeros(max(0, l - len(o["qdata"]))))
+    else:
+        o["length"] = 2 if o["length"] is None else o["length"] # default length for non-truncating pulse
 
 def parse(soccfg, cfg):
     """
@@ -74,12 +82,12 @@ def parse(soccfg, cfg):
         c["g"][o["g"]]["nqz"] = cfg.get(f"p{p}_nqz", 2)
         o["freq"] = cfg.get(f"p{p}_freq", 0)
         c["g"][o["g"]]["freq"] = o["freq"]
-        c["g"][o["g"]]["mixer"] = c["g"][o["g"]].get("mixer", cfg.get(f"p{p}_mixer", None))
+        c["g"][o["g"]]["mixer"] = c["g"][o["g"]].get("mixer", cfg.get(f"p{p}_mixer"))
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
         o["phrst"] = cfg.get(f"p{p}_phrst", 0)
         o["style"] = cfg.get(f"p{p}_style", "const")
-        o["length"] = cfg.get(f"p{p}_length", 2)
-        o["sigma"] = cfg.get(f"p{p}_sigma", o["length"] / 5)
+        o["length"] = cfg.get(f"p{p}_length")
+        o["sigma"] = cfg.get(f"p{p}_sigma", (0 if o["length"] is None else o["length"]) / 5)
         o["delta"] = cfg.get(f"p{p}_delta", -200)
         o["gain"] = cfg.get(f"p{p}_gain", 0)
         o["mask"] = cfg.get(f"p{p}_mask", list(range(len(o["freq"]))) if np.iterable(o["freq"]) else None)
@@ -89,7 +97,7 @@ def parse(soccfg, cfg):
         o["qdata"] = np.array(cfg[f"p{p}_qdata"]) if cfg.get(f"p{p}_qdata") is not None else None
         o["ibias"] = cfg.get(f"p{p}_ibias", 0)
         o["qbias"] = cfg.get(f"p{p}_qbias", 0)
-        if cfg.get(f"p{p}_power", None) is not None:
+        if cfg.get(f"p{p}_power") is not None:
             o["gain"] = dB2gain(cfg[f"p{p}_power"])
             cfg[f"p{p}_gain"] = o["gain"] # write back computed gain
         if o["style"] == "flat_top": # not supporting mode
@@ -304,3 +312,5 @@ class Mercator(AveragerProgramV2):
         ax.set_ylim([-1.05, 1.2])
         ax.grid()
         return fig
+
+# Python ternary operator is so stupid and makes this code very unreadable. Blame Python syntax here.

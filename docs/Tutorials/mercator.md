@@ -129,6 +129,10 @@ p0_sigma: 0.01     # Standard deviation (µs) for Gaussian filter.
 > Note: `Total length = (sum of stage times) + 8*sigma`, padded to the next clock tick.
 > The maximum amplitude of non-`const` pulses can be up to 2x weaker than a `const` pulse of the same gain.
 
+**Pulse Length Truncating and Padding**:
+
+For pulse style `stage` and `arb`, the `length` property is defaulted to `null` (`None` in Python). If `length` is set, the pulse will be truncated or padded to match the specified length. If the specified `length` is shorter than pulse length, the pulse will be truncated. If it is longer, the pulse will be padded with zeros at the end.
+
 ## Readout Setup
 
 Configure readout (ADC) channels. Properties are prefixed with `rx_`, where `x` is the channel number (e.g., `r0_`).
