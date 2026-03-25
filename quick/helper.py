@@ -173,13 +173,13 @@ def gain2dB(gain, ref_gain=1, ref_dB=None):
     return 20 * np.log10(gain / ref_gain) if ref_dB is None else 20 * np.log10(gain) - ref_dB
 
 def evalStr(s, var, _var=None):
-    return eval(f"f'''{s}'''", _var, var)
+    return eval(f"f'''{s}'''", _var, var) # How amazing this is!
 
 def safe_wrap(retry=2, timeout=300):
     def decorator(func):
         def wrapper(*args, **kwargs):
             for i in range(retry + 1):
-                try:
+                try: # func_timeout is dark magic. It calls ctypes.pythonapi to kill a thread
                     return func_timeout(timeout, func, args, kwargs)
                 except Exception:
                     if i == retry:
@@ -195,7 +195,7 @@ def symmetryCenter(x, y, it=3):
     y = (y - np.mean(y)) / np.std(y)
     fft = np.fft.rfft(np.append(y, np.zeros(L)))
     res, d = 0, 0
-    for _ in range(it):
+    for _ in range(it): # dark magic: phase shift in Fourier space to align cross-correlation peak to the center iteratively
         fft *= np.exp(2j*π*d*freq)
         co = np.fft.irfft(fft**2)[R-1:L+R-1]
         i = np.argmax(co[R-Δ:R+Δ]) + R-Δ
