@@ -174,18 +174,19 @@ def gain2dB(gain, ref_gain=1, ref_dB=None):
 def evalStr(s, var, _var=None):
     return eval(f"f'''{s}'''", _var, var)
 
+def _process_worker(q, f, *a, **kw): # this function needs to be defined at the top level to be picklable for multiprocessing
+    try:
+        q.put(('R', f(*a, **kw)))
+    except Exception as e:
+        q.put(('E', e))
+
 def safe_wrap(retry=3, timeout=300):
     def decorator(f):
-        def _run(q, *a, **kw):
-            try:
-                q.put(('R', f(*a, **kw)))
-            except Exception as e:
-                q.put(('E', e))
         def wrap(*a, **kw):
             last_error = TimeoutError("All retries and timeouts exceeded")
             for _ in range(retry + 1):
                 q = Queue()
-                p = Process(target=_run, args=(q,) + a, kwargs=kw)
+                p = Process(target=_process_worker, args=(q, f) + a, kwargs=kw)
                 p.start()
                 p.join(timeout)
                 if p.is_alive():
