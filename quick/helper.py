@@ -5,6 +5,7 @@ from scipy.optimize import minimize, curve_fit, leastsq
 from scipy import interpolate, stats
 import yaml, json, os, re, copy
 from tqdm.notebook import tqdm
+from func_timeout import func_timeout, FunctionTimedOut
 from datetime import datetime
 import Pyro4
 from qick import QickConfig
@@ -174,30 +175,16 @@ def gain2dB(gain, ref_gain=1, ref_dB=None):
 def evalStr(s, var, _var=None):
     return eval(f"f'''{s}'''", _var, var)
 
-def _process_worker(q, f, *a, **kw): # this function needs to be defined at the top level to be picklable for multiprocessing
-    try:
-        q.put(('R', f(*a, **kw)))
-    except Exception as e:
-        q.put(('E', e))
-
-def safe_wrap(retry=3, timeout=300):
-    def decorator(f):
-        def wrap(*a, **kw):
-            last_error = TimeoutError("All retries and timeouts exceeded")
-            for _ in range(retry + 1):
-                q = Queue()
-                p = Process(target=_process_worker, args=(q, f) + a, kwargs=kw)
-                p.start()
-                p.join(timeout)
-                if p.is_alive():
-                    p.terminate()
-                    last_error = TimeoutError("Function timeout")
-                elif not q.empty():
-                    s, res = q.get()
-                    if s == 'R': return res
-                    last_error = res
-            raise last_error
-        return wrap
+def safe_wrap(retry=2, timeout=300):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for i in range(retry + 1):
+                try:
+                    return func_timeout(timeout, func, args, kwargs)
+                except Exception:
+                    if i == retry:
+                        raise
+        return wrapper
     return decorator
 
 def symmetryCenter(x, y, it=3):

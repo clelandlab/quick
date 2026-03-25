@@ -37,7 +37,8 @@ setup(
         "pyyaml",
         "pyro4",
         "matplotlib",
-        "ipython"
+        "ipython",
+        "func_timeout"
     ],
     package_data={
         "quick": ["VERSION", "experiment.yml"],
