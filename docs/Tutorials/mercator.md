@@ -171,6 +171,7 @@ Defines the sequence of operations. Steps are specified with a flat `i_` prefix 
 - `delay`: Delay for duration `t`.
 - `delay_auto`: Delay for duration `t` after all channels and readouts finish.
 - `goto`: Jump to another step.
+- `pin`: Trigger digital pins specified by `pins` (defaults to `[0]`).
 
 ### Trigger
 

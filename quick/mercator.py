@@ -73,6 +73,8 @@ def parse(soccfg, cfg):
             if o["rs"] != None:
                 for r in o["rs"]:
                     c["r"][r] = {}
+        if o["type"] == "pin":
+            o["pins"] = cfg.get(f"{i}_pins", [0])
         if o["type"] == "goto":
             o["rep"] = cfg.get(f"{i}_rep", 0)
             o["i"] = cfg.get(f"{i}_i", i + 1)
@@ -195,7 +197,9 @@ class Mercator(AveragerProgramV2):
             if o["type"] in time_functions:
                 time_functions[o["type"]](o["t"])
             if o["type"] == "trigger":
-                self.trigger(ros=(o["rs"] or self.c["r"].keys()), t=o["t"], pins=[0])
+                self.trigger(ros=(o["rs"] or self.c["r"].keys()), t=o["t"])
+            if o["type"] == "pin":
+                self.trigger(pins=o["pins"], t=o["t"])
             if o["type"] == "goto":
                 goto_rep[i] = goto_rep.get(i, o["rep"]) - 1
                 i = o["i"] if goto_rep[i] >= 0 else i + 1
