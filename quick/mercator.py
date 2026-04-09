@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 
 def generate_waveform(o, soccfg):
-    f_fabric = soccfg["gens"][o["g"]]["f_fabric"]
-    samps_per_clk = soccfg["gens"][o["g"]]["samps_per_clk"]
+    g = o["gs"][-1]
+    f_fabric = soccfg["gens"][g]["f_fabric"]
+    samps_per_clk = soccfg["gens"][g]["samps_per_clk"]
     l = int((0 if o["length"] is None else o["length"]) * f_fabric) * samps_per_clk
     σ = o["sigma"] * samps_per_clk * f_fabric # keep float!
     if o["style"] == "const":
@@ -66,7 +67,10 @@ def parse(soccfg, cfg):
         if o["type"] == "pulse":
             o["g"], o["p"], o["r"] = cfg.get(f"{i}_g"), cfg.get(f"{i}_p"), cfg.get(f"{i}_r", 0)
             c["g"][o["g"]] = { "p": o["p"], "r": None }
-            c["p"][o["p"]] = { "g": o["g"], "r": None } # TODO: allow multiple generator using one pulse
+            if o["p"] not in c["p"]:
+                c["p"][o["p"]] = { "gs": [o["g"]], "r": None }
+            else:
+                c["p"][o["p"]]["gs"].append(o["g"])
             o["threshold"] = cfg.get(f"{i}_threshold")
         if o["type"] == "trigger":
             o["rs"], o["p"] = cfg.get(f"{i}_rs"), cfg.get(f"{i}_p")
@@ -80,11 +84,12 @@ def parse(soccfg, cfg):
             o["i"] = cfg.get(f"{i}_i", i + 1)
         c["exec"].append(o)
     for p in c["p"]: # find all used pulses
-        o = c["p"][p] # TODO: loop through all generators using this pulse
-        c["g"][o["g"]]["nqz"] = cfg.get(f"p{p}_nqz", 2)
+        o = c["p"][p]
         o["freq"] = cfg.get(f"p{p}_freq", 0)
-        c["g"][o["g"]]["freq"] = o["freq"]
-        c["g"][o["g"]]["mixer"] = c["g"][o["g"]].get("mixer", cfg.get(f"p{p}_mixer"))
+        for g in o["gs"]:
+            c["g"][g]["nqz"] = cfg.get(f"p{p}_nqz", 2)
+            c["g"][g]["freq"] = o["freq"]
+            c["g"][g]["mixer"] = c["g"][g].get("mixer", cfg.get(f"p{p}_mixer"))
         o["mode"] = cfg.get(f"p{p}_mode", "oneshot")
         o["phrst"] = cfg.get(f"p{p}_phrst", 0)
         o["style"] = cfg.get(f"p{p}_style", "const")
@@ -113,7 +118,7 @@ def parse(soccfg, cfg):
             o["length"] = cfg.get(f"r{r}_length")
             o["phase"] = cfg.get(f"r{r}_phase", 0)
             if o["p"] is not None: # match corresponding pulse/channels
-                o["g"] = c["p"][o["p"]]["g"] # TODO: use only one generator using this pulse
+                o["g"] = c["p"][o["p"]]["gs"][-1] # use the last generator for matching
                 c["g"][o["g"]]["r"] = c["p"][o["p"]]["r"] = r
                 if o["freq"] is None:
                     o["freq"] = c["p"][o["p"]]["freq"]
@@ -166,17 +171,18 @@ class Mercator(AveragerProgramV2):
                     kwargs.pop(k, None)
             if o["style"] != "const":
                 kwargs["envelope"] = f"e{p}"
-                maxv = self.soccfg.get_maxv(o["g"])
-                idata = None if o["idata"] is None else maxv * np.array(o["idata"])
-                qdata = None if o["qdata"] is None else maxv * np.array(o["qdata"])
-                self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata) # TODO: ? test if one envelope is okay
+                for g in o["gs"]:
+                    maxv = self.soccfg.get_maxv(g)
+                    idata = None if o["idata"] is None else maxv * np.array(o["idata"])
+                    qdata = None if o["qdata"] is None else maxv * np.array(o["qdata"])
+                    self.add_envelope(ch=g, name=kwargs["envelope"], idata=idata, qdata=qdata)
             if o["style"] == "flat_top":
                 kwargs.pop("mode", None) # no support
             if o["style"] in ["flat_top", "const"]:
                 kwargs["length"] = o["length"]
             else:
                 kwargs["style"] = "arb"
-            self.add_pulse(ch=o["g"], name=f"p{p}",  **kwargs) # TODO: support multiple generator using one pulse
+            self.add_pulse(ch=o["gs"], name=f"p{p}",  **kwargs)
         if cfg["rep"] > 0:
             self.add_loop("rep", cfg["rep"])
 
