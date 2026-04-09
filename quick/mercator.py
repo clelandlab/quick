@@ -66,7 +66,7 @@ def parse(soccfg, cfg):
         if o["type"] == "pulse":
             o["g"], o["p"], o["r"] = cfg.get(f"{i}_g"), cfg.get(f"{i}_p"), cfg.get(f"{i}_r", 0)
             c["g"][o["g"]] = { "p": o["p"], "r": None }
-            c["p"][o["p"]] = { "g": o["g"], "r": None }
+            c["p"][o["p"]] = { "g": o["g"], "r": None } # TODO: allow multiple generator using one pulse
             o["threshold"] = cfg.get(f"{i}_threshold")
         if o["type"] == "trigger":
             o["rs"], o["p"] = cfg.get(f"{i}_rs"), cfg.get(f"{i}_p")
@@ -80,7 +80,7 @@ def parse(soccfg, cfg):
             o["i"] = cfg.get(f"{i}_i", i + 1)
         c["exec"].append(o)
     for p in c["p"]: # find all used pulses
-        o = c["p"][p]
+        o = c["p"][p] # TODO: loop through all generators using this pulse
         c["g"][o["g"]]["nqz"] = cfg.get(f"p{p}_nqz", 2)
         o["freq"] = cfg.get(f"p{p}_freq", 0)
         c["g"][o["g"]]["freq"] = o["freq"]
@@ -113,7 +113,7 @@ def parse(soccfg, cfg):
             o["length"] = cfg.get(f"r{r}_length")
             o["phase"] = cfg.get(f"r{r}_phase", 0)
             if o["p"] is not None: # match corresponding pulse/channels
-                o["g"] = c["p"][o["p"]]["g"]
+                o["g"] = c["p"][o["p"]]["g"] # TODO: use only one generator using this pulse
                 c["g"][o["g"]]["r"] = c["p"][o["p"]]["r"] = r
                 if o["freq"] is None:
                     o["freq"] = c["p"][o["p"]]["freq"]
@@ -169,14 +169,14 @@ class Mercator(AveragerProgramV2):
                 maxv = self.soccfg.get_maxv(o["g"])
                 idata = None if o["idata"] is None else maxv * np.array(o["idata"])
                 qdata = None if o["qdata"] is None else maxv * np.array(o["qdata"])
-                self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata)
+                self.add_envelope(ch=o["g"], name=kwargs["envelope"], idata=idata, qdata=qdata) # TODO: ? test if one envelope is okay
             if o["style"] == "flat_top":
                 kwargs.pop("mode", None) # no support
             if o["style"] in ["flat_top", "const"]:
                 kwargs["length"] = o["length"]
             else:
                 kwargs["style"] = "arb"
-            self.add_pulse(ch=o["g"], name=f"p{p}",  **kwargs)
+            self.add_pulse(ch=o["g"], name=f"p{p}",  **kwargs) # TODO: support multiple generator using one pulse
         if cfg["rep"] > 0:
             self.add_loop("rep", cfg["rep"])
 
@@ -317,4 +317,4 @@ class Mercator(AveragerProgramV2):
         ax.grid()
         return fig
 
-# Python ternary operator is so stupid and makes this code very unreadable. Blame Python syntax here.
+# Python ternary operator and object operations are so stupid and makes this code very unreadable. Blame Python syntax here.
