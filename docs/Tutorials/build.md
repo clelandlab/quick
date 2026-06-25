@@ -33,13 +33,13 @@ In short, **Mercator Protocol** includes 4 parts:
 
 We typically use YAML format to write the Mercator Protocol. For detailed description of all possible keys, see [Mercator Protocol](../mercator))
 
-1.Meta Information: hard averaging 1000 times (run the sequence 1000 times on board and return the averaged result)
+**1. Meta Information**: hard averaging 1000 times (run the sequence 1000 times on board and return the averaged result)
 
 ```yaml
 hard_avg: 1000
 ```
 
-2.Pulse Setup: define a constant(square) pulse `1` with frequency 5000 MHz, length 2 us, and power -30 dB (relative to the maximum output power of the generator):
+**2. Pulse Setup**: define a constant(square) pulse `1` with frequency 5000 MHz, length 2 us, and power -30 dB (relative to the maximum output power of the generator):
 
 ```yaml
 p1_style: const
@@ -50,7 +50,7 @@ p1_power: -30
 
 In this section, all keys start with `p` followed by a pulse index. The pulse index can be arbitrary integers or letters.
 
-3.Readout Setup: define a readout acquisition window with length 3 us, on readout(ADC) channel `0`:
+**3. Readout Setup**: define a readout acquisition window with length 3 us, on readout(ADC) channel `0`:
 
 ```yaml
 r0_p: 1 # links the pulse 1 for frequency matching
@@ -59,7 +59,7 @@ r0_length: 3
 
 In this section, all keys start with `r` followed by the readout(ADC) channel index. The readout channel index can be found in `soccfg`. We need to specify the downconversion frequency for the readout channel. Here we link it to pulse `1` for frequency matching.
 
-4.Execution Steps: now we can lay down the prepared things on a timeline. Here we first apply the pulse `1` on generator(DAC) channel `8`, and 0.1 us later trigger the readout(ADC) channel `0`. Then we wait for acquisition to finish and wait for another 2 us before the next repetition.
+**4. Execution Steps**: now we can lay down the prepared things on a timeline. Here we first apply the pulse `1` on generator(DAC) channel `8`, and 0.1 us later trigger the readout(ADC) channel `0`. Then we wait for acquisition to finish and wait for another 2 us before the next repetition.
 
 ```yaml
 steps:
