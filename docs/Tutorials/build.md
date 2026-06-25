@@ -113,17 +113,17 @@ I, Q = m.acquire(soc) # return averaged values of I and Q from the readout chann
 
 Using a fixed pulse sequence is not very flexible. Besides programmatically modifying the dictionary `cfg`, there is a cooler way to apply variables to the pulse sequence. For example, we want to use a dictionary `v` to specify the pulse frequency(`v["r_freq"]`) and readout(ADC) channel(`v["rr"]`):
 
-```python
+```python hl_lines="1 6 9 10 23"
 v = { "r_freq": 5000, "rr": 0 } # example
 
 mercator_protocol = """
 hard_avg: 1000
 p1_style: const
-p1_freq: {r_freq}   # look here
+p1_freq: {r_freq}
 p1_length: 2
 p1_power: -30
-r{rr}_p: 1          # and here
-r{rr}_length: 3     #
+r{rr}_p: 1
+r{rr}_length: 3
 steps:
 - type: pulse
   p: 1
