@@ -107,7 +107,7 @@ m.light()
 I, Q = m.acquire(soc) # return averaged values of I and Q from the readout channel
 ```
 
-> Detailed description about arguments and return values of `quick.Mercator` can be found in [Mercator Protocol](../../API References/mercator).
+> Detailed description about arguments and return values of `quick.Mercator` can be found in [Mercator API](../../API References/mercator).
 
 ## 4. Variable Insertion
 
