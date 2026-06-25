@@ -1,10 +1,10 @@
 # Build an Experiment
 
-This is a very simple tutorial to show how to build a customized experiment without using `quick.experiment`. For pre-defined experiments, see [Experiment](experiment).
+This is a very simple tutorial to show how to build a customized experiment without using `quick.experiment`. For pre-defined experiments, see [Experiment](../experiment).
 
 ## 1. Connect to the QICK Board
 
-> You need to install qick on your QICK board first. See [QICK Setup](qick) for instructions.
+> You need to install qick on your QICK board first. See [QICK Setup](../qick) for instructions.
 
 Once your QICK board is set up and running, connect to it from the experiment computer in the same network:
 
@@ -20,7 +20,7 @@ It would be helpful to identify the relevant generator(DAC) and readout(ADC) cha
 
 ## 2. Write Pulse Sequence
 
-> The pulse sequence is specified by [Mercator Protocol](mercator), see detailed tutorial documentation for full description.
+> The pulse sequence is specified by [Mercator Protocol](../mercator), see detailed tutorial documentation for full description.
 
 In short, **Mercator Protocol** includes 4 parts:
 
@@ -31,7 +31,7 @@ In short, **Mercator Protocol** includes 4 parts:
 
 **Example**:
 
-We typically use YAML format to write the Mercator Protocol. For detailed description of all possible keys, see [Mercator Protocol](mercator))
+We typically use YAML format to write the Mercator Protocol. For detailed description of all possible keys, see [Mercator Protocol](../mercator))
 
 1. Meta Information: hard averaging 1000 times (run the sequence 1000 times on board and return average the result)
 
@@ -72,7 +72,7 @@ steps:
   t: 2
 ```
 
-This section uses a list of steps contained in the `steps` key. All possible step types and keys are listed in [Mercator Protocol](mercator).
+This section uses a list of steps contained in the `steps` key. All possible step types and keys are listed in [Mercator Protocol](../mercator).
 
 ## 3. Plot and Run the Pulse Sequence
 
@@ -107,7 +107,7 @@ m.light()
 I, Q = m.acquire(soc) # return averaged values of I and Q from the readout channel
 ```
 
-> Detailed description about arguments and return values of `quick.Mercator` can be found in [Mercator Protocol](../API References/mercator).
+> Detailed description about arguments and return values of `quick.Mercator` can be found in [Mercator Protocol](../../API References/mercator).
 
 ## 4. Variable Insertion
 
@@ -141,7 +141,7 @@ cfg = yaml.safe_load(quick.evalStr(mercator_protocol, v))
 
 This results in the same `cfg` dictionary as before, but now we can easily change the pulse frequency and readout channel by modifying the dictionary `v` without touching the Mercator Protocol string.
 
-> See [evalStr API](../API References/helper/#evalstr) for more details
+> See [evalStr API](../../API References/helper/#evalstr) for more details
 
 You can also directly modify the dictionary `cfg` after it is created:
 
@@ -171,7 +171,7 @@ for _cfg in quick.Sweep(cfg, sweep):
     I, Q = m.acquire(soc)
 ```
 
-> See [Sweep API](../API References/helper/#sweep) for more details
+> See [Sweep API](../../API References/helper/#sweep) for more details
 
 ## 6. Save Data
 
@@ -198,5 +198,5 @@ for _v in quick.Sweep(v, sweep):
 s.write_yml()
 ```
 
-> See [Saver API](../API References/helper/#saver) for more details
+> See [Saver API](../../API References/helper/#saver) for more details
 

@@ -2,7 +2,7 @@
 
 This is a tutorial of `quick.experiment`. For detailed parameters information, see API References.
 
-`quick.experiment` use a variable dictionary to specify useful parameters for readout/qubit. The list of variables and there default values is [here](../API References/experiment/#var). For customization, see the last section of this document.
+`quick.experiment` use a variable dictionary to specify useful parameters for readout/qubit. The list of variables and there default values is [here](../../API References/experiment/#var). For customization, see the last section of this document.
 
 ## Wiring and Pulse
 
