@@ -24,6 +24,9 @@ pip install clelandlab-quick
 
 ```python
 import quick
+
+# connect to the QICK board
+soccfg, soc = quick.connect(QICK_IP)
 ```
 
 ## Document Convention

@@ -22,6 +22,9 @@ Then you can import it in your Python code:
 
 ```python
 import quick
+
+# connect to the QICK board
+soccfg, soc = quick.connect(QICK_IP)
 ```
 
 ## Layers
