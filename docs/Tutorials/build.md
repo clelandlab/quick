@@ -97,14 +97,14 @@ steps:
   t: 2
 """
 
-cfg = yaml.safe_load(mercator_protocol) # convert the string to a dictionary
-m = quick.Mercator(soccfg, cfg) # initialize the Mercator class with the pulse sequence
+cfg = yaml.safe_load(mercator_protocol) # convert to dictionary
+m = quick.Mercator(soccfg, cfg) # initialize the Mercator class
 
 # visualize the pulse sequence
 m.light()
 
 # execute the pulse sequence
-I, Q = m.acquire(soc) # return averaged values of I and Q from the readout channel
+I, Q = m.acquire(soc) # return averaged values of I and Q
 ```
 
 > Detailed description about arguments and return values of `quick.Mercator` can be found in [Mercator API](../../API References/mercator).
@@ -153,7 +153,7 @@ cfg["hard_avg"] = 2000 # change hard averaging to 2000
 
 What if we want to run a pulse sequence with different pulse frequencies? We can use `quick.Sweep` to sweep the variables:
 
-```python
+```python hl_lines="1 2"
 sweep = { "r_freq": np.arange(5000, 6000, 1) }
 for _v in quick.Sweep(v, sweep):
     # here _v is the variables with sweeping r_freq
@@ -177,7 +177,7 @@ for _cfg in quick.Sweep(cfg, sweep):
 
 Don't forget to save the data! You can use `quick.Saver` to save the data to files:
 
-```python
+```python hl_lines="2-5 13-15 18"
 # initialize the Saver
 s = quick.Saver("Example Title", "path/to/directry",
     indep_params=[("Frequency", "MHz")],
