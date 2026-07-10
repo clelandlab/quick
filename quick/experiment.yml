@@ -234,7 +234,7 @@ T2Ramsey: |
   p2_gain: {q_gain_2}
   p3_style: gaussian
   p3_freq: {q_freq}
-  p3_length: {q_length}
+  p3_length: {q_length_2 or q_length}
   p3_gain: {q_gain_2}
   p3_phase: {-360 * time * fringe_freq % 360}
   r{rr}_p: 0
