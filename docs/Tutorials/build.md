@@ -191,7 +191,7 @@ for _v in quick.Sweep(v, sweep):
     I, Q = m.acquire(soc)
     S = I[0][0] + 1j * Q[0][0]
     s.write_data([ # append rows of data
-        [ _v["r_freq", np.abs(S) ]
+        [ _v["r_freq"], np.abs(S) ]
     ])
 
 # record the finishing time
