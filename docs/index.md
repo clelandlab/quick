@@ -1,6 +1,8 @@
 # Get Started
 
-QuICK is a universal wrap of [QICK](https://github.com/openquantumhardware/qick).
+> This source checkout uses a native TCP Mercator client and ZCU216 server. Neither side requires a QICK/Pyro Python package. The board uses the supplied QICK firmware and its existing PYNQ/RFDC libraries.
+
+QuICK provides experiment routines and pulse protocols for [QICK](https://github.com/openquantumhardware/qick) firmware.
 
 <div>
   <a style="margin: 0.25rem;" href="https://clelandlab-quick.readthedocs.io/en/latest/"><img src="https://img.shields.io/readthedocs/clelandlab-quick?style=for-the-badge&logo=readthedocs&logoColor=white"></a>
@@ -12,12 +14,12 @@ QuICK is a universal wrap of [QICK](https://github.com/openquantumhardware/qick)
 
 ## Installation
 
-> This is the installation on your PC. For QICK Board setup, see [here](./Tutorials/qick).
+Use Python 3.13+ on the PC and install this checkout from its repository root. An independently published release may not contain the native changes. Install the separate `board_setup_next` package on the board before connecting; see [Board Setup](Tutorials/qick.md).
 
 Install this package with `pip`:
 
 ```
-pip install clelandlab-quick
+python -m pip install -e .
 ```
 
 > It is recommended to use a conda environment.
@@ -25,7 +27,7 @@ pip install clelandlab-quick
 ```python
 import quick
 
-# connect to the QICK board
+# connect to the native board server on TCP 9999
 soccfg, soc = quick.connect(QICK_IP)
 ```
 

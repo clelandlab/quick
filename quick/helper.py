@@ -1,3 +1,27 @@
+"""QuICK helpers and the local configuration used by its board client.
+
+The configuration conversions follow QICK 0.2.418.
+Derived portions are Copyright (c) Open Quantum Hardware, under the MIT License:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
@@ -7,8 +31,349 @@ import yaml, json, os, re, copy
 from tqdm.notebook import tqdm
 from func_timeout import func_timeout, FunctionTimedOut
 from datetime import datetime
-import Pyro4
-from qick import QickConfig
+import logging
+
+
+class _SocConfig:
+    """Local RFSoC configuration and unit conversions, with no board dependency.
+
+    The numerical conventions match the 0.2.418 firmware client: MHz, degrees,
+    microseconds, nearest-even register rounding, and absolute v2 frequencies.
+    Only configuration dictionaries and numeric arrays cross the connection.
+    """
+
+    def __init__(self, cfg=None):
+        if isinstance(cfg, (str, os.PathLike)):
+            with open(cfg) as f:
+                cfg = json.load(f)
+        if hasattr(cfg, "get_cfg"):
+            cfg = cfg.get_cfg()
+        self._cfg = {} if cfg is None else cfg
+
+    def __getitem__(self, key):
+        return self._cfg[key]
+
+    def __setitem__(self, key, value):
+        self._cfg[key] = value
+
+    def __contains__(self, key):
+        return key in self._cfg
+
+    def __iter__(self):
+        return iter(self._cfg)
+
+    def __len__(self):
+        return len(self._cfg)
+
+    def get(self, key, default=None):
+        return self._cfg.get(key, default)
+
+    def keys(self):
+        return self._cfg.keys()
+
+    def items(self):
+        return self._cfg.items()
+
+    def get_cfg(self):
+        return self._cfg
+
+    def dump_cfg(self, gen_file_path=None):
+        result = json.dumps(self._cfg, indent=4)
+        if gen_file_path is not None:
+            with open(gen_file_path, "w") as f:
+                f.write(result)
+        return result
+
+    def description(self):
+        cfg = self._cfg
+        tproc = next(iter(cfg.get("tprocs", [])), {})
+        lines = ["QuICK running on %s, software version %s" % (
+            cfg.get("board", "RFSoC"), cfg.get("sw_version", "unknown")),
+            "\nFirmware configuration (built %s):" % cfg.get("fw_timestamp", "unknown")]
+        if "refclk_freq" in cfg:
+            lines.append("\n\tGlobal clocks (MHz): tProc dispatcher timing %.3f, RF reference %.3f" % (
+                tproc.get("f_time", 0), cfg["refclk_freq"]))
+
+        lines.append("\n\t%d signal generator channels:" % len(cfg.get("gens", [])))
+        for i, gen in enumerate(cfg.get("gens", [])):
+            lines.append("\t%d:\t%s" % (i, gen.get("type", "channel")))
+            if "fs" in gen and "f_fabric" in gen:
+                lines[-1] += " - fs=%.3f Msps, fabric=%.3f MHz" % (gen["fs"], gen["f_fabric"])
+            if all(k in gen for k in ("maxlen", "samps_per_clk", "f_fabric")):
+                duration = gen["maxlen"] / (gen["samps_per_clk"] * gen["f_fabric"])
+                lines.append("\t\tenvelope memory: %d %s samples (%.3f us)" % (
+                    gen["maxlen"], "complex" if gen.get("complex_env", True) else "real", duration))
+            if gen.get("has_dds", True) and "b_dds" in gen and "f_dds" in gen:
+                lines.append("\t\t%d-bit DDS, range=%.3f MHz" % (gen["b_dds"], gen["f_dds"]))
+            if "dac" in gen:
+                lines.append("\t\t" + self._describe_converter("DAC", gen["dac"]))
+
+        lines.append("\n\t%d readout channels:" % len(cfg.get("readouts", [])))
+        for i, ro in enumerate(cfg.get("readouts", [])):
+            control = "tProc output %d" % ro["tproc_ctrl"] if "tproc_ctrl" in ro else "PYNQ"
+            lines.append("\t%d:\t%s - configured by %s" % (i, ro.get("ro_type", "channel"), control))
+            if all(k in ro for k in ("fs", "f_output", "b_dds", "f_dds")):
+                lines.append("\t\tfs=%.3f Msps, decimated=%.3f MHz, %d-bit DDS, range=%.3f MHz" % (
+                    ro["fs"], ro["f_output"], ro["b_dds"], ro["f_dds"]))
+            if "avgbuf_type" in ro:
+                lines.append("\t\t%s v%s (%s edge counter, %s weights)" % (
+                    ro["avgbuf_type"], ro.get("avgbuf_version", "unknown"),
+                    "has" if ro.get("has_edge_counter") else "no", "has" if ro.get("has_weights") else "no"))
+            if all(k in ro for k in ("avg_maxlen", "buf_maxlen", "f_output")):
+                lines.append("\t\tmemory %d accumulated, %d decimated (%.3f us)" % (
+                    ro["avg_maxlen"], ro["buf_maxlen"], ro["buf_maxlen"] / ro["f_output"]))
+                if ro.get("has_weights") and "wgt_maxlen" in ro:
+                    lines[-1] += ", %d weights (%.3f us)" % (ro["wgt_maxlen"], ro["wgt_maxlen"] / ro["f_output"])
+            if all(k in ro for k in ("trigger_type", "trigger_port", "trigger_bit", "tproc_ch")):
+                lines.append("\t\ttriggered by %s %d, pin %d, feedback to tProc input %d" % (
+                    ro["trigger_type"], ro["trigger_port"], ro["trigger_bit"], ro["tproc_ch"]))
+            if "adc" in ro:
+                lines.append("\t\t" + self._describe_converter("ADC", ro["adc"]))
+
+        if tproc:
+            pins = tproc.get("output_pins", [])
+            lines.append("\n\t%d digital output pins:" % len(pins))
+            for i, (kind, port, pin, name) in enumerate(pins):
+                lines.append("\t%d:\t%s (%s %d, pin %d)" % (i, name, kind, port, pin))
+            kind = tproc.get("type", "unknown")
+            version = {"qick_processor": "v2", "axis_tproc64x32_x8": "v1"}.get(kind, "unknown")
+            lines.append('\n\ttProc: %s ("%s") rev %s' % (kind, version, tproc.get("revision", "unknown")))
+            if "f_core" in tproc:
+                lines[-1] += ", core execution clock %.3f MHz" % tproc["f_core"]
+            memories = ["%s %d" % (label, tproc[key]) for key, label in (
+                ("pmem_size", "program"), ("dmem_size", "data"), ("wmem_size", "waveform")) if key in tproc]
+            if memories:
+                lines.append("\t\tmemories (words): " + ", ".join(memories))
+            for key, label in (("start_pin", "start"), ("stop_pin", "stop")):
+                if key in tproc:
+                    lines.append("\t\texternal %s pin: %s" % (label, tproc[key]))
+        lines.extend(cfg.get("extra_description", []))
+        return "\n".join(lines)
+
+    def _describe_converter(self, kind, name):
+        if len(str(name)) != 2 or not str(name).isdigit():
+            return "%s %s" % (kind, name)
+        tile, block = map(int, str(name))
+        label = "%s tile %d, blk %d" % (kind, tile, block)
+        if self.get("board") == "ZCU216":
+            dac = kind == "DAC"
+            connector = (1 if dac else 5) + block % 2 + 2 * (tile // 2)
+            label += " is %d_%d on JHC%d" % (block, tile + (228 if dac else 224), connector)
+            if dac or tile in (1, 2):
+                label += ", or QICK box %s port %d" % (kind, (tile if dac else tile - 1) * 4 + block)
+        return label
+
+    def __str__(self):
+        return self.description()
+
+    @staticmethod
+    def _to_int(value, scale, quantize=1, parname=None):
+        if hasattr(value, "to_int"):
+            return value.to_int(scale, quantize=quantize, parname=parname, trunc=False)
+        return int(quantize * np.round(value * scale / quantize))
+
+    def calc_fstep_int(self, dict1, other_dicts):
+        channels = [dict1] + list(other_dicts)
+        common_div = np.lcm.reduce([d["fdds_div"] for d in channels])
+        max_bits = max(d["b_dds"] for d in channels)
+        multipliers = [d["fs_mult"] * (common_div // d["fdds_div"]) *
+                       2 ** (max_bits - d["b_dds"]) for d in channels]
+        return np.lcm.reduce(multipliers) // multipliers[0]
+
+    def ch_fstep(self, channel):
+        return channel["fs_mult"] * (self["refclk_freq"] / channel["fdds_div"]) / 2 ** channel["b_dds"]
+
+    def calc_fstep(self, dicts):
+        step = self.ch_fstep(dicts[0])
+        if len(dicts) > 1:
+            step *= self.calc_fstep_int(dicts[0], dicts[1:])
+        return step
+
+    def roundfreq(self, f, dicts):
+        step = self.calc_fstep(dicts)
+        rounded = np.round(f / step) * step
+        return float(rounded) if np.isscalar(rounded) else rounded
+
+    def freq2int(self, f, thisch, otherch=None):
+        step = 1 if otherch is None else self.calc_fstep_int(thisch, [otherch])
+        return self._to_int(f, 1 / self.ch_fstep(thisch), quantize=step, parname="freq")
+
+    def int2freq(self, r, thisch):
+        return r / (2 ** thisch["b_dds"] / thisch["f_dds"])
+
+    def freq2reg(self, f, gen_ch=0, ro_ch=None):
+        gen = self["gens"][gen_ch]
+        ro = None if ro_ch is None else self["readouts"][ro_ch]
+        if gen["interpolation"] != 1 and (f > gen["f_dds"] / 2 or f < -gen["f_dds"] / 2):
+            raise RuntimeError("requested frequency %f is outside of [-range/2, range/2]" % f)
+        return self.freq2int(f, gen, ro) % 2 ** gen["b_dds"]
+
+    def freq2reg_adc(self, f, ro_ch=0, gen_ch=None):
+        ro = self["readouts"][ro_ch]
+        gen = None if gen_ch is None else self["gens"][gen_ch]
+        return self.freq2int(f, ro, gen) % 2 ** ro["b_dds"]
+
+    def reg2freq(self, r, gen_ch=0):
+        return self.int2freq(r, self["gens"][gen_ch])
+
+    def reg2freq_adc(self, r, ro_ch=0):
+        return self.int2freq(r, self["readouts"][ro_ch])
+
+    def adcfreq(self, f, gen_ch=0, ro_ch=0):
+        return self.roundfreq(f, [self["gens"][gen_ch], self["readouts"][ro_ch]])
+
+    def _get_ch_cfg(self, gen_ch=None, ro_ch=None):
+        if gen_ch is not None and ro_ch is not None:
+            raise RuntimeError("can't specify both gen_ch and ro_ch!")
+        if gen_ch is not None:
+            return self["gens"][gen_ch]
+        if ro_ch is not None:
+            return self["readouts"][ro_ch]
+        return None
+
+    def _get_mixer_cfg(self, gencfg):
+        return {"fs_mult": gencfg["fs_mult"], "fdds_div": gencfg["fs_div"], "b_dds": 48}
+
+    def deg2int(self, deg, thisch):
+        return self._to_int(deg, 2 ** thisch["b_phase"] / 360, parname="phase") % 2 ** thisch["b_phase"]
+
+    def int2deg(self, r, thisch):
+        return r / (2 ** thisch["b_phase"] / 360)
+
+    def deg2reg(self, deg, gen_ch=0, ro_ch=None):
+        ch = self._get_ch_cfg(gen_ch, ro_ch)
+        if ch is None:
+            raise RuntimeError("must specify either gen_ch or ro_ch!")
+        return self.deg2int(deg, ch)
+
+    def reg2deg(self, r, gen_ch=0, ro_ch=None):
+        ch = self._get_ch_cfg(gen_ch, ro_ch)
+        if ch is None:
+            raise RuntimeError("must specify either gen_ch or ro_ch!")
+        return self.int2deg(r, ch)
+
+    def _clock(self, gen_ch=None, ro_ch=None):
+        ch = self._get_ch_cfg(gen_ch, ro_ch)
+        if gen_ch is not None:
+            return ch["f_fabric"]
+        if ro_ch is not None:
+            return ch["f_output"]
+        return self["tprocs"][0]["f_time"]
+
+    def cycles2us(self, cycles, gen_ch=None, ro_ch=None):
+        return cycles / self._clock(gen_ch, ro_ch)
+
+    def us2cycles(self, us, gen_ch=None, ro_ch=None, as_float=False):
+        clock = self._clock(gen_ch, ro_ch)
+        return us * clock if as_float else self._to_int(us, clock, parname="length")
+
+    def calc_mixer_freq(self, gen_ch, mixer_freq, nqz, ro_ch):
+        gen = self["gens"][gen_ch]
+        channels = [self._get_mixer_cfg(gen)]
+        if ro_ch is not None:
+            channels.append(self["readouts"][ro_ch])
+        rounded = self.roundfreq(mixer_freq, channels)
+        setval = -rounded if abs(rounded) > gen["fs"] / 2 and nqz == 2 else rounded
+        return {"userval": mixer_freq, "rounded": rounded, "setval": setval}
+
+    def calc_muxgen_regs(self, gen_ch, freqs, gains, phases, ro_ch, absolute_freqs, mixer_freq):
+        gen = self["gens"][gen_ch]
+        channels = [gen] + ([] if ro_ch is None else [self["readouts"][ro_ch]])
+        if gains is not None and len(gains) != len(freqs):
+            raise RuntimeError("lengths of freqs and gains lists do not match")
+        if phases is not None and len(phases) != len(freqs):
+            raise RuntimeError("lengths of freqs and phases lists do not match")
+        tones = []
+        for i, freq in enumerate(freqs):
+            rounded = self.roundfreq(freq - mixer_freq if absolute_freqs else freq, channels)
+            tone = {"freq_rounded": rounded + mixer_freq if absolute_freqs else rounded}
+            if gen["interpolation"] != 1 and abs(rounded) > gen["f_dds"] / 2:
+                fs = gen["fs"]
+                output = rounded + mixer_freq
+                output_zone = int(output / (fs / 2) + 1)
+                folded = (-output if output_zone % 2 == 0 else output) % (fs / 2)
+                mixer_zone = int(mixer_freq / (fs / 2) + 1)
+                image = -folded * (-1) ** mixer_zone + fs * (mixer_zone // 2) - mixer_freq
+                if abs(image) <= gen["f_dds"]:
+                    rounded = image
+            tone["freq_int"] = self.freq2reg(rounded, gen_ch=gen_ch)
+            if gen["has_gain"]:
+                gain = 1.0 if gains is None else gains[i]
+                tone["gain_int"] = int(np.round(gain * gen["maxv"]))
+                tone["gain_rounded"] = tone["gain_int"] / gen["maxv"]
+            if gen["has_phase"]:
+                phase = 0.0 if phases is None else phases[i]
+                tone["phase_int"] = self.deg2reg(phase, gen_ch=gen_ch)
+                tone["phase_rounded"] = self.reg2deg(tone["phase_int"], gen_ch=gen_ch)
+            tones.append(tone)
+        return tones
+
+    def calc_ro_regs(self, rocfg, phase, sel, ch=None):
+        regs = {}
+        if rocfg["has_outsel"]:
+            regs["sel"] = sel
+        elif sel != "product":
+            raise RuntimeError("output selection is not supported by readout %s" % ch)
+        if "b_phase" in rocfg:
+            regs["phase_int"] = self.deg2int(phase, rocfg)
+            regs["phase_rounded"] = self.int2deg(regs["phase_int"], rocfg)
+        elif phase != 0:
+            raise RuntimeError("phase selection is not supported by readout %s" % ch)
+        return regs
+
+    def calc_ro_freq(self, rocfg, ro_pars, ro_regs, absolute_freqs, mixer_freq, flip_freq=False):
+        gen_ch = ro_pars["gen_ch"]
+        if gen_ch is None:
+            freq = self.roundfreq(ro_pars["freq"], [rocfg])
+        else:
+            mixer = self.roundfreq(mixer_freq, [rocfg])
+            dds = ro_pars["freq"] - mixer if absolute_freqs else ro_pars["freq"]
+            freq = self.roundfreq(dds, [self["gens"][gen_ch], rocfg]) + mixer
+        ro_regs["f_rounded"] = -freq if flip_freq else freq
+        if "pfb_nout" in rocfg:
+            self._calc_pfbro_freq(rocfg, ro_regs)
+        else:
+            ro_regs["f_int"] = self.freq2int(ro_regs["f_rounded"], rocfg)
+        if flip_freq:
+            ro_regs["f_rounded"] *= -1
+
+    def _calc_pfbro_freq(self, rocfg, ro_regs):
+        freq = ro_regs["f_rounded"]
+        zone = int(freq // (rocfg["fs"] / 2)) + 1
+        if zone % 2 == 0:
+            freq *= -1
+        freq %= rocfg["fs"]
+        ro_regs["f_folded"] = freq
+        step = rocfg["f_dds"] / 2
+        steps = int(np.round(freq / step))
+        dds = freq - steps * step
+        ro_regs.update({"pfb_f": dds, "pfb_lo": (steps - 0.5) * step,
+                        "pfb_hi": (steps + 0.5) * step, "pfb_center": steps * step,
+                        "pfb_lolo": max(steps - 1, 0) * step,
+                        "pfb_hihi": min(steps + 1, rocfg["pfb_nch"]) * step,
+                        "pfb_ch": (rocfg["pfb_ch_offset"] + steps) % rocfg["pfb_nch"],
+                        "f_int": self.freq2int(dds, rocfg)})
+
+    def check_pfb_collisions(self, rocfg, cfg1, cfgs):
+        logger = logging.getLogger(__name__)
+        for cfg2 in cfgs:
+            if cfg2["f_rounded"] == cfg1["f_rounded"]:
+                continue
+            if cfg2["pfb_ch"] == cfg1["pfb_ch"]:
+                message = "Readouts at %.3f and %.3f MHz use the same PFB channel." % (cfg1["f_rounded"], cfg2["f_rounded"])
+                if rocfg["pfb_dds_on_output"]:
+                    logger.warning(message + " Crosstalk is possible.")
+                else:
+                    raise RuntimeError(message)
+            else:
+                if abs(cfg2["f_folded"] - cfg1["pfb_center"]) < rocfg["f_dds"] / 2:
+                    logger.warning("Readout at %.3f MHz may see crosstalk from %.3f MHz.", cfg1["f_rounded"], cfg2["f_rounded"])
+                if abs(cfg1["f_folded"] - cfg2["pfb_center"]) < rocfg["f_dds"] / 2:
+                    logger.warning("Readout at %.3f MHz may see crosstalk from %.3f MHz.", cfg2["f_rounded"], cfg1["f_rounded"])
+
+    def get_maxv(self, gen_ch):
+        gen = self["gens"][gen_ch]
+        return int(np.floor(gen["maxv"] * gen["maxv_scale"]))
 
 _soccfg, _soc = None, None
 π = np.pi
@@ -16,14 +381,17 @@ _soccfg, _soc = None, None
 yaml.add_representer(np.ndarray, lambda dumper, array: dumper.represent_sequence('tag:yaml.org,2002:seq', array.tolist(), flow_style=True))
 yaml.add_multi_representer(np.generic, lambda dumper, data: dumper.represent_data(data.item()))
 
-def connect(ip, port=8888, proxy_name="qick"):
+def connect(ip, port=9999, timeout=10, takeover=True):
+    """Connect to the QuICK TCP server and cache its configuration/client pair."""
     global _soc, _soccfg
-    Pyro4.config.SERIALIZER = "pickle"
-    Pyro4.config.PICKLE_PROTOCOL_VERSION = 4
-    ns = Pyro4.locateNS(host=ip, port=port)
-    _soc = Pyro4.Proxy(ns.lookup(proxy_name))
-    _soc.get_cfg()
-    _soccfg = QickConfig(_soc.get_cfg())
+    from .client import TCPClient
+    soc = TCPClient(ip, port, timeout=timeout, takeover=takeover)
+    try:
+        soccfg = _SocConfig(soc.get_cfg())
+    except BaseException:
+        soc.close()
+        raise
+    _soc, _soccfg = soc, soccfg
     return _soccfg, _soc
 
 def getSoc(): # Return cached connection

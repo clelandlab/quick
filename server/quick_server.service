@@ -1,0 +1,19 @@
+[Unit]
+Description=QuICK binary TCP board server
+Wants=network-online.target
+After=network-online.target
+Conflicts=qick_pyro.service
+
+[Service]
+Type=simple
+User=root
+Environment=BOARD=ZCU216
+Environment=PYTHONPATH=/home/xilinx/jupyter_notebooks/quick_server
+WorkingDirectory=/home/xilinx/jupyter_notebooks/quick_server
+ExecStart=/bin/bash -c 'source /etc/profile; exec /usr/local/share/pynq-venv/bin/python -m quickserver.server --config /home/xilinx/quick_server.json'
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

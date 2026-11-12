@@ -7,21 +7,22 @@ Helper functions and classes, including data-saving, connection, fitting, etc.
 ## 🟢connect
 
 ```python
-soccfg, soc = quick.connect(ip, port=8888, proxy_name="qick")
+soccfg, soc = quick.connect(ip, port=9999, timeout=10, takeover=True)
 ```
 
-Connect to a QICK board.
+Connect to the QuICK TCP server. Install the separate `board_setup_next` package on the board first.
 
 **Parameters**:
 
 - `ip` (str) IP address of the QICK board
-- `port=8888` (int) Port of the QICK board
-- `proxy_name="qick"` (str) Proxy server name of the QICK board
+- `port=9999` (int) TCP port of the board server.
+- `timeout=10` (float) Network timeout in seconds; TCP requires a finite positive value.
+- `takeover=True` (bool) On a connection/reconnection, cancel the prior board run, wait for cleanup/recovery and reset outputs before returning. `False` opts out for observation/control connections; it does not enforce read-only access. The old PC process is not killed. The takeover handshake uses at least 35 seconds independently of the ordinary network timeout.
 
 **Return**:
 
-- `soccfg` QICK board socket config
-- `soc` QICK board socket
+- `soccfg` Local board configuration and unit-conversion object.
+- `soc` TCP client.
 
 ## 🟡getSoc
 
@@ -29,12 +30,12 @@ Connect to a QICK board.
 soccfg, soc = quick.getSoc()
 ```
 
-Get the socket objects for the last connected QICK board. Mostly for internal use.
+Get the cached configuration/client pair from the last `connect()` call. Mostly for internal use; it does not create a new connection.
 
 **Return**:
 
-- `soccfg` QICK board socket config
-- `soc` QICK board socket
+- `soccfg` Local board configuration object.
+- `soc` TCP client.
 
 ## 🟢print_yaml
 

@@ -8,7 +8,7 @@ def get_version(rel_path):
 setup(
     name="clelandlab-quick",
     version=get_version("quick/VERSION"),
-    description="QuICK is a universal wrap of QICK.",
+    description="QuICK Mercator control and streaming acquisition for RFSoC firmware.",
     long_description=(here / "README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     url="https://github.com/clelandlab/quick",
@@ -28,14 +28,13 @@ setup(
     packages=find_packages(where="."),
     python_requires=">=3.13, <4",
     install_requires=[
-        "qick==0.2.418",
         "numpy",
         "scipy",
         "pyyaml",
-        "pyro4",
         "matplotlib",
         "ipython",
-        "func_timeout"
+        "func_timeout",
+        "tqdm"
     ],
     package_data={
         "quick": ["VERSION", "experiment.yml"],

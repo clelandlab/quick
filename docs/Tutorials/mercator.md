@@ -60,7 +60,7 @@ soft_avg: 1        # Software (Python) averages.
 rep: 0             # Repetitions without averaging (returns all data).
 ```
 
-> `hard_avg` and `rep` are incompatible with time-series acquisition `acquire_decimated`.
+> `acquire_decimated` retains the flattened hardware-shot axis when `hard_avg`/`rep` produce multiple shots. All windows across shots/triggers must fit the finite capture buffer; software rounds are averaged. See the [current API](../API%20References/mercator.md).
 
 ## Pulse Setup
 
@@ -175,7 +175,7 @@ Defines the sequence of operations. Steps are specified with a flat `i_` prefix 
 
 ### Trigger
 
-Trigger ADC readout. Note that the ADC has a time delay compared to the pulse, so you might always need an offset `t` to match the readout window for the correct readout pulse. A program MUST have at least one trigger step, no matter whether you care about the data or not.
+Trigger ADC readout. The ADC has a delay relative to a generated pulse, so use an offset `t` appropriate to the signal path. Acquisition requires triggered readouts; run-only programs can omit them. Leave capture/rearm margin between triggers: overlapping or exactly touching windows can miss triggers despite returning an array of the expected shape.
 
 ### Delay
 
@@ -210,7 +210,7 @@ The protocol supports conditional pulses (e.g., for active reset) that execute b
 6_r: 0             # Readout channel to check (default 0).
 ```
 
-In this example, the pulse `p1` at step 6 is played only if the I-data from readout channel `r: 0` (triggered at step 3) is above the `threshold`.
+In this example, pulse `p1` at step 6 plays when raw integrated I from readout `r: 0` is greater than or equal to the quantized threshold. Equality plays the pulse. This hardware decision is separate from the software population threshold passed to `acquire()`.
 
 ### Syntax Sugar (Recommended)
 
