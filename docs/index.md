@@ -1,7 +1,5 @@
 # Get Started
 
-> This source checkout uses a native TCP Mercator client and ZCU216 server. Neither side requires a QICK/Pyro Python package. The board uses the supplied QICK firmware and its existing PYNQ/RFDC libraries.
-
 QuICK provides experiment routines and pulse protocols for [QICK](https://github.com/openquantumhardware/qick) firmware.
 
 <div>
@@ -19,7 +17,7 @@ Use Python 3.13+ on the PC and install this checkout from its repository root. A
 Install this package with `pip`:
 
 ```
-python -m pip install -e .
+pip install clelandlab-quick
 ```
 
 > It is recommended to use a conda environment.
