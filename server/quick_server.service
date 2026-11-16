@@ -1,19 +1,20 @@
 [Unit]
-Description=QuICK binary TCP board server
+Description=QuICK native C++ TCP board server
 Wants=network-online.target
 After=network-online.target
-Conflicts=qick_pyro.service
+Conflicts=quack_server.service qick_pyro.service
 
 [Service]
 Type=simple
 User=root
 Environment=BOARD=ZCU216
-Environment=PYTHONPATH=/home/xilinx/jupyter_notebooks/quick_server
+EnvironmentFile=/home/xilinx/jupyter_notebooks/quick_server/runtime.env
 WorkingDirectory=/home/xilinx/jupyter_notebooks/quick_server
-ExecStart=/bin/bash -c 'source /etc/profile; exec /usr/local/share/pynq-venv/bin/python -m quickserver.server --config /home/xilinx/quick_server.json'
+ExecStart=/home/xilinx/jupyter_notebooks/quick_server/bin/quick-server --config /home/xilinx/quick_server.json
 Restart=on-failure
 RestartSec=3
-TimeoutStopSec=10
+TimeoutStopSec=30
+KillMode=control-group
 
 [Install]
 WantedBy=multi-user.target

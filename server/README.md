@@ -1,35 +1,68 @@
-# Board server
+# Native QuICK board server
 
-`quickserver` runs the supplied ZCU216 tProc v2 firmware through PYNQ, RFDC registers and DMA. It receives compiled programs over TCP port 9999 and streams accumulated IQ. Decimated capture uses finite firmware buffers. QICK and Pyro are not runtime dependencies.
+`quick-server` is a C++17 server for ZCU216 tProc v2 firmware on PYNQ 3.0.1.
+It implements the existing QK01 protocol and works with the unchanged Python
+PC client and compiler. The server does not start or embed Python.
 
-The board needs its existing Python 3.8+, NumPy, PYNQ, `xrfdc` and `xrfclk` environment. The server source is in [quickserver](quickserver/); PC transport is in [client.py](../quick/client.py), with identical framing implementations in [quick/wire.py](../quick/wire.py) and [quickserver/wire.py](quickserver/wire.py). [quick_server.service](quick_server.service) supplies automatic startup.
+## Build
 
-## Board installation
-
-The separate `board_setup_next` folder contains `install.sh`, `uninstall.sh`, `dependency.tar.gz` and its checksum. Copy that folder to the board and run:
-
-```sh
-sudo bash install.sh
-```
-
-The installer preserves clock settings and installs the service under `/home/xilinx/jupyter_notebooks/quick_server`, with configuration in `/home/xilinx/quick_server.json`. It supports `--yes` to retain the current hostname and `--no-reboot` to avoid rebooting. The old Pyro service is disabled; do not run both services against the FPGA together.
+Run from the repository root on Linux with GCC 9 or later and CMake 3.16 or later:
 
 ```sh
-systemctl status quick_server
-journalctl -u quick_server
+cmake -S server -B server/build -DCMAKE_BUILD_TYPE=Release
+cmake --build server/build --parallel 2
+server/build/quick-server --help
 ```
 
-The setup folder also contains the offline bundle builder. Firmware and derived code retain their license notices; see [FIRMWARE_LICENSE](FIRMWARE_LICENSE).
+Dependencies are vendored for offline compilation. Building does not require
+Python or access FPGA hardware. Windows users can build through WSL.
 
-## Client use
+For an AArch64 cross-build using the verified Arm GNU 10.2-2020.11 toolchain:
 
-Install the PC package from the repository root, then connect:
-
-```python
-import quick
-soccfg, soc = quick.connect("10.0.1.91")
+```sh
+cmake -S server -B server/build-arm \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/aarch64-linux.cmake \
+  -DQUICK_CROSS_PREFIX=/opt/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- \
+  -DCMAKE_BUILD_TYPE=Release -DQUICK_STATIC_CXX_RUNTIME=ON
+cmake --build server/build-arm --parallel 2
 ```
 
-A new default connection cancels the previous run, waits for ADC recovery, and resets outputs. Use `takeover=False` for an observation connection. `soc.stop()` cancels the current client's run; `soc.reset_gens()` stops persistent outputs. Close the client when finished.
+Use a toolchain whose glibc baseline is no newer than the board's. The verified
+one uses glibc 2.31. `QUICK_STATIC_CXX_RUNTIME` links libstdc++ and libgcc
+statically; glibc and PYNQ's native libraries remain dynamically linked.
 
-Network and acquisition timeouts are separate. Heartbeats keep long programs connected, but do not prove hardware progress. Interrupted acquisitions are not replayed automatically. A DMA fault requires service restart; missed or overlapping ADC triggers remain firmware limits. See the [connection API](../docs/API%20References/helper.md) and [Mercator tutorial](../docs/Tutorials/mercator.md).
+## Run
+
+The server uses PYNQ's installed `libxrfdc.so`, `libxrt_core.so`, xclbin and
+LMK/LMX clock presets. Root access is needed for FPGA programming, register access,
+DMA and SPI. Only one server may own the FPGA at a time.
+
+```sh
+sudo server/build/quick-server --config /home/xilinx/quick_server.json
+```
+
+Example configuration:
+
+```json
+{
+  "bitfile": "/home/xilinx/jupyter_notebooks/quick_server/firmware/qick_216.bit",
+  "host": "0.0.0.0",
+  "port": 9999,
+  "download": true,
+  "dac_sample_rates": {"0": 6881.28}
+}
+```
+
+The matching `.hwh` must sit beside the bitstream. CLI options override JSON
+settings; use `--help` for supported options. `--attach` skips FPGA programming
+and requires matching firmware, usable XRT memory topology and locked RFDC clocks.
+
+Firmware metadata can be inspected without hardware access:
+
+```sh
+server/build/quick-server --inspect-firmware /path/to/qick_216.bit
+```
+
+`quick_server.service` provides the systemd unit. The separately prepared
+`board_setup_next` bundle contains `dependency.tar.gz` and `install.sh` for
+deployment; it is outside this source repository.
