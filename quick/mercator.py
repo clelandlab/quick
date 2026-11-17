@@ -975,7 +975,8 @@ def generate_waveform(o, soccfg):
         x = np.arange(0, l)
         μ = l/2 - 0.5
         y = np.exp(-((x - μ) / σ) ** 2)
-        o["idata"] = (y - y[0]) / (1 - y[0])
+        # Normalize to the sampled peak, which is below one for even lengths.
+        o["idata"] = (y - y[0]) / (y.max() - y[0])
     if o["style"] == "stage":
         o["idata"] = np.zeros(int(σ * 4))
         for s in o["stage"]:
