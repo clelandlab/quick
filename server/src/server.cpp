@@ -103,9 +103,7 @@ struct Server::Impl {
         const int fd;
         const std::string session;
         std::atomic<bool> disconnected{false};
-        bool reserved = false; // protected by state
-        bool busy = false;
-        bool registered = true;
+        bool registered = true; // protected by state
     };
     struct Program { Json plan; Arrays arrays; std::size_t size = 0; };
     struct Capture {
@@ -194,15 +192,24 @@ struct Server::Impl {
                 if (stop) { close_socket(fd); break; }
                 configure_socket(fd);
                 auto conn = std::make_shared<Connection>(fd);
+                socket_timeout(fd, 5.0);
                 {
                     std::lock_guard<std::mutex> lock(state);
-                    std::size_t normal = 0, reserved = 0;
-                    for (const auto& existing : connections) existing->reserved ? ++reserved : ++normal;
-                    if (normal >= client_limit) {
-                        if (reserved) continue;
-                        conn->reserved = true;
+                    // Keep the newest clients in accept order, even when the
+                    // oldest client is stalled mid-request or acquiring.
+                    if (connections.size() >= client_limit) {
+                        auto retired = connections.front();
+                        retired->registered = false;
+                        if (experiment == retired) experiment.reset();
+                        if (active_connection == retired && active_capture) {
+                            active_capture->cancel.store(true);
+                            active_capture->changed.notify_all();
+                        }
+                        // Wake its I/O now; the session retains ownership of
+                        // the descriptor until its worker has finished cleanup.
+                        retired->disconnect();
+                        connections.pop_front();
                     }
-                    socket_timeout(fd, conn->reserved ? 2.0 : 5.0);
                     connections.push_back(conn);
                 }
                 try {
@@ -251,47 +258,27 @@ struct Server::Impl {
         shutdown_complete = true;
     }
 
-    bool promote(const std::shared_ptr<Connection>& conn) {
-        std::shared_ptr<Connection> retired;
-        {
-            std::lock_guard<std::mutex> lock(state);
-            if (!conn->registered) return false;
-            if (!conn->reserved) return true;
-            std::size_t normal = 0;
-            for (const auto& item : connections) if (!item->reserved) ++normal;
-            if (normal >= client_limit) {
-                auto it = std::find_if(connections.begin(), connections.end(), [](const auto& item) { return !item->reserved && !item->busy; });
-                if (it == connections.end()) return false;
-                retired = *it; retired->registered = false; connections.erase(it);
-            }
-            conn->reserved = false;
-        }
-        if (retired) retired->disconnect();
-        socket_timeout(conn->fd, 5.0);
-        return true;
+    void check_connection(const std::shared_ptr<Connection>& conn) {
+        if (stop) throw Error("CancelledError", "Server is shutting down");
+        if (conn->disconnected) throw Error("EOFError", "Client disconnected");
     }
 
     void session(const std::shared_ptr<Connection>& conn) noexcept {
         try {
             while (!stop && !conn->disconnected) {
-                bool reserved;
                 {
                     std::lock_guard<std::mutex> lock(state);
                     if (!conn->registered) break;
-                    reserved = conn->reserved;
                 }
-                if (!reserved && !readable(conn->fd, 0.2)) continue;
+                if (!readable(conn->fd, 0.2)) continue;
                 {
                     std::lock_guard<std::mutex> lock(state);
                     if (!conn->registered) break;
-                    conn->busy = true;
                 }
                 auto frame = recv_frame(conn->fd);
+                check_connection(conn);
                 if (frame.kind != REQUEST) throw Error("ProtocolError", "Expected a request frame");
                 try {
-                    bool taking_over = get(frame.meta, "command") == "config" && get(frame.meta, "takeover") == true;
-                    if (reserved && get(frame.meta, "command") != "stop" && !taking_over && !promote(conn))
-                        throw Error("BusyError", "Normal sessions are busy; reserved connection permits stop or takeover");
                     dispatch(conn, frame);
                 } catch (const Error& error) {
                     if (transport_error(error)) throw;
@@ -301,17 +288,12 @@ struct Server::Impl {
                 } catch (const std::exception& error) {
                     send_frame(conn->fd, response(ERROR, frame.request_id, {{"error", "RuntimeError"}, {"message", std::string(error.what()).substr(0, 4096)}}));
                 }
-                {
-                    std::lock_guard<std::mutex> lock(state);
-                    conn->busy = false;
-                    if (conn->reserved) break;
-                }
             }
         } catch (const std::exception&) { /* EOF, malformed framing, or dead peer terminates only this session. */ }
         {
             std::lock_guard<std::mutex> lock(state);
             if (active_connection == conn && active_capture) active_capture->cancel.store(true);
-            connections.remove(conn); conn->registered = false; conn->busy = false;
+            connections.remove(conn); conn->registered = false;
             if (experiment == conn) experiment.reset();
         }
         conn->disconnect();
@@ -348,7 +330,7 @@ struct Server::Impl {
             }
             send_frame(conn->fd, response(RESPONSE, frame.request_id, std::move(result)));
         } else if (command == "read_mem" || command == "reset_gens") {
-            claim_board();
+            claim_board(conn);
             std::unique_lock<BoardGate> lease(board, std::adopt_lock);
             if (command == "read_mem") {
                 auto memory = string_value(meta, "mem_sel", "dmem");
@@ -365,25 +347,32 @@ struct Server::Impl {
         } else throw Error("ProtocolError", "Unknown command");
     }
 
-    void claim_board() {
-        if (stop) throw Error("CancelledError", "Server is shutting down");
+    void claim_board(const std::shared_ptr<Connection>& conn, const std::shared_ptr<Capture>& capture = {}) {
+        check_connection(conn);
         if (!board.try_lock()) throw Error("BusyError", "Board is acquiring");
         try {
-            if (stop) throw Error("CancelledError", "Server is shutting down");
             std::lock_guard<std::mutex> lock(state);
+            check_connection(conn);
             if (takeover_pending) throw Error("BusyError", "A new experimental session is taking over");
             if (recover_until > now_seconds()) throw Error("BusyError", "ADC window recovering (" + std::to_string(recover_until-now_seconds()) + " seconds remaining)");
+            // Publish the capture atomically with the eviction check so a
+            // retired client cannot start an uncancelled acquisition.
+            if (capture) { active_connection = conn; active_capture = capture; }
         } catch (...) { board.unlock(); throw; }
     }
 
     void takeover(const std::shared_ptr<Connection>& conn) {
         auto deadline = Clock::now() + std::chrono::seconds(30);
         std::unique_lock<std::timed_mutex> takeover_guard(takeover_lock, std::defer_lock);
-        if (!takeover_guard.try_lock_until(deadline)) throw Error("BusyError", "Previous session takeover did not finish");
+        do {
+            check_connection(conn);
+            if (Clock::now() >= deadline) throw Error("BusyError", "Previous session takeover did not finish");
+        } while (!takeover_guard.try_lock_for(std::chrono::milliseconds(10)));
         std::unique_lock<BoardGate> lease(board, std::defer_lock);
         try {
             {
                 std::lock_guard<std::mutex> lock(state);
+                check_connection(conn);
                 takeover_pending = true;
                 if (experiment && experiment != conn) experiment->disconnect();
                 experiment.reset();
@@ -391,7 +380,7 @@ struct Server::Impl {
                 if (active_connection && active_connection != conn) active_connection->disconnect();
             }
             while (true) {
-                if (stop) throw Error("CancelledError", "Server is shutting down");
+                check_connection(conn);
                 if (Clock::now() >= deadline) throw Error("BusyError", "Board cleanup or ADC recovery exceeded the takeover deadline");
                 if (readable(conn->fd, 0)) {
                     if (peer_closed(conn->fd)) throw Error("EOFError", "New experimental session disconnected");
@@ -415,12 +404,11 @@ struct Server::Impl {
             for (std::size_t ch = 0; ch < cfg.at("readouts").size(); ++ch)
                 backend.call("enable_buf", {{"ch", ch}, {"enable_avg", false}, {"enable_buf", false}});
             backend.call("reset_gens");
-            while (!promote(conn)) {
-                if (Clock::now() >= deadline) throw Error("BusyError", "No normal session slot became available for takeover");
-                if (stop) throw Error("CancelledError", "Server is shutting down");
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            {
+                std::lock_guard<std::mutex> lock(state);
+                check_connection(conn);
+                experiment = conn; takeover_pending = false;
             }
-            { std::lock_guard<std::mutex> lock(state); experiment = conn; takeover_pending = false; }
         } catch (...) {
             std::lock_guard<std::mutex> lock(state); takeover_pending = false; throw;
         }
@@ -577,8 +565,7 @@ struct Server::Impl {
             }
         }
         auto capture = std::make_shared<Capture>();
-        claim_board();
-        { std::lock_guard<std::mutex> lock(state); active_connection = conn; active_capture = capture; }
+        claim_board(conn, capture);
         std::thread worker;
         try { worker = std::thread([this, meta, entry, capture] { capture_run(meta, entry, capture); }); }
         catch (...) {
